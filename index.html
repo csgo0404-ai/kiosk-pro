@@ -215,7 +215,7 @@ const PHASE_LABEL = ['0일차 · 진로선택/사업계획','1일차 · 면접·
 const MAXPHASE = PHASE_LABEL.length - 1;   // 2
 function boothIdFor(ownerCd){ return 'sb_'+ownerCd; }
 // 키오스크는 같은 폴더에 함께 올리는 전제 → 상대경로. (다른 곳 호스팅이면 KIOSK_BASE로 교체)
-function _boothUrl(ownerCd){ return '키오스크.html?booth='+encodeURIComponent(boothIdFor(ownerCd))+'&me='+encodeURIComponent((ME&&ME.cd)||''); }
+function _boothUrl(ownerCd){ return 'kiosk.html?booth='+encodeURIComponent(boothIdFor(ownerCd))+'&me='+encodeURIComponent((ME&&ME.cd)||''); }
 function _ensureBoothThen(ownerCd, cb){
   const id = boothIdFor(ownerCd);
   const b = obj(obj(DB.businesses)[ownerCd]);
@@ -625,10 +625,10 @@ function teacherBoothsCard(){
   h += '</div></div>';
   return h;
 }
-function openKioskMain(){ window.open('키오스크.html', '_blank'); }
+function openKioskMain(){ window.open('kiosk.html', '_blank'); }
 // 교사용: 사장 부스를 '사장(주인) 자격'으로 열기 → 키오스크 월급 지급 버튼이 보임(me=사장코드)
 function openBoothAsOwner(ownerCd){
-  const url = '키오스크.html?booth='+encodeURIComponent(boothIdFor(ownerCd))+'&me='+encodeURIComponent(ownerCd);
+  const url = 'kiosk.html?booth='+encodeURIComponent(boothIdFor(ownerCd))+'&me='+encodeURIComponent(ownerCd);
   window.open(url, '_blank');
   _ensureBoothThen(ownerCd, ()=>{});
 }
@@ -1549,7 +1549,7 @@ function civilBoothCard(){
   h += '</div></div>';
   return h;
 }
-function openGovBooth(id){ window.open('키오스크.html?booth='+encodeURIComponent(id)+'&me='+encodeURIComponent((ME&&ME.cd)||'')+'&sale=1', '_blank'); }
+function openGovBooth(id){ window.open('kiosk.html?booth='+encodeURIComponent(id)+'&me='+encodeURIComponent((ME&&ME.cd)||'')+'&sale=1', '_blank'); }
 function startCivil(){ S.child('civilServants/'+ME.cd).update({cd:ME.cd, nm:ME.nm, status:'draft', createdAt:TS, updatedAt:TS}); toast('공무원 신청서를 작성해 주세요!'); }
 function cancelCivilDraft(){ prettyConfirm('공무원 신청 그만두기', '작성 중인 공무원 신청서를 <b>삭제</b>할까요?<br>(제출 전이라 다시 시작할 수 있어요)', ()=>{ clearDraftLocal('civil'); S.child('civilServants/'+ME.cd).remove().then(()=>toast('공무원 신청을 그만뒀어요')); }, '🗑️'); }
 function saveCivil(submit){
