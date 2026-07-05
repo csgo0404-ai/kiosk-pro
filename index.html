@@ -1,0 +1,2018 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🏢 창업 프로젝트</title>
+<style>
+  :root{
+    --org:#f57c2b; --org-d:#e05f0e; --grn:#22a06b; --grn-d:#178254;
+    --pink:#ff7fae; --ink:#2b2b2b; --line:#e6e6e6; --bg:#f5f6f8; --card:#fff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:'Malgun Gothic','맑은 고딕',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+  h1,h2,h3{margin:0 0 8px}
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:10px;font-weight:700;font-size:14px;padding:10px 14px}
+  input,textarea,select{font-family:inherit;font-size:14px;width:100%;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;background:#fff}
+  textarea{resize:vertical;min-height:64px}
+  .btn-org{background:var(--org);color:#fff}
+  .btn-org:hover{background:var(--org-d)}
+  .btn-grn{background:var(--grn);color:#fff}
+  .btn-grn:hover{background:var(--grn-d)}
+  .btn-pink{background:var(--pink);color:#fff}
+  .btn-gray{background:#e9edf1;color:#444}
+  .btn-red{background:#e8524a;color:#fff}
+  .btn-sm{padding:6px 10px;font-size:13px;border-radius:8px}
+  .wrap{max-width:920px;margin:0 auto;padding:14px}
+  .topbar{background:linear-gradient(90deg,var(--org),#ffa15c);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .topbar b{font-size:18px}
+  .pill{background:rgba(255,255,255,.25);padding:4px 10px;border-radius:20px;font-size:13px;font-weight:700}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  .card h2{font-size:17px;display:flex;align-items:center;gap:7px}
+  .muted{color:#8a8f98;font-size:13px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .field{margin-bottom:10px}
+  .field label{display:block;font-weight:700;font-size:13px;margin-bottom:4px;color:#555}
+  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:700}
+  .b-wait{background:#fff3e0;color:#c46a12}
+  .b-ok{background:#e6f6ec;color:#178254}
+  .b-no{background:#fdecea;color:#c0392b}
+  .b-info{background:#e8f0fe;color:#2b5fd0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+  .applicant{border:1.5px solid var(--line);border-radius:12px;padding:12px;background:#fafbfc}
+  .applicant.picked{border-color:var(--grn);background:#f1fbf5}
+  .applicant.reserved{border-color:#f0b429;background:#fffaf0}
+  .anon-tag{font-weight:800;color:var(--org)}
+  #loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  #loginView.hidden{display:none}
+  .login-box{width:100%;max-width:380px;margin:0 auto;background:#fff;border-radius:18px;padding:28px;box-shadow:0 8px 30px rgba(0,0,0,.1);text-align:center}
+  .login-box h1{font-size:26px}
+  .tabline{display:flex;gap:6px;margin:16px 0}
+  .tabline button{flex:1;background:#eef1f4;color:#555}
+  .tabline button.on{background:var(--org);color:#fff}
+  .hidden{display:none!important}
+  .step-dots{display:flex;gap:6px;flex-wrap:wrap}
+  .step-dots .d{padding:6px 11px;border-radius:20px;background:#eef1f4;color:#888;font-size:12.5px;font-weight:700}
+  .step-dots .d.on{background:var(--grn);color:#fff}
+  .kv{font-size:13.5px;line-height:1.7}
+  .kv b{color:#555}
+  .divider{height:1px;background:var(--line);margin:12px 0}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:11px 18px;border-radius:24px;font-size:14px;z-index:9999;opacity:0;transition:.25s;pointer-events:none}
+  .toast.show{opacity:1}
+  .empty{text-align:center;color:#9aa0a8;padding:22px;font-size:14px}
+  .pc-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:10000;padding:20px}
+  .pc-overlay.show{display:flex}
+  .pc-box{background:#fff;border-radius:22px;max-width:380px;width:100%;padding:26px 24px;text-align:center;box-shadow:0 16px 44px rgba(0,0,0,.28);animation:pcPop .18s ease}
+  @keyframes pcPop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+  .pc-icon{font-size:46px;line-height:1;margin-bottom:8px}
+  .pc-box h3{font-size:20px;margin:0 0 10px}
+  .pc-msg{color:#555;font-size:14.5px;line-height:1.65;margin-bottom:20px}
+  .pc-btns{display:flex;gap:10px}
+  .pc-btns button{flex:1;padding:12px}
+  .role-board{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  @media(max-width:640px){.role-board{grid-template-columns:repeat(2,1fr)}}
+  .role-col{background:#f6f7f9;border:2px solid var(--line);border-radius:12px;padding:8px;min-height:120px;transition:.15s}
+  .role-col.drag-over{border-color:var(--org);background:#fff5ec}
+  .role-col-h{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px;font-size:13px}
+  .role-col-body{display:flex;flex-wrap:wrap;gap:6px;min-height:52px}
+  .role-chip{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:6px 11px;font-size:13px;font-weight:700;cursor:grab;box-shadow:0 1px 2px rgba(0,0,0,.04);transition:.12s}
+  .role-chip:hover{border-color:var(--org);box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  .role-chip:active{cursor:grabbing}
+  .role-chip.dragging{opacity:.4}
+  .chip-open{cursor:pointer;color:var(--org);font-weight:800;padding:0 3px;font-size:15px}
+  .role-empty{width:100%;color:#b8bdc4;font-size:12px;text-align:center;padding:12px 4px;border:1px dashed var(--line);border-radius:8px}
+  .nograb, .nograb *{user-select:none;-webkit-user-select:none;-moz-user-select:none;-webkit-touch-callout:none}
+  .nograb img{pointer-events:none;-webkit-user-drag:none;user-drag:none}
+  .role-board3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start}
+  @media(max-width:640px){.role-board3{grid-template-columns:1fr}}
+  .role-board3 .role-col{min-width:0}
+  .rb-top{display:flex;gap:12px;align-items:start;flex-wrap:wrap}
+  .rb-top>.role-col{flex:0 0 150px}
+  .rb-top>.sb-wrap{flex:1 1 260px;min-width:0}
+  @media(max-width:640px){.rb-top>.role-col,.rb-top>.sb-wrap{flex:1 1 100%}}
+  .sb-table{border-collapse:separate;border-spacing:0;width:100%;margin-top:4px}
+  .sb-table th{font-size:12px;color:#888;text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+  .sb-table td{vertical-align:middle;padding:8px;border-bottom:1px solid #f1f2f4}
+  .sb-table td.sb-boss{white-space:nowrap;width:1%}
+  .sb-emps{min-height:38px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1.5px dashed transparent;border-radius:10px;padding:4px 6px;background:#fafbfc}
+  .sb-emps.drag-over{border-color:var(--org);background:#fff5ec}
+  .score-table{border-collapse:collapse;font-size:13px}
+  .score-table th,.score-table td{border:1px solid #dcdfe4;padding:6px 8px;text-align:center}
+  .score-table th{background:#f7f8fa;white-space:nowrap;font-size:12.5px}
+  .score-table th.corner{text-align:left;color:#777}
+  .score-table td.it{font-weight:800;white-space:nowrap;text-align:left;background:#fafbfc}
+  .score-table td.sumcell{font-weight:900;background:#fff7ee}
+  .score-table td.sumcell.top{background:#fff0d6;color:#c46a12}
+  .stars{display:inline-flex;touch-action:none;cursor:pointer;user-select:none;-webkit-user-select:none;white-space:nowrap}
+  .stars.locked{cursor:default;opacity:.9}
+  .star{position:relative;display:inline-block;width:1.25em;font-size:22px;line-height:1;color:#d5d9df}
+  .star .fill{position:absolute;left:0;top:0;overflow:hidden;color:#f5b301;width:0}
+  .biz-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .list-item{border:1px solid var(--line);border-radius:11px;padding:12px;margin-bottom:9px;background:#fff}
+</style>
+</head>
+<body>
+
+<!-- ================= 로그인 ================= -->
+<div id="loginView">
+  <div class="login-box">
+    <h1>🏢 창업 프로젝트</h1>
+    <div class="tabline">
+      <button id="tabStu" class="on" onclick="switchLogin('stu')">학생</button>
+      <button id="tabTch" onclick="switchLogin('tch')">선생님</button>
+    </div>
+    <div id="stuLogin">
+      <div class="field"><input id="stuCodeInput" placeholder="학생 코드 입력" onkeyup="if(event.key==='Enter')doStuLogin()"></div>
+      <button class="btn-org" style="width:100%" onclick="doStuLogin()">입장하기 🚀</button>
+    </div>
+    <div id="tchLogin" class="hidden">
+      <div class="field"><input id="tchPwInput" type="password" placeholder="교사 코드" onkeyup="if(event.key==='Enter')doTchLogin()"></div>
+      <button class="btn-grn" style="width:100%" onclick="doTchLogin()">입장하기 🚀</button>
+    </div>
+    <p id="loginMsg" class="muted" style="color:#c0392b;min-height:18px"></p>
+  </div>
+</div>
+
+<!-- ================= 앱 ================= -->
+<div id="appView" class="hidden">
+  <div class="topbar">
+    <b>🏢 창업 프로젝트</b>
+    <div class="row">
+      <span class="pill" id="whoPill"></span>
+      <span class="pill" id="phasePill"></span>
+      <button class="pill" id="gearBtn" onclick="openSettings()" title="설정" style="display:none;cursor:pointer;border:none;font-size:18px">⚙️</button>
+      <button class="btn-gray btn-sm" onclick="logout()">로그아웃</button>
+    </div>
+  </div>
+  <div class="wrap" id="mainArea"></div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- 교사 설정 -->
+<div id="setOverlay" class="pc-overlay">
+  <div class="pc-box">
+    <div class="pc-icon">⚙️</div>
+    <h3>설정</h3>
+    <div class="pc-msg">자료를 백업(내보내기)하거나 백업 파일로 되돌리고, 전체 초기화할 수 있어요.</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn-grn" onclick="exportData()">📤 자료 내보내기 (백업)</button>
+      <button class="btn-org" onclick="document.getElementById('importFile').click()">📥 자료 불러오기</button>
+      <button class="btn-red" onclick="closeSettings();resetAll()">🧹 전체 초기화</button>
+      <button class="btn-gray" onclick="closeSettings()">닫기</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json,.json" style="display:none" onchange="importData(this)">
+  </div>
+</div>
+
+<!-- 예쁜 확인창 -->
+<div id="pcOverlay" class="pc-overlay">
+  <div class="pc-box">
+    <div class="pc-icon" id="pcIcon">⚠️</div>
+    <h3 id="pcTitle"></h3>
+    <div id="pcMsg" class="pc-msg"></div>
+    <div class="pc-btns">
+      <button class="btn-gray" onclick="pcClose()">취소</button>
+      <button class="btn-org" onclick="pcConfirm()">확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase compat 8.10.1 (기존 우리반 매니저와 동일 버전) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script>
+/* ============================================================
+   창업 프로젝트 — 독립 HTML 앱
+   - 기존 우리반 매니저(class-manager-bad00) DB에 연결
+   - 명단: ClassData/EventShop/stu (읽기 전용)
+   - 신규 데이터: ClassData/Startup/ 하위에 격리
+   - 월급 지급은 범위 밖(키오스크가 처리). 근로계약서까지.
+============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyCzsI9FW3bga1V73lCR7pNgfPLdcqcbsgM",
+  authDomain: "class-manager-bad00.firebaseapp.com",
+  databaseURL: "https://class-manager-bad00-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "class-manager-bad00",
+  storageBucket: "class-manager-bad00.firebasestorage.app",
+  messagingSenderId: "436830301778",
+  appId: "1:436830301778:web:d3da11a5ac0e6c252d798b"
+};
+firebase.initializeApp(firebaseConfig);
+const ROOT = firebase.database().ref('ClassData');
+const S    = ROOT.child('Startup');
+const DBROOT = firebase.database().ref();                    // 루트(키오스크 kiosk_booths 노드용)
+const KIOSK_BASE = 'https://csgo0404-ai.github.io/class-koisk/';   // 키오스크 부스 링크 베이스
+const CLD_CLOUD = 'dtzknm7gz', CLD_PRESET = 'csgo0404';   // Cloudinary(동화책과 동일) — 서명 이미지 호스팅
+const TS   = firebase.database.ServerValue.TIMESTAMP;
+
+/* ---------- 전역 상태 ---------- */
+let ME = null;                 // {cd, nm, no}  학생. 교사면 null
+let IS_TEACHER = false;
+let ROSTER = {};               // cd -> {nm, no}
+let DB = {};                   // Startup 스냅샷 전체
+const PHASE_LABEL = ['0일차 · 진로선택/사업계획','1일차 · 면접·채용/지원','2일차 · 발표·채용확정','3일차 · 부스운영'];
+const MAXPHASE = PHASE_LABEL.length - 1;   // 2
+function boothIdFor(ownerCd){ return 'sb_'+ownerCd; }
+// 키오스크는 같은 폴더에 함께 올리는 전제 → 상대경로. (다른 곳 호스팅이면 KIOSK_BASE로 교체)
+function _boothUrl(ownerCd){ return '키오스크.html?booth='+encodeURIComponent(boothIdFor(ownerCd))+'&me='+encodeURIComponent((ME&&ME.cd)||''); }
+function _ensureBoothThen(ownerCd, cb){
+  const id = boothIdFor(ownerCd);
+  const b = obj(obj(DB.businesses)[ownerCd]);
+  const name = b.name || (nmeOf(ownerCd)+'의 가게');
+  let done=false; const go=()=>{ if(!done){ done=true; cb(); } };
+  try{ DBROOT.child('kiosk_booths/'+id).transaction(cur=> cur ? cur : { id, name, group:'', icon:'🏪', color:'#FFE0B2', ownerCd, open:true, createdAt:Date.now() }, go); }
+  catch(_){ go(); }
+  setTimeout(go, 1500);   // 트랜잭션 콜백 지연 폴백
+}
+function openBooth(ownerCd){
+  window.open(_boothUrl(ownerCd), '_blank');   // 클릭 제스처로 즉시 새 창
+  _ensureBoothThen(ownerCd, ()=>{});           // 부스 생성 보장(키오스크가 생성 감지해 진입)
+}
+/* 부스운영(2일차) 자동 이동: 사장/알바는 창업앱 대신 키오스크 부스로 (세션당 1회) */
+function _maybeAutoBooth(){
+  if(IS_TEACHER || phase()!==3) return;   // 부스운영(3일차)에만 자동 이동
+  if(sessionStorage.getItem('startup_autobooth')) return;
+  const biz = obj(obj(DB.businesses)[ME.cd]);
+  let ownerCd = null;
+  if(biz.status==='approved') ownerCd = ME.cd;   // 사장
+  else { const acc = entries(obj(DB.offers)[ME.cd]).find(([bc,o])=>o.status==='accepted'); if(acc) ownerCd = acc[0]; }   // 알바
+  if(!ownerCd) return;   // 사장·알바 아니면 이동 안 함
+  try{ sessionStorage.setItem('startup_autobooth','1'); }catch(_){}
+  _ensureBoothThen(ownerCd, ()=>{ location.href = _boothUrl(ownerCd); });
+}
+
+/* ---------- 유틸 ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200); }
+let _pcYes=null;
+function prettyConfirm(title, html, onYes, icon){ $('pcTitle').textContent=title; $('pcMsg').innerHTML=html; $('pcIcon').textContent=icon||'⚠️'; _pcYes=onYes||null; $('pcOverlay').classList.add('show'); }
+function pcClose(){ $('pcOverlay').classList.remove('show'); _pcYes=null; }
+function pcConfirm(){ const f=_pcYes; pcClose(); if(f) f(); }
+
+/* 교사 설정: 내보내기 / 불러오기 / 초기화 */
+function openSettings(){ $('setOverlay').classList.add('show'); }
+function closeSettings(){ $('setOverlay').classList.remove('show'); }
+function exportData(){
+  try{
+    const blob = new Blob([JSON.stringify(DB||{}, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const dt = new Date();
+    const stamp = dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')+'_'+String(dt.getHours()).padStart(2,'0')+String(dt.getMinutes()).padStart(2,'0');
+    const a = document.createElement('a');
+    a.href = url; a.download = '창업프로젝트_백업_'+stamp+'.json'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url), 1500);
+    closeSettings(); toast('백업 파일을 내보냈어요');
+  }catch(e){ toast('내보내기 실패'); }
+}
+function importData(input){
+  const f = input.files && input.files[0]; if(!f){ return; }
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    let parsed;
+    try{ parsed = JSON.parse(reader.result); }
+    catch(e){ toast('올바른 백업 파일이 아니에요'); input.value=''; return; }
+    input.value='';
+    closeSettings();
+    prettyConfirm('자료 불러오기', '지금 데이터를 <b style="color:#c0392b">모두 덮어씁니다.</b><br>불러온 백업으로 교체할까요?', ()=>{
+      S.set(parsed).then(()=>toast('불러오기 완료')).catch(()=>toast('불러오기 실패'));
+    }, '📥');
+  };
+  reader.readAsText(f);
+}
+function phase(){ return (DB.meta && typeof DB.meta.phase==='number') ? Math.min(MAXPHASE, Math.max(0, DB.meta.phase)) : 0; }
+function nmeOf(cd){ return (ROSTER[cd] && ROSTER[cd].nm) || ('('+cd+')'); }
+function obj(v){ return v && typeof v==='object' ? v : {}; }
+function entries(v){ return Object.entries(obj(v)); }
+
+/* ============================================================
+   로그인
+============================================================ */
+function switchLogin(k){
+  $('tabStu').classList.toggle('on', k==='stu');
+  $('tabTch').classList.toggle('on', k==='tch');
+  $('stuLogin').classList.toggle('hidden', k!=='stu');
+  $('tchLogin').classList.toggle('hidden', k!=='tch');
+  $('loginMsg').textContent='';
+}
+
+async function loadRoster(){
+  // 네트워크 우선(최신 명단 보장) + 실패/빈스냅샷일 때만 캐시 폴백(신규 학생 로그인 차단 방지)
+  let cache=null; try{ cache=JSON.parse(localStorage.getItem('startup_roster')||'null'); }catch(_){}
+  try{
+    const snap = await ROOT.child('EventShop/stu').once('value');
+    const r = {};
+    snap.forEach(ch=>{ const s=ch.val(); if(s&&s.cd!=null){ const cd=String(s.cd).trim(); if(cd) r[cd]={ nm:s.nm||cd, no:s.no }; } });
+    if(Object.keys(r).length){ ROSTER=r; try{ localStorage.setItem('startup_roster', JSON.stringify({at:Date.now(), map:r})); }catch(_){}; return; }
+    if(cache && cache.map) ROSTER=cache.map;               // 빈 스냅샷 방어
+  }catch(e){
+    if(cache && cache.map){ ROSTER=cache.map; }            // 오프라인/실패 시에만 캐시
+    else throw e;
+  }
+}
+
+async function doStuLogin(){
+  const code = ($('stuCodeInput').value||'').trim();
+  if(!code){ $('loginMsg').textContent='코드를 입력하세요.'; return; }
+  $('loginMsg').textContent='확인 중...';
+  try{
+    if(!Object.keys(ROSTER).length) await loadRoster();
+    if(!ROSTER[code]){ $('loginMsg').textContent='명단에 없는 코드예요. 다시 확인해 주세요.'; return; }
+    ME = { cd:code, nm:ROSTER[code].nm, no:ROSTER[code].no };
+    IS_TEACHER = false;
+    localStorage.setItem('startup_stuCode', code);
+    enterApp();
+  }catch(e){ console.error(e); $('loginMsg').textContent='연결 오류. 인터넷을 확인해 주세요.'; }
+}
+
+async function doTchLogin(){
+  const pw = ($('tchPwInput').value||'').trim();
+  if(pw!=='csgo10'){ $('loginMsg').textContent='교사 코드가 올바르지 않습니다.'; return; }
+  $('loginMsg').textContent='확인 중...';
+  try{
+    await loadRoster();
+    IS_TEACHER = true; ME = null;
+    localStorage.setItem('startup_teacher','1');
+    enterApp();
+  }catch(e){ console.error(e); $('loginMsg').textContent='연결 오류.'; }
+}
+
+function logout(){
+  localStorage.removeItem('startup_stuCode');
+  localStorage.removeItem('startup_teacher');
+  location.href = location.href.split('#')[0].split('?')[0];  // 쿼리(?stu=) 제거하고 로그인 화면으로
+}
+
+/* 교사가 실업자 이름 클릭 → 그 학생 화면을 새 탭으로 (테스트용). localStorage 미변경 → 교사 탭 유지 */
+function openStudentTab(cd){
+  const base = location.href.split('#')[0].split('?')[0];
+  window.open(base + '?stu=' + encodeURIComponent(cd), '_blank');
+}
+
+/* 자동 로그인 */
+window.addEventListener('load', async ()=>{
+  try{
+    // ?stu=코드 로 열면 그 학생으로 자동 로그인 (테스트용, localStorage 미변경 → 다른 탭 세션에 영향 없음)
+    const urlStu = new URLSearchParams(location.search).get('stu');
+    if(urlStu){
+      await loadRoster();
+      if(ROSTER[urlStu]){ ME={cd:urlStu, nm:ROSTER[urlStu].nm, no:ROSTER[urlStu].no}; IS_TEACHER=false; enterApp(); return; }
+    }
+    if(localStorage.getItem('startup_teacher')==='1'){
+      await loadRoster(); IS_TEACHER=true; enterApp(); return;
+    }
+    const code = localStorage.getItem('startup_stuCode');
+    if(code){
+      await loadRoster();
+      if(ROSTER[code]){ ME={cd:code,nm:ROSTER[code].nm,no:ROSTER[code].no}; enterApp(); return; }
+    }
+  }catch(e){ console.error('auto-login', e); }
+});
+
+/* ============================================================
+   앱 진입 + 실시간 구독
+============================================================ */
+function enterApp(){
+  $('loginView').classList.add('hidden');
+  $('appView').classList.remove('hidden');
+  $('whoPill').textContent = IS_TEACHER ? '' : ('🙋 '+ME.nm);
+  $('whoPill').style.display = IS_TEACHER ? 'none' : '';
+  $('gearBtn').style.display = IS_TEACHER ? '' : 'none';
+  if(IS_TEACHER){
+    // 교사(1명)는 전체 구독 — 대시보드/승인/집계에 필요
+    S.on('value', snap=>{ DB = snap.val() || {}; _autoFillDeclines(); _autoPublishAll(); _ensureBooths(); scheduleRender(); });
+    // 키오스크 부스 자동 생성용: 기존 부스 목록 파악
+    DBROOT.child('kiosk_booths').on('value', s=>{ window._kioskBooths=s.val()||{}; window._kioskBoothsLoaded=true; _ensureBooths(); });
+  } else {
+    subscribeStudent();   // 학생은 필요한 노드만 구독(트래픽·프라이버시 절감)
+  }
+  document.addEventListener('focusout', ()=>{ if(_pendingRender) setTimeout(scheduleRender, 60); });
+  if(!IS_TEACHER) _initIdle();   // 유휴 오프라인은 학생만(교사는 실시간 모니터링 유지)
+}
+
+/* 학생 세션: 남의 이력서·점수·offer를 받지 않고 필요한 노드만 구독 */
+function subscribeStudent(){
+  const cd = ME.cd; DB = {};
+  const setSlice = (k, v)=>{ DB[k]=v; scheduleRender(); };
+  const setIv = (k, v)=>{ DB.interview=DB.interview||{}; DB.interview[k]=v; scheduleRender(); };
+  const setMine = (k, v)=>{ DB[k]=DB[k]||{}; DB[k][cd]=v; scheduleRender(); };
+  S.child('meta').on('value', s=>setSlice('meta', s.val()||{}));
+  S.child('businesses').on('value', s=>setSlice('businesses', s.val()||{}));   // 공고·면접대상 (전체 필요)
+  S.child('jobPosts').on('value', s=>{ setSlice('jobPosts', s.val()||{}); _maybeAutoCloseRehire(); });
+  S.child('interview/config').on('value', s=>setIv('config', s.val()||{}));
+  // interview/questions는 학생 미구독 — 남의 질문 안 받고 내 질문만 로컬 보관(트래픽 절감)
+  S.child('interview/scores/'+cd).on('value', s=>{ DB.interview=DB.interview||{}; DB.interview.scores=DB.interview.scores||{}; DB.interview.scores[cd]=s.val()||{}; scheduleRender(); });
+  S.child('offers/'+cd).on('value', s=>setMine('offers', s.val()||{}));
+  // acceptedLock은 전체 구독(작은 노드): 사장이 지원자의 타 회사 취업 여부를 확인. 본인 값은 DB.acceptedLock[cd]로 그대로 접근
+  S.child('acceptedLock').on('value', s=>setSlice('acceptedLock', s.val()||{}));
+  S.child('civilServants/'+cd).on('value', s=>setMine('civilServants', s.val()));
+  S.child('applicantIndex/'+cd).on('value', s=>setMine('applicantIndex', s.val()||{}));
+  // 사장(승인된 학생)만 의미 있음: 내 회사 지원자/선발/확정직원
+  S.child('resumes/'+cd).on('value', s=>setMine('resumes', s.val()||{}));
+  S.child('selections/'+cd).on('value', s=>setMine('selections', s.val()||{}));
+  S.child('hires/'+cd).on('value', s=>{ setMine('hires', s.val()||{}); _maybeAutoCloseRehire(); });   // 수락(입사확정)한 직원 → 추가채용 자동마감 체크
+  S.child('contracts').on('value', s=>setSlice('contracts', s.val()||{}));   // 근로계약(worker코드 키). 사장·아르바이트 모두 필요 → 전체(작음)
+  DBROOT.child('kiosk_booths').on('value', s=>{ window._kioskBooths=s.val()||{}; scheduleRender(); });   // 공무원 부스 링크용(작음)
+}
+
+/* 유휴 연결 관리: 10분 무동작 시 goOffline, 활동/복귀 시 goOnline (writes는 큐잉되어 유실 없음) */
+let _idleTimer=null;
+function _goActive(){
+  if(window._dbOffline){ try{ firebase.database().goOnline(); }catch(_){}; window._dbOffline=false; }
+  clearTimeout(_idleTimer);
+  _idleTimer=setTimeout(()=>{ try{ firebase.database().goOffline(); window._dbOffline=true; }catch(_){} }, 10*60*1000);
+}
+function _initIdle(){
+  ['click','keydown','pointerdown','touchstart'].forEach(ev=>document.addEventListener(ev, _goActive, {passive:true}));
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState!=='hidden') _goActive(); });
+  _goActive();
+}
+
+let _pendingRender = false;
+function isEditing(){
+  const ae = document.activeElement;
+  return ae && $('mainArea').contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName);
+}
+function scheduleRender(){
+  if(isEditing() || window._starDragging){ _pendingRender = true; return; }
+  _pendingRender = false; render();
+}
+
+/* 현재 사용자의 사업(사장 트랙) */
+function myBiz(){ return IS_TEACHER ? null : obj(DB.businesses)[ME.cd]; }
+
+function render(){
+  // 3일차 자동 이동 없음 → 사장·알바는 부스 링크 버튼(boothLinkCard)을 눌러 새 창으로 입장
+  $('phasePill').textContent = PHASE_LABEL[phase()] || ('phase '+phase());
+  const el = $('mainArea');
+  if(IS_TEACHER) el.innerHTML = viewTeacher();
+  else if(myBiz() && myBiz().status==='approved') el.innerHTML = viewBoss();  // 승인된 사장만 사장 화면
+  else el.innerHTML = viewStudent();  // 미승인·미제출·공무원·일반은 학생 화면(두 트랙 모두 작성 가능)
+}
+
+/* ============================================================
+   교사 뷰
+============================================================ */
+function viewTeacher(){
+  const p = phase();
+  let h = '';
+
+  // 단계 선택: 일차 버튼을 누르면 바로 그 일차로 이동(학생 화면도 함께)
+  h += '<div class="card"><h2>🎬 활동 단계 <span class="muted" style="font-weight:400">— 일차를 누르면 바로 이동</span></h2>';
+  h += '<div class="step-dots">';
+  PHASE_LABEL.forEach((lb,i)=> h += `<span class="d ${i===p?'on':''}" style="cursor:pointer" onclick="setPhase(${i})">${esc(lb)}</span>`);
+  h += '</div></div>';
+
+  // 일차별 관리 화면
+  if(p===0){ h += bizApprovalCard(); h += civilApprovalCard(); }
+  else if(p===1){ h += interviewSetupCard(); h += interviewResultCard(); h += interviewQuestionsCard(true); h += companyDashboardCard(); }
+  else if(p===2){ h += companyDashboardCard(); }
+  else if(p===3){ h += teacherBoothsCard(); }
+
+  // 항상 하단: 학생 현황(드래그)
+  h += teacherStatusBoard();
+  return h;
+}
+function setTeacherDay(i){ window._teacherDay = i; try{ localStorage.setItem('startup_teacherDay', i); }catch(_){}; render(); }
+
+/* 0일차: 사업계획서 승인 큐 */
+function bizApprovalCard(){
+  const biz = obj(DB.businesses);
+  const submitted = entries(biz).filter(([cd,b])=>b.status==='submitted');
+  let h = '<div class="card"><h2>📋 사업계획서 승인 대기 <span class="badge b-wait">'+submitted.length+'</span></h2>';
+  if(!submitted.length) h += '<div class="empty">대기 중인 사업계획서가 없습니다.</div>';
+  submitted.forEach(([cd,b])=>{
+    h += '<div class="list-item">';
+    h += `<div class="biz-head"><b>${esc(b.name||'(업체명 미정)')}</b><span class="muted">대표: ${esc(nmeOf(cd))}</span></div>`;
+    h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')}</div>`;
+    h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-grn btn-sm" onclick="approveBiz('${cd}')">✅ 승인</button><button class="btn-gray btn-sm" onclick="rejectBiz('${cd}')">반려</button><button class="btn-red btn-sm" onclick="deleteBiz('${cd}')">삭제</button></div>`;
+    h += '</div>';
+  });
+  const approvedB = entries(biz).filter(([cd,b])=>b.status==='approved');
+  if(approvedB.length){
+    h += '<div class="divider"></div><div class="muted" style="margin-bottom:6px">✅ 승인된 사업 ('+approvedB.length+')</div>';
+    approvedB.forEach(([cd,b])=>{
+      h += '<div class="list-item">';
+      h += `<div class="biz-head"><b>${esc(b.name||'(업체명 미정)')}</b><span class="badge b-ok">사장 ${esc(nmeOf(cd))}</span></div>`;
+      h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')}</div>`;
+      h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-gray btn-sm" onclick="revokeBiz('${cd}')">↩️ 승인취소</button><button class="btn-red btn-sm" onclick="deleteBiz('${cd}')">삭제</button></div>`;
+      h += '</div>';
+    });
+  }
+  h += '</div>';
+  return h;
+}
+/* 사업 정리 업데이트: 채용공고·선발·합격통지 정리. statusVal=null이면 레코드 삭제, 값이면 status 변경 */
+function _bizPurgeUpd(cd, statusVal){
+  const upd = { ['jobPosts/'+cd]:null, ['selections/'+cd]:null, ['hires/'+cd]:null };
+  entries(DB.offers).forEach(([acd, byBiz])=>{ if(obj(byBiz)[cd]){ upd['offers/'+acd+'/'+cd]=null; if(obj(obj(byBiz)[cd]).status==='accepted') upd['acceptedLock/'+acd]=null; } });
+  if(statusVal===null) upd['businesses/'+cd]=null; else upd['businesses/'+cd+'/status']=statusVal;
+  return upd;
+}
+/* 승인된 사업을 승인 취소 → 다시 "신청중"(submitted)으로 */
+function revokeBiz(cd){
+  prettyConfirm('사장 승인 취소', esc(nmeOf(cd))+' 학생을 <b>다시 "신청중"</b>으로 되돌릴까요?<br>채용공고·선발·합격 통지는 정리돼요.', ()=>{
+    S.update(_bizPurgeUpd(cd,'submitted')).then(()=>toast(nmeOf(cd)+' 신청중으로 되돌림'));
+  }, '↩️');
+}
+function deleteBiz(cd){ prettyConfirm('사업계획서 삭제', esc(nmeOf(cd))+' 학생의 <b>사업계획서를 삭제</b>할까요?<br>되돌릴 수 없어요.', ()=>{ S.update(_bizPurgeUpd(cd,null)).then(()=>toast('삭제했어요')); }, '🗑️'); }
+function revokeCivil(cd){ prettyConfirm('임용 취소', esc(nmeOf(cd))+' 학생을 <b>다시 "신청중"</b>으로 되돌릴까요?', ()=>{ S.child('civilServants/'+cd+'/status').set('submitted').then(()=>toast(nmeOf(cd)+' 신청중으로 되돌림')); }, '↩️'); }
+function deleteCivil(cd){ prettyConfirm('공무원 신청 삭제', esc(nmeOf(cd))+' 학생의 <b>공무원 신청서를 삭제</b>할까요?<br>되돌릴 수 없어요.', ()=>{ S.child('civilServants/'+cd).remove().then(()=>toast('삭제했어요')); }, '🗑️'); }
+/* 0일차: 공무원 신청 승인 큐 */
+function civilApprovalCard(){
+  const civils = obj(DB.civilServants);
+  const csub = entries(civils).filter(([cd,c])=>c.status==='submitted');
+  const capp = entries(civils).filter(([cd,c])=>c.status==='approved');
+  let h = '<div class="card"><h2>🏛️ 공무원 신청 <span class="badge b-wait">'+csub.length+'</span></h2>';
+  if(!csub.length) h += '<div class="empty">대기 중인 공무원 신청이 없습니다.</div>';
+  csub.forEach(([cd,c])=>{
+    const isBoss = obj(obj(DB.businesses)[cd]).status==='approved';
+    h += '<div class="list-item"><b>'+esc(nmeOf(cd))+'</b>'+(isBoss?' <span class="badge b-no">이미 사장</span>':'');
+    h += `<div class="kv"><b>지원동기</b> ${esc(c.motive||'-')}<br><b>장점</b> ${esc(c.strength||'-')}<br><b>단점·극복</b> ${esc(c.weakness||'-')}<br><b>다짐 및 각오</b> ${esc(c.resolve||'-')}</div>`;
+    if(isBoss) h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><span class="muted" style="align-self:center;margin-right:auto">사장 승인됨 — 임용 불가</span><button class="btn-red btn-sm" onclick="deleteCivil('${cd}')">삭제</button></div>`;
+    else h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-grn btn-sm" onclick="approveCivil('${cd}')">✅ 임용</button><button class="btn-gray btn-sm" onclick="rejectCivil('${cd}')">반려</button><button class="btn-red btn-sm" onclick="deleteCivil('${cd}')">삭제</button></div>`;
+    h += '</div>';
+  });
+  if(capp.length){
+    h += '<div class="divider"></div><div class="muted" style="margin-bottom:6px">✅ 임용된 공무원 ('+capp.length+')</div>';
+    capp.forEach(([cd,c])=>{
+      h += '<div class="list-item"><b>'+esc(nmeOf(cd))+'</b> <span class="badge b-ok">임용</span>';
+      h += `<div class="kv"><b>지원동기</b> ${esc(c.motive||'-')}<br><b>장점</b> ${esc(c.strength||'-')}<br><b>단점·극복</b> ${esc(c.weakness||'-')}<br><b>다짐 및 각오</b> ${esc(c.resolve||'-')}</div>`;
+      h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-gray btn-sm" onclick="revokeCivil('${cd}')">↩️ 임용취소</button><button class="btn-red btn-sm" onclick="deleteCivil('${cd}')">삭제</button></div>`;
+      h += '</div>';
+    });
+  }
+  h += '</div>';
+  return h;
+}
+/* 1~3일차: 회사별 현황 */
+function companyDashboardCard(){
+  const biz = obj(DB.businesses);
+  const approved = entries(biz).filter(([cd,b])=>b.status==='approved');
+  const _pub = cd => !!obj(obj(DB.selections)[cd]).published;
+  const _hcnt = cd => Object.keys(obj(obj(obj(DB.selections)[cd]).hired)).length;
+  const anyPub = approved.some(([cd])=>!_pub(cd) && _hcnt(cd)>0);
+  let h = '<div class="card"><div class="biz-head" style="margin-bottom:8px"><h2 style="margin:0">🏢 회사 현황 <span class="badge b-info">'+approved.length+'</span></h2>';
+  if(phase()>=2) h += `<button class="btn-org btn-sm" onclick="publishAll()" ${anyPub?'':'disabled'}>📣 일괄 합격 발표</button>`;
+  h += '</div>';
+  if(phase()>=1){ const _ts=obj(DB.meta).teacherSignUrl; h += `<div class="row" style="margin-bottom:6px"><button class="btn-gray btn-sm" onclick="uploadTeacherSign()">🖋 교사 서명 ${_ts?'변경':'등록'}</button>${_ts?'<span class="badge b-ok">등록됨</span>':'<span class="muted">투자약정서 갑 서명에 자동 사용</span>'}</div>`; }
+  if(!approved.length) h += '<div class="empty">승인된 회사가 없습니다.</div>';
+  approved.forEach(([cd,b])=>{
+    const sel = obj(obj(DB.selections)[cd]);
+    const hired = obj(sel.hired), reserve = obj(sel.reserve);
+    const post = obj(DB.jobPosts)[cd];
+    const applicants = entries(obj(obj(DB.resumes)[cd]));
+    let acc=0,dec=0,pend=0;
+    Object.keys(hired).forEach(acd=>{
+      const off = obj(obj(DB.offers)[acd])[cd];
+      if(off&&off.status==='accepted')acc++; else if(off&&off.status==='declined')dec++; else pend++;
+    });
+    h += '<div class="list-item"><div class="biz-head">';
+    h += `<b>${esc(b.name||nmeOf(cd))}</b><span class="muted">대표 ${esc(nmeOf(cd))}</span></div>`;
+    h += `<div class="kv"><b>모집</b> ${post?esc(post.headcount||'?'):'공고 전'}명 · <b>지원</b> ${applicants.length} · <b>선발</b> ${Object.keys(hired).length}(후보 ${Object.keys(reserve).length}) · <b>수락</b> ${acc} / 대기 ${pend} / 거절 ${dec}`;
+    h += `${sel.published?' · <span class="badge b-ok">발표됨</span>':' · <span class="badge b-wait">발표 전</span>'}</div>`;
+    // 각 회사별 뽑힌 학생 이름 표시 (수락✅ / 거절❌ / 대기⏳)
+    const hiredKeys = Object.keys(hired);
+    if(hiredKeys.length){
+      const names = hiredKeys.map(acd=>{
+        const off = obj(obj(DB.offers)[acd])[cd];
+        const ic = (off&&off.status==='accepted')?'✅':(off&&off.status==='declined')?'❌':'⏳';
+        return esc(nmeOf(acd))+ic;
+      }).join(', ');
+      h += `<div class="kv" style="margin-top:2px"><b>뽑힌 학생</b> ${names}</div>`;
+    }
+    // 투자약정서 설정/보내기 (1일차부터)
+    if(phase()>=1) h += investmentEditor(cd);
+    // 근로계약서 인쇄 (2일차부터, 계약서가 작성된 아르바이트별)
+    if(phase()>=2){
+      const _albas = Object.keys(obj(obj(DB.hires)[cd])).filter(acd=>obj(DB.contracts)[acd]);
+      if(_albas.length){
+        h += '<div class="row" style="margin-top:6px;flex-wrap:wrap;gap:6px;align-items:center"><span class="muted">근로계약서</span>';
+        _albas.forEach(acd=>{ const _c=obj(DB.contracts)[acd]; const _done=_c.ownerSignUrl&&_c.workerSignUrl; h += `<button class="btn-org btn-sm" onclick="printContract('${acd}')">🖨 ${esc(nmeOf(acd))}${_done?' ✔':''}</button>`; });
+        h += '</div>';
+      }
+    }
+    // 발표 / 재선발 (2일차부터 교사가 진행)
+    if(phase()>=2){
+      if(!sel.published){
+        h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-org btn-sm" onclick="publish('${cd}')" ${Object.keys(hired).length?'':'disabled'}>📣 합격 발표</button></div>`;
+      } else {
+        const reserves = Object.keys(reserve);
+        if(reserves.length){
+          h += '<div class="row" style="margin-top:8px;flex-wrap:wrap"><span class="muted">후보 추가채용:</span>';
+          reserves.forEach(acd=>{ const wp=obj(obj(obj(DB.resumes)[cd])[acd]).wantPay||0; h += `<button class="btn-grn btn-sm" onclick="promoteReserve('${cd}','${acd}',${wp})">${esc(nmeOf(acd))} 채용</button>`; });
+          h += '</div>';
+        }
+        h += '<div class="row" style="margin-top:6px;justify-content:flex-end"><span class="badge b-ok">발표 완료</span></div>';
+      }
+    }
+    h += '</div>';
+  });
+  h += '</div>';
+  return h;
+}
+
+// 교사 3일차: 부스 운영 안내 + 각 회사 부스로 바로 이동하는 링크 버튼
+function teacherBoothsCard(){
+  const approved = entries(obj(DB.businesses)).filter(([cd,b])=>b.status==='approved');
+  let h = '<div class="card"><h2>🖥️ 부스 운영</h2>';
+  h += '<p class="muted">사장·알바생은 창업앱에서 <b>부스 이동 버튼</b>을 눌러 키오스크 부스로 들어갑니다. 아래에서 각 부스로 바로 이동할 수 있어요.</p>';
+  if(!approved.length){ h += '<div class="empty">승인된 회사(부스)가 없습니다.</div></div>'; return h; }
+  h += '<div class="row" style="flex-wrap:wrap;gap:8px;margin-bottom:8px"><button class="btn-org btn-sm" onclick="openKioskMain()">🖥️ 키오스크 메인화면(교사)</button></div>';
+  h += '<div class="row" style="flex-wrap:wrap;gap:8px">';
+  approved.forEach(([cd,b])=>{ h += `<button class="btn-grn btn-sm" onclick="openBoothAsOwner('${cd}')">🖥️ ${esc(b.name||nmeOf(cd))} 부스</button>`; });
+  h += '</div></div>';
+  return h;
+}
+function openKioskMain(){ window.open('키오스크.html', '_blank'); }
+// 교사용: 사장 부스를 '사장(주인) 자격'으로 열기 → 키오스크 월급 지급 버튼이 보임(me=사장코드)
+function openBoothAsOwner(ownerCd){
+  const url = '키오스크.html?booth='+encodeURIComponent(boothIdFor(ownerCd))+'&me='+encodeURIComponent(ownerCd);
+  window.open(url, '_blank');
+  _ensureBoothThen(ownerCd, ()=>{});
+}
+function setPhase(p){ if(p<0||p>MAXPHASE)return; window._teacherDay=p; try{ localStorage.setItem('startup_teacherDay', p); }catch(_){}; S.child('meta').update({phase:p, dayLabel:PHASE_LABEL[p], updatedAt:TS}); toast(PHASE_LABEL[p]+' 로 이동'); }
+function approveBiz(cd){
+  if(obj(obj(DB.civilServants)[cd]).status==='approved'){ prettyConfirm('승인할 수 없어요', esc(nmeOf(cd))+' 학생은 <b>이미 공무원으로 임용</b>됐어요.<br>사장으로 승인하려면 먼저 하단 <b>역할 관리</b>에서 공무원에서 빼주세요.', null, '⚠️'); return; }
+  const b = obj(obj(DB.businesses)[cd]);
+  S.update({
+    ['businesses/'+cd+'/status']:'approved', ['businesses/'+cd+'/approvedAt']:TS, ['businesses/'+cd+'/approvedBy']:'teacher',
+    ['businesses/'+cd+'/hireQuota']:(b.headcount||1),
+    ['jobPosts/'+cd]:{ duty:b.duty||'', qualification:b.qualification||'', headcount:(b.headcount||1), workDays:b.workDays||'', condition:b.condition||'', weeklyPay:(b.weeklyPay||0), open:true, postedAt:TS }
+  }).then(()=>toast(nmeOf(cd)+' 사장 승인! 채용공고 게시됨'));
+}
+function rejectBiz(cd){ if(!confirm(nmeOf(cd)+' 사업계획서를 반려할까요?'))return; S.child('businesses/'+cd).update({status:'rejected'}); }
+function resetAll(){ if(!confirm('창업 프로젝트 전체 데이터를 삭제합니다. 계속할까요?'))return; if(!confirm('정말 삭제할까요? 되돌릴 수 없습니다.'))return;
+  const tSign = obj(DB.meta).teacherSignUrl;   // 교사 서명은 보존
+  // 사장별 부스(kiosk_booths/sb_*)와 관련 데이터도 제거 — 공무원(isGov) 등 그 외 부스는 보존
+  const rootUpd = {};
+  entries(obj(window._kioskBooths)).forEach(([id,b])=>{
+    if(String(id).startsWith('sb_') && !(b&&b.isGov)){
+      rootUpd['kiosk_booths/'+id]=null; rootUpd['kiosk_booth_items/'+id]=null; rootUpd['kiosk_booth_stats/'+id]=null; rootUpd['kiosk_payroll/settled/'+id]=null;
+    }
+  });
+  S.remove().then(()=>{
+    if(tSign) S.child('meta/teacherSignUrl').set(tSign);
+    const done = ()=> toast('초기화 완료'+(tSign?' (교사 서명 보존)':'')+' · 사장 부스 제거');
+    if(Object.keys(rootUpd).length) DBROOT.update(rootUpd).then(done).catch(done); else done();
+  }); }
+
+/* ===== 학생 현황 · 역할 관리 (사장/공무원/아르바이트/실업자) ===== */
+const ROLE_META = { boss:{t:'사장',c:'b-ok'}, civil:{t:'공무원',c:'b-info'}, alba:{t:'아르바이트',c:'b-wait'}, jobless:{t:'실업자',c:'b-no'} };
+function stuRole(cd){
+  if(obj(obj(DB.businesses)[cd]).status==='approved') return 'boss';
+  if(obj(obj(DB.civilServants)[cd]).status==='approved') return 'civil';
+  const employed = entries(obj(DB.offers)[cd]).some(([bc,o])=>o.status==='accepted');
+  if(employed) return 'alba';
+  if(obj(DB.roleOverride)[cd]==='alba') return 'alba';
+  return 'jobless';
+}
+function _roleChip(cd){
+  const r = ROSTER[cd]||{};
+  const nm = esc((r.no!=null?r.no+' ':'')+(r.nm||cd));
+  return `<div class="role-chip" draggable="true" ondragstart="roleDragStart(event,'${cd}')" ondragend="roleDragEnd(event)"><span>${nm}</span><span class="chip-open" title="학생 화면 새 탭" onclick="event.stopPropagation();openStudentTab('${cd}')">↗</span></div>`;
+}
+function _roleCol(role, list){
+  let h = `<div class="role-col" ondragover="roleDragOver(event)" ondragleave="roleDragLeave(event)" ondrop="roleDrop(event,'${role}')">`;
+  h += `<div class="role-col-h"><span class="badge ${ROLE_META[role].c}">${ROLE_META[role].t}</span> <b>${list.length}</b></div>`;
+  h += '<div class="role-col-body">';
+  list.forEach(cd=> h += _roleChip(cd));
+  if(!list.length) h += '<div class="role-empty">여기로 끌어다 놓기</div>';
+  h += '</div></div>';
+  return h;
+}
+function _bossOf(cd){ const acc = entries(obj(DB.offers)[cd]).find(([bc,o])=>o.status==='accepted'); return acc?acc[0]:null; }
+function teacherStatusBoard(){
+  const cds = Object.keys(ROSTER).sort((a,b)=>(ROSTER[a].no||0)-(ROSTER[b].no||0));
+  let h = '<div class="card"><h2>👥 학생 현황 · 역할 관리</h2>';
+  if(!cds.length){ h += '<div class="empty">명단을 불러오지 못했어요.</div></div>'; return h; }
+  const bosses=[], civils=[], jobless=[], empByBoss={};
+  cds.forEach(cd=>{ const r=stuRole(cd);
+    if(r==='boss') bosses.push(cd);
+    else if(r==='civil') civils.push(cd);
+    else if(r==='alba'){ const bc=_bossOf(cd)||'_none'; (empByBoss[bc]=empByBoss[bc]||[]).push(cd); }
+    else jobless.push(cd);
+  });
+  const albaCount = Object.values(empByBoss).reduce((s,a)=>s+a.length,0);
+  // 상단: 공무원 · 사장 · 아르바이트(사장 우측) / 하단: 실업자
+  h += '<div class="rb-top">';
+  h += _roleCol('civil', civils);
+  h += _roleCol('boss', bosses);
+  // 아르바이트(사장별) — 사장 우측. 각 사장 칸으로 드래그하면 그 사장의 아르바이트로 배정
+  h += '<div class="sb-wrap"><div class="role-col-h"><span class="badge b-wait">아르바이트</span> <b>'+albaCount+'</b></div>';
+  h += '<table class="sb-table"><tr><th>사장</th><th>아르바이트</th></tr>';
+  if(!bosses.length && !albaCount){ h += '<tr><td colspan="2"><div class="role-empty">아직 사장이 없어요. 먼저 사장을 배정하세요.</div></td></tr>'; }
+  const _albaCell = (bc, emps)=> `<td class="sb-alba"><div class="sb-emps" ondragover="roleDragOver(event)" ondragleave="roleDragLeave(event)" ondrop="albaDrop(event,'${bc}')">`
+      + (emps.length? emps.map(_roleChip).join('') : '<span class="muted" style="font-size:12px">—</span>') + '</div></td>';
+  bosses.forEach(bc=>{ h += '<tr><td class="sb-boss">'+_roleChip(bc)+'</td>'+_albaCell(bc, empByBoss[bc]||[])+'</tr>'; });
+  const _shown = new Set(bosses);
+  Object.keys(empByBoss).forEach(bc=>{
+    if(bc==='_none' || _shown.has(bc)) return;
+    h += '<tr><td class="sb-boss">'+_roleChip(bc)+'</td>'+_albaCell(bc, empByBoss[bc])+'</tr>';
+  });
+  if(empByBoss['_none'] && empByBoss['_none'].length){
+    h += '<tr><td class="sb-boss"><span class="muted" style="font-size:12px">(직접지정)</span></td><td class="sb-alba"><div class="sb-emps">'+empByBoss['_none'].map(_roleChip).join('')+'</div></td></tr>';
+  }
+  h += '</table></div>';   // close sb-wrap
+  h += '</div>';           // close rb-top
+  // 하단: 실업자 (전체 너비)
+  h += '<div class="divider"></div>';
+  h += _roleCol('jobless', jobless);
+  h += '</div>';           // close card
+  return h;
+}
+/* 역할 칸반 드래그 */
+let _dragCd = null;
+function roleDragStart(e, cd){ _dragCd = cd; try{ e.dataTransfer.setData('text/plain', cd); e.dataTransfer.effectAllowed='move'; }catch(_){}; if(e.currentTarget) e.currentTarget.classList.add('dragging'); }
+function roleDragEnd(e){ if(e.currentTarget) e.currentTarget.classList.remove('dragging'); }
+function roleDragOver(e){ e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect='move'; e.currentTarget.classList.add('drag-over'); }
+function roleDragLeave(e){ e.currentTarget.classList.remove('drag-over'); }
+function roleDrop(e, role){ e.preventDefault(); e.currentTarget.classList.remove('drag-over'); let cd=_dragCd; if(!cd&&e.dataTransfer){ try{ cd=e.dataTransfer.getData('text/plain'); }catch(_){} } _dragCd=null; if(cd) setStuRole(cd, role); }
+// 사장·아르바이트 패널: 아르바이트 칸(.sb-emps)에 놓으면 무시, 사장 칸에 놓을 때만 사장 지정
+function sbDrop(e){ e.preventDefault(); e.currentTarget.classList.remove('drag-over'); if(e.target&&e.target.closest&&e.target.closest('.sb-alba')){ _dragCd=null; return; } let cd=_dragCd; if(!cd&&e.dataTransfer){ try{ cd=e.dataTransfer.getData('text/plain'); }catch(_){} } _dragCd=null; if(cd) setStuRole(cd, 'boss'); }
+// 아르바이트를 특정 사장에게 배정(드롭)
+function albaDrop(e, bc){ e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('drag-over'); let cd=_dragCd; if(!cd&&e.dataTransfer){ try{ cd=e.dataTransfer.getData('text/plain'); }catch(_){} } _dragCd=null; if(cd) assignAlbaToBoss(cd, bc); }
+function assignAlbaToBoss(cd, bc){
+  if(cd===bc){ toast('사장을 자기 회사 알바로 넣을 수 없어요'); return; }
+  const nm = nmeOf(cd);
+  const bn = obj(obj(DB.businesses)[bc]).name || nmeOf(bc);
+  if(stuRole(cd)==='alba' && _bossOf(cd)===bc) return;   // 이미 그 사장 알바
+  prettyConfirm('아르바이트 배정', esc(nm)+' 학생을 <b>'+esc(bn)+'</b>의 아르바이트로 배정할까요?', ()=>{
+    const pay = (obj(obj(DB.jobPosts)[bc]).weeklyPay)||0;
+    const upd = {};
+    upd['businesses/'+cd]=null; upd['jobPosts/'+cd]=null; upd['selections/'+cd]=null;   // 사장 역할 해제
+    upd['civilServants/'+cd]=null;                                                       // 공무원 해제
+    upd['contracts/'+cd]=null;                                                           // 옛 사장 근로계약(서명 포함) 제거 → 새 사장이 다시 작성
+    // 다른 사장에게 걸린 기존 고용 해제
+    entries(obj(DB.offers)[cd]).forEach(([obc,o])=>{ if((o.status==='accepted'||o.status==='pending') && obc!==bc) upd['offers/'+cd+'/'+obc+'/status']='declined'; });
+    entries(DB.hires).forEach(([obc,hs])=>{ if(obj(hs)[cd] && obc!==bc) upd['hires/'+obc+'/'+cd]=null; });
+    // bc에 고용 확정
+    upd['acceptedLock/'+cd]=bc;
+    upd['offers/'+cd+'/'+bc]={status:'accepted', offerPay:pay, decidedAt:TS, notifiedAt:TS};
+    upd['hires/'+bc+'/'+cd]={weeklyPay:pay, confirmedAt:TS};
+    upd['roleOverride/'+cd]=null;
+    S.update(upd).then(()=>toast(nm+' → '+bn+' 아르바이트')).catch(()=>toast('배정 실패'));
+  }, '🧑‍🍳');
+}
+function setStuRole(cd, role){
+  const nm = nmeOf(cd), label = ROLE_META[role].t;
+  if(stuRole(cd)===role) return;
+  // 드롭 이벤트 중 동기 confirm()은 브라우저가 막을 수 있어 비차단 모달 사용
+  prettyConfirm('역할 변경', esc(nm)+' 학생을 <b>'+esc(label)+'</b>(으)로 바꿀까요?', ()=>_applyStuRole(cd, role, nm, label), '🔄');
+}
+function _applyStuRole(cd, role, nm, label){
+  const upd = {};
+  const clearBiz = ()=>{ upd['businesses/'+cd]=null; upd['jobPosts/'+cd]=null; upd['selections/'+cd]=null; };
+  const clearCivil = ()=>{ upd['civilServants/'+cd]=null; };
+  const clearEmployment = ()=>{
+    upd['acceptedLock/'+cd]=null; upd['contracts/'+cd]=null;   // 근로계약(서명 포함)도 함께 정리
+    entries(obj(DB.offers)[cd]).forEach(([bc,o])=>{ if(o.status==='accepted'||o.status==='pending') upd['offers/'+cd+'/'+bc+'/status']='declined'; });
+    entries(DB.hires).forEach(([bc,hs])=>{ if(obj(hs)[cd]) upd['hires/'+bc+'/'+cd]=null; });
+  };
+  if(role==='boss'){
+    const b = obj(DB.businesses)[cd];
+    upd['businesses/'+cd+'/ownerCd']=cd; upd['businesses/'+cd+'/ownerNm']=nm;
+    if(!b.name) upd['businesses/'+cd+'/name']=nm+'의 가게';
+    if(!b.createdAt) upd['businesses/'+cd+'/createdAt']=TS;
+    upd['businesses/'+cd+'/status']='approved'; upd['businesses/'+cd+'/approvedAt']=TS;
+    if(!obj(DB.jobPosts)[cd]) upd['jobPosts/'+cd]={ duty:b.duty||'', qualification:b.qualification||'', headcount:(b.headcount||1), workDays:b.workDays||'', condition:b.condition||'', weeklyPay:(b.weeklyPay||0), open:true, postedAt:TS };
+    clearCivil(); upd['roleOverride/'+cd]=null;
+  } else if(role==='civil'){
+    upd['civilServants/'+cd+'/cd']=cd; upd['civilServants/'+cd+'/nm']=nm;
+    upd['civilServants/'+cd+'/status']='approved'; upd['civilServants/'+cd+'/approvedAt']=TS;
+    clearBiz(); upd['roleOverride/'+cd]=null;
+  } else {
+    clearBiz(); clearCivil();
+    if(role==='jobless') clearEmployment();
+    upd['roleOverride/'+cd]=role;
+  }
+  S.update(upd).then(()=>toast(nm+' → '+label)).catch(()=>toast('변경 실패'));
+}
+
+/* ============================================================
+   사장(승인/미승인 포함) 뷰
+============================================================ */
+function viewBoss(){
+  const b = myBiz();
+  const cd = ME.cd;
+  let h = '';
+  h += `<div class="card"><div class="biz-head"><h2 style="margin:0">🏪 ${esc(b.name||'내 사업')}</h2>`;
+  h += bizStatusBadge(b.status)+'</div></div>';
+
+  if(b.status!=='approved'){
+    // 계획서 작성/수정 + 상태
+    h += planEditorCard(b);
+    if(b.status==='submitted') h += '<div class="card"><div class="empty">✅ 제출 완료! 선생님 승인을 기다리는 중이에요.</div></div>';
+    if(b.status==='rejected') h += '<div class="card"><div class="empty">반려되었습니다. 계획서를 고쳐서 다시 제출해 주세요.</div></div>';
+    return h;
+  }
+
+  // 승인된 사장 (사업가는 본인이 면접 대상이라 면접 질문·채점은 보지 않음)
+  h += bossBoothCard(cd);    // 3일차: 우리 부스(키오스크) — 최상단
+  h += bossInvestmentCard(cd); // 1일차+: 선생님이 보낸 투자약정서
+  h += bossJobPostCard(cd);
+  h += bossHiringCard(cd);   // 1일차: 지원자 심사·선발
+  h += bossContractCard(cd); // 2일차+: 아르바이트 근로계약서 작성·서명
+  h += bossResultCard(cd);   // 2일차+: 우리 회사 직원(채용 결과)
+  h += bossRehireCard(cd);   // 3일차: 추가 채용공고 + 실업자 추가 채용
+  return h;
+}
+/* 사장/알바 공용: 회사 부스(키오스크) 열기 링크 (2일차부터) */
+function boothLinkCard(ownerCd, title){
+  if(phase()<3) return '';   // 부스(키오스크)는 3일차부터
+  return '<div class="card"><h2>🖥️ '+title+'</h2><p class="muted">버튼을 누르면 우리 가게 <b>키오스크 부스</b>가 새 창에서 열려요. 여기서 손님을 받고 물건을 팔아요.</p>'
+       + '<button class="btn-grn" onclick="openBooth(\''+ownerCd+'\')">🖥️ 상점 이동</button></div>';
+}
+function bossBoothCard(cd){ return boothLinkCard(cd, '우리 부스 (키오스크)'); }
+/* 사장: 채용 결과 — 수락(입사확정)한 직원 표시 (2일차부터) */
+function bossResultCard(cd){
+  if(phase()<2) return '';
+  const sel = obj(obj(DB.selections)[cd]);
+  if(!sel.published) return '<div class="card"><h2>👔 채용 결과</h2><div class="empty">선생님이 합격 발표를 하면 여기에 확정 직원이 표시돼요.</div></div>';
+  const myHires = obj(obj(DB.hires)[cd]);
+  const names = Object.keys(myHires);
+  let h = '<div class="card"><h2>👔 우리 회사 직원 <span class="badge b-ok">'+names.length+'</span></h2>';
+  if(!names.length) h += '<div class="empty">아직 수락한 직원이 없어요.<br><span class="muted">합격자가 거절하면 후보에게 자동으로 넘어가요.</span></div>';
+  names.forEach(acd=>{ const hh=obj(myHires[acd]); h += `<div class="list-item"><b>🙋 ${esc(nmeOf(acd))}</b> <span class="badge b-ok">입사 확정</span> <span class="muted">시급 ${esc(hh.weeklyPay||0)} 쿠키</span></div>`; });
+  h += '</div>';
+  return h;
+}
+
+function bizStatusBadge(st){
+  if(st==='approved') return '<span class="badge b-ok">사장 승인됨</span>';
+  if(st==='submitted') return '<span class="badge b-wait">승인 대기</span>';
+  if(st==='rejected') return '<span class="badge b-no">반려됨</span>';
+  return '<span class="badge b-info">작성 중</span>';
+}
+
+/* ---- 자동 로컬 임시저장: 임시저장을 안 눌러도 입력을 localStorage에 보관.
+       서버 수신 지연·재렌더로 인한 입력 유실/덮어쓰기 방지(로컬 우선 프리필) ---- */
+function _draftKey(kind){ return 'startup_draft_'+kind+'_'+(ME&&ME.cd); }
+function getDraftLocal(kind){ try{ return JSON.parse(localStorage.getItem(_draftKey(kind))||'null'); }catch(_){ return null; } }
+function setDraftLocal(kind, data){ try{ localStorage.setItem(_draftKey(kind), JSON.stringify(data)); }catch(_){} }
+function clearDraftLocal(kind){ try{ localStorage.removeItem(_draftKey(kind)); }catch(_){} }
+function _optSel(list, sel){ return list.map(o=>`<option ${o===sel?'selected':''}>${esc(o)}</option>`).join(''); }
+function autosavePlan(){ setDraftLocal('plan', { name:$('p_name').value, ceo:$('p_ceo').value, desc:$('p_desc').value, plan:$('p_plan').value, items:$('p_items').value, cost:$('p_cost').value, duty:$('p_duty').value, qual:$('p_qual').value, head:$('p_head').value, days:$('p_days').value, bonus:$('p_bonus').value, ins4:$('p_ins4').value, cond:$('p_cond').value, pay:$('p_pay').value, at:Date.now() }); }
+function autosaveCivil(){ setDraftLocal('civil', { motive:$('cs_motive').value, strength:$('cs_strength').value, weakness:$('cs_weakness').value, resolve:$('cs_resolve').value, at:Date.now() }); }
+
+function planEditorCard(b){
+  b = obj(b); const bg = obj(b.budget);
+  const editable = b.status!=='submitted';
+  if(!editable) clearDraftLocal('plan');                 // 제출 완료 → 로컬 초안 정리
+  const d = editable ? (getDraftLocal('plan')||{}) : {};  // 로컬 초안 우선
+  const pick = (k, fb)=> (d[k]!==undefined ? d[k] : fb);
+  const dis = editable ? '' : 'disabled';
+  const oi = editable ? 'oninput="autosavePlan()"' : '';
+  let h = '<div class="card"><h2>📋 사업계획서 '+bizStatusBadge(b.status)+'</h2>';
+  h += `<div class="field"><label>업체명</label><input id="p_name" ${oi} value="${esc(pick('name', b.name||''))}" ${dis}></div>`;
+  h += `<div class="field"><label>대표자 이름</label><input id="p_ceo" ${oi} value="${esc(pick('ceo', b.ceo||ME.nm))}" ${dis}></div>`;
+  h += `<div class="field"><label>사업 설명</label><textarea id="p_desc" ${oi} ${dis}>${esc(pick('desc', b.desc||''))}</textarea></div>`;
+  h += `<div class="field"><label>운영 계획</label><textarea id="p_plan" ${oi} ${dis}>${esc(pick('plan', b.plan||''))}</textarea></div>`;
+  h += `<div class="field"><label>준비물</label><input id="p_items" ${oi} value="${esc(pick('items', bg.items||''))}" ${dis}></div>`;
+  h += `<div class="field"><label>예산 신청 (0~10,000원)</label><input id="p_cost" type="number" min="0" max="10000" step="100" ${oi} value="${esc(pick('cost', bg.cost!=null?bg.cost:''))}" ${dis} placeholder="0 ~ 10000"></div>`;
+  h += '<div class="divider"></div><div style="font-weight:800;color:#5a5f66;margin-bottom:6px">📢 직원 모집 — 사장님이 된다면 직원을 어떻게 뽑을까요?</div>';
+  h += `<div class="field"><label>담당 업무</label><textarea id="p_duty" ${oi} ${dis} placeholder="예: 홍보와 물품 판매하기">${esc(pick('duty', b.duty||''))}</textarea></div>`;
+  h += `<div class="field"><label>모집 인원</label><input id="p_head" type="number" min="0" ${oi} value="${esc(pick('head', b.headcount!=null?b.headcount:''))}" ${dis} placeholder="예: 0명"></div>`;
+  h += `<div class="field"><label>근무 시간</label><input id="p_days" ${oi} value="${esc(pick('days', b.workDays||''))}" ${dis} placeholder="예: 0시간"></div>`;
+  h += `<div class="field"><label>자격 및 우대사항</label><textarea id="p_qual" ${oi} ${dis} placeholder="예: 미술을 좋아하는 사람 우대">${esc(pick('qual', b.qualification||''))}</textarea></div>`;
+  h += `<div class="field"><label>시급 (쿠키)</label><input id="p_pay" type="number" min="0" ${oi} value="${esc(pick('pay', b.weeklyPay!=null?b.weeklyPay:''))}" ${dis} placeholder="예: 시간당 0쿠키"></div>`;
+  h += '<div class="field"><label>성과급</label><select id="p_bonus" '+(editable?'onchange="autosavePlan()"':'disabled')+'>'+_optSel(['없음','있음'], pick('bonus', b.bonus||'없음'))+'</select></div>';
+  h += '<div class="field"><label>4대 보험 적용</label><select id="p_ins4" '+(editable?'onchange="autosavePlan()"':'disabled')+'>'+_optSel(['없음','있음'], pick('ins4', b.ins4||'없음'))+'</select></div>';
+  h += `<div class="field"><label>기타</label><textarea id="p_cond" ${oi} ${dis} placeholder="예: 주 1회 간식·휴가 지급">${esc(pick('cond', b.condition||''))}</textarea></div>`;
+  if(b.status==='submitted'){
+    h += '<div class="empty">✅ 제출 완료! 선생님 승인을 기다리는 중이에요.<br><span class="muted">제출한 사업계획서는 수정·취소할 수 없어요.</span></div>';
+  } else {
+    if(b.status==='rejected') h += '<div class="empty">반려되었습니다. 내용을 고쳐서 다시 제출해 주세요.</div>';
+    h += '<div class="row"><button class="btn-gray btn-sm" onclick="cancelPlanDraft()">그만두기</button><button class="btn-gray btn-sm" onclick="savePlan(false)">임시 저장</button><button class="btn-org" onclick="savePlan(true)">📨 제출하기</button></div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function savePlan(submit){
+  const data = {
+    ownerCd: ME.cd, ownerNm: ME.nm,
+    name: $('p_name').value.trim(), ceo: $('p_ceo').value.trim(),
+    desc: $('p_desc').value.trim(), plan: $('p_plan').value.trim(),
+    budget:{ items:$('p_items').value.trim(), cost:Math.max(0, Math.min(10000, parseInt($('p_cost').value)||0)) },
+    duty: $('p_duty').value.trim(), qualification: $('p_qual').value.trim(),
+    headcount: Math.max(0, parseInt($('p_head').value)||0),
+    workDays: $('p_days').value.trim(),
+    bonus: $('p_bonus').value, ins4: $('p_ins4').value,
+    condition: $('p_cond').value.trim(), weeklyPay: Math.max(0, parseInt($('p_pay').value)||0),
+    status: submit?'submitted':'draft', updatedAt:TS
+  };
+  if(submit){
+    const req = [[data.name,'업체명'],[data.ceo,'대표자 이름'],[data.desc,'사업 설명'],[data.plan,'운영 계획'],
+      [data.budget.items,'준비물'],[data.duty,'담당 업무'],[data.workDays,'근무 시간'],[data.qualification,'자격 및 우대사항']];
+    const missing = req.filter(([v])=>!String(v||'').trim()).map(([,n])=>n);
+    if(data.headcount<=0) missing.push('모집 인원');
+    if(data.weeklyPay<=0) missing.push('시급');
+    if(missing.length){ prettyConfirm('제출할 수 없어요', '다음 항목을 채워야 제출할 수 있어요:<br><b style="color:#c0392b">'+esc(missing.join(', '))+'</b>', null, '✍'); return; }
+  }
+  const doSave = ()=>{
+    const cur = myBiz();
+    if(!cur || !cur.createdAt) data.createdAt = TS;
+    S.child('businesses/'+ME.cd).update(data).then(()=>{ clearDraftLocal('plan'); toast(submit?'제출 완료!':'저장했어요'); });
+  };
+  if(submit) prettyConfirm('📋 사업계획서 제출', '제출하면 <b style="color:#c0392b">수정·취소할 수 없어요.</b><br>내용을 다시 확인하고 제출할까요?', doSave);
+  else doSave();
+}
+
+/* 작성 중(초안/반려) 사업계획서 취소 — 제출 전이라 되돌릴 수 있음 */
+function cancelPlanDraft(){ prettyConfirm('사장 도전 그만두기', '작성 중인 사업계획서를 <b>삭제</b>할까요?<br>(제출 전이라 다시 시작할 수 있어요)', ()=>{ clearDraftLocal('plan'); S.child('businesses/'+ME.cd).remove().then(()=>toast('사장 도전을 그만뒀어요')); }, '🗑️'); }
+
+/* 학생이 사장 도전 시작 */
+function startBusiness(){
+  S.child('businesses/'+ME.cd).update({ownerCd:ME.cd, ownerNm:ME.nm, status:'draft', createdAt:TS, updatedAt:TS});
+  toast('사업계획서를 작성해 주세요!');
+}
+
+/* ---------- 채용공고 ---------- */
+function bossJobPostCard(cd){
+  if(phase()>=2) return '';       // 2일차부터 내 채용공고 숨김(모집 종료)
+  const post = obj(obj(DB.jobPosts)[cd]);
+  if(!post.postedAt) return '';   // 채용공고는 사업계획서에 작성 → 승인 시 자동 게시
+  const _b = obj(obj(DB.businesses)[cd]);
+  let h = '<div class="card"><h2>📢 내 채용공고 '+(post.open?'<span class="badge b-ok">모집중</span>':'<span class="badge b-no">마감</span>')+'</h2>';
+  h += `<div class="kv"><b>담당업무</b> ${esc(post.duty||'-')}<br><b>모집인원</b> ${esc(post.headcount||1)}명 · <b>근무시간</b> ${esc(post.workDays||'-')}<br><b>자격·우대</b> ${esc(post.qualification||'-')}<br><b>시급</b> ${esc(post.weeklyPay||0)} 쿠키<br><b>성과급</b> ${_b.bonus==='있음'?'있음':'없음'} · <b>4대 보험</b> ${_b.ins4==='있음'?'있음':'없음'}${_b.condition?'<br><b>기타</b> '+esc(_b.condition):''}</div>`;
+  h += '<p class="muted" style="margin-top:6px">채용공고 내용은 사업계획서에 작성했어요.</p>';
+  h += `<div class="row"><button class="btn-gray btn-sm" onclick="togglePost(${!post.open})">${post.open?'모집 마감':'모집 재개'}</button></div>`;
+  h += '</div>';
+  return h;
+}
+function savePost(open){
+  const head = parseInt($('j_head').value)||1;
+  const data = { duty:$('j_duty').value.trim(), qualification:$('j_qual').value.trim(),
+    headcount:head, condition:$('j_cond').value.trim(), weeklyPay:parseInt($('j_pay').value)||0,
+    open:open, postedAt:TS };
+  S.child('jobPosts/'+ME.cd).update(data);
+  S.child('businesses/'+ME.cd+'/hireQuota').set(head);
+  toast('공고를 게시했어요!');
+}
+function togglePost(open){ S.child('jobPosts/'+ME.cd+'/open').set(open); toast(open?'모집 재개':'모집 마감'); }
+
+/* 사장 추가 채용 (3일차): 실업자에게 공고를 다시 열어 이력서를 받고 채용 통지 */
+function bossRehireCard(cd){
+  if(phase()<2) return '';   // 추가 채용은 2~3일차
+  const post = obj(obj(DB.jobPosts)[cd]);
+  if(!post.postedAt) return '';
+  const rehiring = !!post.rehire && !!post.open;
+  let h = '<div class="card"><h2>📢 추가 채용</h2>';
+  h += '<p class="muted">일손이 부족하면 <b>추가 채용공고</b>를 열어 아직 취업하지 못한 실업자에게 이력서를 받을 수 있어요. 이전 공고 내용을 고쳐서 <b>시급·인원</b> 등을 조정할 수 있어요.</p>';
+  // 공고 내용 편집 — 로컬 자동저장(초안) 우선 프리필, 저장 시 서버 전송
+  const _b = obj(obj(DB.businesses)[cd]);
+  const rd = getRehireDraft(); const rpk=(k,fb)=> (rd[k]!==undefined? rd[k] : fb);
+  h += `<div class="field"><label>담당업무</label><textarea id="rh_duty" oninput="autosaveRehire()">${esc(rpk('duty', post.duty||''))}</textarea></div>`;
+  h += `<div class="field"><label>추가 모집 인원 (명)</label><input id="rh_head" type="number" min="1" oninput="autosaveRehire()" value="${esc(rpk('head', post.rehireQuota||1))}"></div>`;
+  h += `<div class="field"><label>근무시간</label><input id="rh_days" oninput="autosaveRehire()" value="${esc(rpk('days', post.workDays||''))}"></div>`;
+  h += `<div class="field"><label>자격·우대</label><textarea id="rh_qual" oninput="autosaveRehire()">${esc(rpk('qual', post.qualification||''))}</textarea></div>`;
+  h += `<div class="field"><label>시급 (쿠키)</label><input id="rh_pay" type="number" min="0" oninput="autosaveRehire()" value="${esc(rpk('pay', post.weeklyPay||0))}"></div>`;
+  h += '<div class="field"><label>성과급</label><select id="rh_bonus" onchange="autosaveRehire()">'+_optSel(['없음','있음'], rpk('bonus', _b.bonus||'없음'))+'</select></div>';
+  h += '<div class="field"><label>4대 보험 적용</label><select id="rh_ins4" onchange="autosaveRehire()">'+_optSel(['없음','있음'], rpk('ins4', _b.ins4||'없음'))+'</select></div>';
+  h += `<div class="field"><label>기타</label><textarea id="rh_cond" oninput="autosaveRehire()">${esc(rpk('cond', post.condition||''))}</textarea></div>`;
+  h += '<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:2px">';
+  h += '<button class="btn-grn btn-sm" onclick="saveRehirePost()">💾 저장</button>';
+  if(rehiring){
+    h += '<button class="btn-red btn-sm" onclick="toggleRehire(false)">공고 취소</button>';
+  } else {
+    h += '<button class="btn-org btn-sm" onclick="toggleRehire(true)">📢 채용 공고</button>';
+  }
+  h += '</div>';
+  h += _rehireApplicants(cd, post);
+  h += '</div>';
+  return h;
+}
+function _rehireApplicants(cd, post){
+  post = obj(post);
+  const hired = obj(obj(obj(DB.selections)[cd]).hired);
+  const myHires = obj(obj(DB.hires)[cd]);
+  const offerPay = parseInt(post.weeklyPay)||0;   // 통지 시급 = 현재 공고 시급
+  // 이미 입사 확정된 직원(기존 채용)은 숨기고, 아직 확정 안 된(새로 제출한) 지원자만 표시
+  const apps = entries(obj(obj(DB.resumes)[cd])).filter(([acd])=> !myHires[acd]).sort((a,b)=>(a[1].submittedAt||0)-(b[1].submittedAt||0));
+  if(!apps.length) return '<div class="divider"></div><div class="empty">아직 새 지원자가 없어요.</div>';
+  let h = '<div class="divider"></div><div class="grid">';
+  apps.forEach(([acd,r],i)=>{
+    const picked = !!hired[acd], confirmed = !!myHires[acd];
+    const lock = obj(DB.acceptedLock)[acd];
+    const employedElsewhere = lock && lock!==cd && !confirmed;   // 다른 회사에 취직함
+    const reveal = picked || confirmed;   // 채용 통지를 보낸 뒤(또는 확정)에만 이름 공개
+    h += '<div class="applicant">';
+    h += `<div class="anon-tag">지원자 #${i+1}${reveal?(' · '+esc(nmeOf(acd))):''}</div>`;
+    h += `<div class="kv"><b>지원동기</b> ${esc(r.motive||'-')}<br><b>성격 장점</b> ${esc(r.pros||'-')}<br><b>성격 단점·극복</b> ${esc(r.cons||'-')}<br><b>관련 경험</b> ${esc(r.career||'-')}<br><b>다짐·포부</b> ${esc(r.resolve||'-')}<br><b>희망 시급</b> ${esc(r.wantPay||'-')} 쿠키</div>`;
+    if(confirmed) h += '<div class="badge b-ok" style="margin-top:8px">채용 확정</div>';
+    else if(employedElsewhere) h += '<div class="badge b-no" style="margin-top:8px">🚫 다른 회사에 취직함</div>';
+    else if(picked) h += '<div class="badge b-wait" style="margin-top:8px">통지 대기(수락 기다리는 중)</div>';
+    else h += `<div class="row" style="margin-top:8px"><button class="btn-grn btn-sm" onclick="rehireOffer('${cd}','${acd}',${offerPay})">📣 채용 통지 (시급 ${offerPay})</button></div>`;
+    h += '</div>';
+  });
+  h += '</div>';
+  return h;
+}
+// 추가 채용 폼 로컬 초안(자동저장) — 재렌더/새로고침에도 입력 보존
+function _rehireKey(){ return 'startup_rehire_'+(ME&&ME.cd); }
+function getRehireDraft(){ try{ return JSON.parse(localStorage.getItem(_rehireKey())||'null')||{}; }catch(_){ return {}; } }
+function autosaveRehire(){ try{ localStorage.setItem(_rehireKey(), JSON.stringify({ duty:$('rh_duty').value, head:$('rh_head').value, days:$('rh_days').value, qual:$('rh_qual').value, pay:$('rh_pay').value, bonus:$('rh_bonus').value, ins4:$('rh_ins4').value, cond:$('rh_cond').value })); }catch(_){} }
+function clearRehireDraft(){ try{ localStorage.removeItem(_rehireKey()); }catch(_){} }
+function cancelRehireEdit(){ clearRehireDraft(); scheduleRender(); toast('편집을 취소했어요'); }
+function saveRehirePost(){
+  const head = parseInt($('rh_head').value)||1;   // 추가 모집 인원(기존과 별도)
+  S.child('jobPosts/'+ME.cd).update({
+    duty:$('rh_duty').value.trim(), qualification:$('rh_qual').value.trim(),
+    rehireQuota:head, workDays:$('rh_days').value.trim(), condition:$('rh_cond').value.trim(),
+    weeklyPay:parseInt($('rh_pay').value)||0
+  });
+  S.child('businesses/'+ME.cd).update({ bonus:$('rh_bonus').value, ins4:$('rh_ins4').value });   // 성과급·4대보험은 회사(계약서·공고 공통)에 저장
+  clearRehireDraft();   // 서버 전송 완료 → 로컬 초안 정리
+  toast('추가 채용 공고를 저장했어요!');
+}
+// 추가 채용: 새로 확정된 인원이 추가 모집 인원을 채우면 자동 마감(구독 시점 실행 → 새로고침 없이 사장 버튼도 즉시 갱신)
+function _maybeAutoCloseRehire(){
+  if(IS_TEACHER || !ME) return;
+  const cd = ME.cd;
+  const post = obj(obj(DB.jobPosts)[cd]);
+  if(!(post.rehire && post.open && post.rehireQuota)) return;
+  if(post.rehireBase==null) return;   // 기준선 없으면(옛 데이터) 조기 마감 방지
+  const hiredCnt = Object.keys(obj(obj(DB.hires)[cd])).length;
+  const newHires = hiredCnt - post.rehireBase;   // 추가 채용 연 시점 이후 새 확정분
+  if(newHires < post.rehireQuota) return;
+  window._rehCloseBusy = window._rehCloseBusy||{};
+  if(window._rehCloseBusy[cd]) return;
+  window._rehCloseBusy[cd] = true;
+  S.child('jobPosts/'+cd).update({rehire:false, open:false})
+    .then(()=>{ window._rehCloseBusy[cd]=false; toast('추가 모집 인원을 다 채워 추가 채용을 자동 마감했어요'); scheduleRender(); })
+    .catch(()=>{ window._rehCloseBusy[cd]=false; });
+}
+function toggleRehire(on){
+  const upd = { rehire:on };
+  if(on){ upd.open = true; upd.rehireBase = Object.keys(obj(obj(DB.hires)[ME.cd])).length; }   // 여는 시점의 확정 인원을 기준선으로(이후 새 확정분만 카운트)
+  S.child('jobPosts/'+ME.cd).update(upd);
+  toast(on?'추가 채용공고를 열었어요!':'추가 채용을 마감했어요');
+}
+function rehireOffer(cd, acd, pay){
+  pay = parseInt(pay)||0;
+  prettyConfirm('추가 채용 통지', esc(nmeOf(acd))+' 학생에게 <b>합격 통지</b>를 보낼까요?<br>시급 '+pay+' 쿠키 (학생이 수락하면 입사 확정)', ()=>{
+    S.child('selections/'+cd+'/hired/'+acd).transaction(cur=> cur ? cur : {offerPay:pay, at:TS}, (e,committed)=>{
+      if(e){ toast('오류가 발생했어요'); return; }
+      if(!committed){ toast('이미 통지한 지원자예요.'); return; }
+      S.child('offers/'+acd+'/'+cd).update({status:'pending', offerPay:pay, notifiedAt:TS});
+      S.child('selections/'+cd+'/published').set(true);   // 통지가 보이도록 발표 상태 유지
+      toast('합격 통지를 보냈어요! 📣');
+    });
+  }, '📣');
+}
+
+/* ---------- 익명 선발 / 발표 / 재선발 ---------- */
+function bossHiringCard(cd){
+  if(phase()!==1) return '';   // 지원자 심사·선발은 1일차에만 (발표·재선발은 교사 페이지)
+  const post = obj(obj(DB.jobPosts)[cd]);
+  const sel = obj(obj(DB.selections)[cd]);
+  const hired = obj(sel.hired), reserve = obj(sel.reserve);
+  const quota = post.headcount||1;
+  // 지원자 익명화: submittedAt 오름차순 결정적 정렬
+  const apps = entries(obj(obj(DB.resumes)[cd]))
+      .sort((a,b)=>(a[1].submittedAt||0)-(b[1].submittedAt||0));
+  let h = '<div class="card"><h2>🕵️ 지원자 심사 & 선발</h2>';
+  h += `<p class="muted">모집 ${quota}명. 이력서는 <b>익명</b>이며, 발표 전까지 이름이 공개되지 않습니다.</p>`;
+  if(!apps.length){ h += '<div class="empty">아직 지원자가 없습니다.</div></div>'; return h; }
+
+  const published = !!sel.published;
+  h += '<div class="grid">';
+  apps.forEach(([acd,r],i)=>{
+    const isHired = !!hired[acd], isRes = !!reserve[acd];
+    const resOrd = isRes ? (obj(reserve[acd]).order||'') : '';   // 후보 순번
+    h += `<div class="applicant ${isHired?'picked':(isRes?'reserved':'')}">`;
+    h += `<div class="anon-tag">지원자 #${i+1}${published?(' · '+esc(nmeOf(acd))):''}</div>`;
+    h += `<div class="kv"><b>지원동기</b> ${esc(r.motive||'-')}<br><b>성격 장점</b> ${esc(r.pros||'-')}<br><b>성격 단점·극복</b> ${esc(r.cons||'-')}<br><b>관련 경험</b> ${esc(r.career||'-')}<br><b>다짐·포부</b> ${esc(r.resolve||'-')}<br><b>희망 시급</b> ${esc(r.wantPay||'-')} 쿠키</div>`;
+    if(!published){
+      h += '<div class="row" style="margin-top:8px">';
+      if(isHired) h += `<button class="btn-gray btn-sm" onclick="unpick('${cd}','${acd}')">채용 취소</button><span class="badge b-ok">채용</span>`;
+      else if(isRes) h += `<button class="btn-gray btn-sm" onclick="unpick('${cd}','${acd}')">후보 취소</button><span class="badge b-wait">후보${resOrd}</span>`;
+      else h += `<button class="btn-grn btn-sm" onclick="pickHire('${cd}','${acd}',${r.wantPay||0})">채용</button><button class="btn-pink btn-sm" onclick="pickReserve('${cd}','${acd}')">후보 추가</button>`;
+      h += '</div>';
+    } else {
+      const off = obj(obj(DB.offers)[acd])[cd];
+      if(isHired){
+        if(off&&off.status==='accepted') h += '<div class="badge b-ok" style="margin-top:8px">수락 · 채용확정</div>';
+        else if(off&&off.status==='declined') h += '<div class="badge b-no" style="margin-top:8px">거절함</div>';
+        else h += '<div class="badge b-wait" style="margin-top:8px">통지 대기</div>';
+      } else if(isRes){
+        h += `<div class="row" style="margin-top:8px"><span class="badge b-wait">후보${resOrd}</span><button class="btn-grn btn-sm" onclick="promoteReserve('${cd}','${acd}',${r.wantPay||0})">추가 채용</button></div>`;
+      }
+    }
+    h += '</div>';
+  });
+  h += '</div>';
+
+  h += `<div class="divider"></div><div class="row"><b>선발 ${Object.keys(hired).length}/${quota}명 · 후보 ${Object.keys(reserve).length}명</b> <span class="muted">후보(후보1·2·3…)를 원하는 만큼 뽑아두면 거절 시 순서대로 자동 채용돼요. 발표는 선생님이 2일차에 합니다.</span></div>`;
+  h += '</div>';
+  return h;
+}
+
+function _hiredCount(cd){ return Object.keys(obj(obj(obj(DB.selections)[cd]).hired)).length; }
+
+function pickHire(cd, acd, wantPay){
+  const quota = (obj(obj(DB.jobPosts)[cd]).headcount)||1;
+  const ref = S.child('selections/'+cd+'/hired');
+  ref.transaction(cur=>{
+    cur = cur||{};
+    if(cur[acd]) return cur;                    // 이미 채용
+    if(Object.keys(cur).length>=quota) return;  // 정원 초과 → abort
+    cur[acd] = { offerPay: wantPay||0, at: Date.now() };
+    return cur;
+  }, (err,committed)=>{
+    if(err) return toast('오류가 발생했어요');
+    if(!committed) return toast('모집 정원이 찼어요. 후보로 넣거나 정원을 늘리세요.');
+    S.child('selections/'+cd+'/reserve/'+acd).remove();
+    toast('채용 후보에 추가');
+  });
+}
+function pickReserve(cd, acd){
+  const order = Object.keys(obj(obj(obj(DB.selections)[cd]).reserve)).length+1;
+  S.child('selections/'+cd+'/reserve/'+acd).set({order, at:TS});
+  S.child('selections/'+cd+'/hired/'+acd).remove();
+}
+function unpick(cd, acd){
+  S.child('selections/'+cd+'/hired/'+acd).remove();
+  S.child('selections/'+cd+'/reserve/'+acd).remove();
+}
+
+function publish(cd){
+  if(!confirm('합격자를 발표할까요? 발표 후 지원자에게 실명이 공개됩니다.'))return;
+  const hired = obj(obj(obj(DB.selections)[cd]).hired);
+  const upd = {};
+  Object.entries(hired).forEach(([acd,info])=>{
+    createOffer(cd, acd, info.offerPay||0);
+  });
+  S.child('selections/'+cd).update({published:true, publishedAt:TS});
+  toast('합격 발표 완료! 📣');
+}
+
+/* 후보 → 채용 승격(재선발). 발표 이후에도 사용 */
+/* 교사 클라이언트에서 자동 후보 승격: 발표된 회사에서 합격자가 거절/타사수락(자동거절)하면
+   그 자리를 후보 순서대로 자동 채워 offer 발송. 멱등(처리 후 재실행 시 변경 없음). */
+function _autoFillDeclines(){
+  if(!IS_TEACHER) return;
+  const biz = obj(DB.businesses);
+  entries(biz).forEach(([cd,b])=>{
+    if(b.status!=='approved') return;
+    const sel = obj(obj(DB.selections)[cd]);
+    if(!sel.published) return;
+    const hired = Object.assign({}, obj(sel.hired));
+    const reserve = obj(sel.reserve);
+    const quota = obj(obj(DB.jobPosts)[cd]).headcount || 1;
+    // 1) 거절된 합격자는 자리에서 제거(자리 반환)
+    Object.keys(hired).forEach(acd=>{
+      const off = obj(obj(DB.offers)[acd])[cd];
+      if(off && off.status==='declined'){ S.child('selections/'+cd+'/hired/'+acd).remove(); delete hired[acd]; }
+    });
+    // 2) 빈 자리만큼 후보를 순서대로 승격 + offer 발송
+    let openSlots = quota - Object.keys(hired).length;
+    if(openSlots>0){
+      const cand = Object.keys(reserve)
+        .filter(acd=>!hired[acd])
+        .filter(acd=>{ const off=obj(obj(DB.offers)[acd])[cd]; return !off || (off.status!=='pending' && off.status!=='accepted'); })
+        .sort((a,b)=>(obj(reserve[a]).order||0)-(obj(reserve[b]).order||0));
+      cand.slice(0, openSlots).forEach(acd=>{
+        const wp = obj(reserve[acd]).offerPay || obj(obj(obj(DB.resumes)[cd])[acd]).wantPay || 0;
+        S.child('selections/'+cd+'/hired/'+acd).set({ offerPay:wp, at:Date.now() });
+        S.child('selections/'+cd+'/reserve/'+acd).remove();
+        createOffer(cd, acd, wp);
+      });
+    }
+  });
+}
+/* 승인된 회사마다 키오스크 부스(kiosk_booths/sb_<사장코드>) 자동 생성 — 없을 때만. ownerCd로 키오스크 월급지급과도 연동 */
+function _ensureBooths(){
+  if(!IS_TEACHER || !window._kioskBoothsLoaded) return;
+  const biz = obj(DB.businesses);
+  const existing = window._kioskBooths || {};
+  const upd = {};
+  entries(biz).forEach(([cd,b])=>{
+    if(b.status!=='approved') return;
+    if(b.boothId || existing[boothIdFor(cd)]) return;   // 이미 생성됨(키오스크에서 삭제해도 재생성 안 함)
+    const id = boothIdFor(cd);
+    upd['kiosk_booths/'+id] = { id, name:(b.name||(nmeOf(cd)+'의 가게')), group:'', icon:'🏪', color:'#FFE0B2', ownerCd:cd, open:true, createdAt:Date.now() };
+    upd['ClassData/Startup/businesses/'+cd+'/boothId'] = id;   // 생성 표시(재생성 방지)
+  });
+  if(Object.keys(upd).length){ try{ DBROOT.update(upd); }catch(_){} }
+}
+function publishAll(){
+  const biz = obj(DB.businesses);
+  const targets = entries(biz).filter(([cd,b])=> b.status==='approved' && !obj(obj(DB.selections)[cd]).published && Object.keys(obj(obj(obj(DB.selections)[cd]).hired)).length>0);
+  if(!targets.length){ toast('발표할 회사가 없어요.'); return; }
+  prettyConfirm('일괄 합격 발표', '<b>'+targets.length+'개 회사</b>의 합격자를 한 번에 발표할까요?<br>발표 후 지원자에게 실명이 공개됩니다.', ()=>{
+    targets.forEach(([cd])=>{
+      const hired = obj(obj(obj(DB.selections)[cd]).hired);
+      Object.entries(hired).forEach(([acd,info])=> createOffer(cd, acd, info.offerPay||0));
+      S.child('selections/'+cd).update({published:true, publishedAt:TS});
+    });
+    toast('일괄 발표 완료! 📣');
+  }, '📣');
+}
+// 2일차 진입 시 자동 일괄 발표(교사 클라이언트 전용, 확인창 없음, 멱등)
+function _autoPublishAll(){
+  if(!IS_TEACHER || phase()<2 || window._autoPubBusy) return;
+  const biz = obj(DB.businesses);
+  const targets = entries(biz).filter(([cd,b])=> b.status==='approved' && !obj(obj(DB.selections)[cd]).published && Object.keys(obj(obj(obj(DB.selections)[cd]).hired)).length>0);
+  if(!targets.length) return;
+  window._autoPubBusy = true;
+  const upd = {};
+  targets.forEach(([cd])=>{
+    const hired = obj(obj(obj(DB.selections)[cd]).hired);
+    Object.entries(hired).forEach(([acd,info])=> createOffer(cd, acd, info.offerPay||0));   // 트랜잭션 멱등
+    upd['selections/'+cd+'/published']=true; upd['selections/'+cd+'/publishedAt']=TS;
+  });
+  S.update(upd).then(()=>{ window._autoPubBusy=false; toast(targets.length+'개 회사 자동 합격 발표 📣'); }).catch(()=>{ window._autoPubBusy=false; });
+}
+function promoteReserve(cd, acd, wantPay){
+  const quota = (obj(obj(DB.jobPosts)[cd]).headcount)||1;
+  const ref = S.child('selections/'+cd+'/hired');
+  ref.transaction(cur=>{
+    cur = cur||{};
+    if(cur[acd]) return cur;
+    if(Object.keys(cur).length>=quota) return; // 정원 초과
+    cur[acd] = { offerPay: wantPay||0, at: Date.now() };
+    return cur;
+  }, (err,committed)=>{
+    if(err) return toast('오류');
+    if(!committed) return toast('정원이 찼어요. 거절/취소 후 다시 시도하세요.');
+    S.child('selections/'+cd+'/reserve/'+acd).remove();
+    createOffer(cd, acd, wantPay||0);
+    toast('추가 채용 통지 전송');
+  });
+}
+
+/* 합격 통지 생성 (멱등) */
+function createOffer(bizCd, acd, offerPay){
+  S.child('offers/'+acd+'/'+bizCd).transaction(cur=>{
+    if(cur) return cur;                 // 이미 통지됨
+    return {status:'pending', offerPay:offerPay||0, createdAt:Date.now()};
+  });
+}
+
+/* ============================================================
+   사업가 면접 채점 (익명)
+   - 항목은 인덱스 키(i0,i1..)로 저장 → 채점 시작 전 항목 확정 권장
+============================================================ */
+const IPRESET = ['아이디어','합리적 예산','구체적인 계획','기타(성실함, 리더십 등)'];
+function iCfg(){ return obj(obj(DB.interview).config); }
+// 교사가 항목을 설정하지 않았으면 기본 4항목(IPRESET)이 항상 선택된 것으로 취급
+function iItems(){ const it=(iCfg().items||[]); return it.length ? it : IPRESET.slice(); }
+
+/* ---- 교사: 설정 ---- */
+function interviewSetupCard(){
+  const cfg = iCfg();
+  const items = iItems();
+  const max = cfg.max || 5;
+  let h = '<div class="card"><h2>🎤 사업가 면접 채점 — 설정</h2>';
+  h += '<p class="muted">평가항목을 고르면 <b>1일차</b>에 학생들에게 채점표가 <b>자동으로 표시</b>됩니다(사업가는 제외). 필요하면 마감을 눌러 숨길 수 있어요. <b>항목은 미리 확정하세요.</b></p>';
+  h += '<div class="field"><label>평가항목 (클릭해서 선택/해제)</label><div class="row">';
+  IPRESET.forEach(p=>{ const on=items.includes(p); h += `<button class="btn-sm ${on?'btn-grn':'btn-gray'}" onclick="toggleIItem('${p}')">${on?'✔ ':''}${esc(p)}</button>`; });
+  h += '</div></div>';
+  const customs = items.filter(x=>!IPRESET.includes(x));
+  if(customs.length){ h += '<div class="row" style="margin-bottom:8px">'+customs.map((c,i)=>`<span class="badge b-ok">${esc(c)} <a onclick="removeIItem(${items.indexOf(c)})" style="cursor:pointer">✕</a></span>`).join(' ')+'</div>'; }
+  h += '<div class="row"><input id="iCustom" placeholder="직접 추가할 항목" style="max-width:200px" onkeyup="if(event.key===\'Enter\')addIItem()"><button class="btn-gray btn-sm" onclick="addIItem()">+ 추가</button>';
+  h += `<label style="margin-left:8px;font-size:13px">항목별 만점 <input id="iMax" type="number" min="1" max="10" value="${max}" style="width:60px;display:inline-block" onchange="saveIMax()"></label></div>`;
+  const isOpen = cfg.open!==false;   // 기본 표시, 명시적으로 마감(false)했을 때만 숨김
+  h += '<div class="divider"></div><div class="row">';
+  h += `<button class="${isOpen?'btn-red':'btn-grn'}" onclick="toggleIOpen(${!isOpen})">${isOpen?'⏹ 채점 마감(숨기기)':'▶ 채점 표시하기'}</button>`;
+  h += `<span class="badge ${isOpen?'b-ok':'b-wait'}">${isOpen?'학생에게 표시중':'숨김'}</span>`;
+  h += '<button class="btn-gray btn-sm" onclick="resetInterview()">채점 기록 초기화</button></div></div>';
+  return h;
+}
+function toggleIItem(p){ let items=iItems().slice(); items = items.includes(p) ? items.filter(x=>x!==p) : items.concat([p]); S.child('interview/config/items').set(items); }
+function removeIItem(idx){ let items=iItems().slice(); items.splice(idx,1); S.child('interview/config/items').set(items); }
+function addIItem(){ const v=($('iCustom').value||'').trim(); if(!v)return; let items=iItems().slice(); if(!items.includes(v)) items.push(v); S.child('interview/config/items').set(items); $('iCustom').value=''; }
+function saveIMax(){ const m=parseInt($('iMax').value)||5; S.child('interview/config/max').set(Math.max(1,Math.min(10,m))); }
+function toggleIOpen(v){ S.child('interview/config/open').set(v); toast(v?'채점을 시작했어요':'채점을 마감했어요'); }
+function resetInterview(){ if(!confirm('면접 채점 기록을 모두 삭제할까요?'))return; S.child('interview/scores').remove(); toast('채점 기록 초기화'); }
+
+/* ---- 교사: 결과 채점표 ---- */
+function interviewResultCard(){
+  const cfg = iCfg(); const items = iItems();
+  const targets = entries(DB.businesses).filter(([cd,b])=>b.status==='approved');
+  let h = '<div class="card"><h2>📊 면접 채점표 (평균)</h2>';
+  if(!items.length){ h += '<div class="empty">평가항목을 먼저 설정하세요.</div></div>'; return h; }
+  if(!targets.length){ h += '<div class="empty">승인된 사업가가 없습니다.</div></div>'; return h; }
+  const scores = obj(obj(DB.interview).scores);
+  const totals = {};
+  const cell='border:1px solid #ddd;padding:6px;text-align:center';
+  h += '<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;font-size:13px">';
+  h += '<tr><th style="'+cell+';background:#f7f7f7;text-align:left">평가항목 ＼ 지원자</th>';
+  targets.forEach(([cd,b])=> h += `<th style="${cell};background:#f7f7f7">${esc(b.name||nmeOf(cd))}<br><span class="muted">${esc(nmeOf(cd))}</span></th>`);
+  h += '</tr>';
+  items.forEach((it,idx)=>{
+    h += `<tr><td style="${cell};text-align:left;font-weight:700">${esc(it)}</td>`;
+    targets.forEach(([tcd])=>{
+      let sum=0,n=0;
+      Object.values(scores).forEach(byTarget=>{ const v=obj(obj(byTarget)[tcd])['i'+idx]; if(typeof v==='number'){sum+=v;n++;} });
+      const avg = n?(sum/n):0; totals[tcd]=(totals[tcd]||0)+avg;
+      h += `<td style="${cell}">${n?avg.toFixed(1):'-'}</td>`;
+    });
+    h += '</tr>';
+  });
+  let best=-1,bestCd=null;
+  targets.forEach(([tcd])=>{ const t=totals[tcd]||0; if(t>best){best=t;bestCd=tcd;} });
+  h += `<tr><td style="${cell};text-align:left;font-weight:800;background:#fff7ee">총 합</td>`;
+  targets.forEach(([tcd])=>{ const t=totals[tcd]||0; h += `<td style="${cell};font-weight:800;background:#fff7ee">${t.toFixed(1)}${(tcd===bestCd&&best>0)?' 🏆':''}</td>`; });
+  h += '</tr></table></div>';
+  h += `<p class="muted" style="margin-top:8px">채점 참여 ${Object.keys(scores).length}명 · 셀 값은 평균 점수입니다.</p></div>`;
+  return h;
+}
+
+/* ---- 학생: 면접 채점표 (표 + 별점, 로컬 보관 → 마지막에 제출) ---- */
+function _iScoresKey(){ return 'startup_iscores_'+(ME&&ME.cd); }
+function getLocalScores(){ if(!window._localScores){ try{ window._localScores=JSON.parse(localStorage.getItem(_iScoresKey())||'{}')||{}; }catch(_){ window._localScores={}; } } return window._localScores; }
+function _saveLocalScores(){ try{ localStorage.setItem(_iScoresKey(), JSON.stringify(getLocalScores())); }catch(_){} }
+function localScoreOf(tcd, idx){ const t=getLocalScores()[tcd]||{}; return t['i'+idx]||0; }
+function setLocalScore(tcd, idx, n){ const ls=getLocalScores(); ls[tcd]=ls[tcd]||{}; if(n>0) ls[tcd]['i'+idx]=n; else delete ls[tcd]['i'+idx]; _saveLocalScores(); }
+function interviewScoreCard(voterCd){
+  if(phase()!==1) return '';        // 면접 채점은 1일차
+  const cfg = iCfg();
+  if(cfg.open===false) return '';   // 교사가 '마감'을 눌렀을 때만 숨김 (평가항목 있으면 기본 표시)
+  const items = iItems(); const max = cfg.max || 5;
+  const targets = entries(DB.businesses).filter(([cd,b])=>b.status==='approved' && cd!==voterCd);
+  // 로컬이 비어있고 서버에 제출본이 있으면 1회 시드(새로고침/다른 기기 복원)
+  if(Object.keys(getLocalScores()).length===0){ const srv=obj(obj(obj(DB.interview).scores)[voterCd]); if(Object.keys(srv).length){ window._localScores=JSON.parse(JSON.stringify(srv)); _saveLocalScores(); } }
+  const locked = Object.keys(obj(obj(obj(DB.interview).scores)[voterCd])).length>0;   // 제출하면 잠김(수정 불가)
+  let h = '<div class="card"><h2>🎤 사업가 면접 채점표</h2>';
+  h += locked ? '<p class="muted">✅ 이미 제출했어요. <b>점수는 수정할 수 없어요.</b></p>'
+              : '<p class="muted">별을 <b>클릭</b>하면 한 칸씩 채워지고 <b>같은 별을 다시 클릭</b>하면 해제돼요. 선택은 저장되어 기억돼요. 다 매긴 뒤 <b>제출하기</b>를 누르세요. <b>(제출하면 수정할 수 없어요)</b></p>';
+  if(!targets.length){ h += '<div class="empty">채점할 사업가가 없어요.</div></div>'; return h; }
+  h += '<div style="overflow-x:auto"><table class="score-table"><tr><th class="corner">평가항목 ＼ 지원자</th>';
+  targets.forEach(([tcd,b])=>{ h += `<th>${esc(b.name||nmeOf(tcd))}</th>`; });
+  h += '</tr>';
+  items.forEach((it,idx)=>{
+    h += `<tr><td class="it">${esc(it)}</td>`;
+    targets.forEach(([tcd])=>{
+      const cur = localScoreOf(tcd, idx);
+      const pd = locked ? '' : `onpointerdown="starDown(event,'${tcd}',${idx})"`;
+      h += `<td><div class="stars${locked?' locked':''}" data-max="${max}" ${pd}>`;
+      for(let s=0;s<max;s++){ const frac=Math.max(0,Math.min(1,cur-s)); h += `<span class="star">☆<span class="fill" style="width:${frac*100}%">★</span></span>`; }
+      h += '</div></td>';
+    });
+    h += '</tr>';
+  });
+  const sums = targets.map(([tcd])=>{ let s=0; items.forEach((_,idx)=>{ s+=localScoreOf(tcd,idx); }); return s; });
+  const maxSum = Math.max(0, ...sums);
+  h += '<tr><td class="it">총합</td>';
+  sums.forEach(s=>{ const top=s>0&&s===maxSum; h += `<td class="sumcell${top?' top':''}">${Number.isInteger(s)?s:s.toFixed(1)}${top?' 🏆':''}</td>`; });
+  h += '</tr></table></div>';
+  h += '<p class="muted" style="margin-top:6px">총합은 내가 각 사업가에게 준 점수의 합이에요. 🏆는 내가 가장 높게 준 사업가.</p>';
+  if(locked) h += '<div class="row" style="margin-top:6px"><span class="badge b-ok">✅ 제출 완료 · 수정 불가</span></div>';
+  else h += '<div class="row" style="margin-top:6px"><button class="btn-org" onclick="submitScores()">📨 제출하기</button><span class="badge b-wait">아직 미제출</span></div>';
+  h += '</div>';
+  return h;
+}
+function submitScores(){
+  prettyConfirm('면접 점수 제출', '지금까지 준 별점을 <b>제출</b>할까요?<br><b style="color:#c0392b">제출하면 수정할 수 없어요.</b>', ()=>{
+    S.child('interview/scores/'+ME.cd).set(getLocalScores()).then(()=>toast('제출 완료! 📨')).catch(()=>toast('제출 실패'));
+  }, '📨');
+}
+
+/* 별점 위젯: 클릭=한 칸 토글 (로컬 저장, 제출 전엔 서버 write 없음) */
+function _starRatio(c, clientX){ const r=c.getBoundingClientRect(); let x=r.width?(clientX-r.left)/r.width:0; return Math.max(0,Math.min(1,x)); }
+function _paintStars(c, value){ c.querySelectorAll('.star').forEach((slot,i)=>{ const frac=Math.max(0,Math.min(1,value-i)); const f=slot.querySelector('.fill'); if(f) f.style.width=(frac*100)+'%'; }); }
+function starDown(e, tcd, idx){
+  e.preventDefault();
+  const c=e.currentTarget, max=parseInt(c.dataset.max)||5, cur=localScoreOf(tcd,idx);
+  window._starDrag={ tcd, idx, c, max, cur, moved:false, val:cur };
+  window._starDragging=true;
+  try{ c.setPointerCapture(e.pointerId); }catch(_){}
+  c.onpointermove=starMove; c.onpointerup=starUp; c.onpointercancel=starUp;
+}
+function starMove(e){
+  const d=window._starDrag; if(!d) return;
+  const v=Math.round(_starRatio(d.c, e.clientX)*d.max);   // 1개(정수) 단위
+  d.moved=true; d.val=v; _paintStars(d.c, v);
+}
+function starUp(e){
+  const d=window._starDrag; if(!d) return;
+  let v;
+  if(d.moved){ v=d.val; }
+  else { const s=Math.min(d.max, Math.max(1, Math.ceil(_starRatio(d.c, e.clientX)*d.max))); v=(d.cur===s)? s-1 : s; }
+  window._starDrag=null; window._starDragging=false;
+  try{ d.c.onpointermove=null; d.c.onpointerup=null; d.c.onpointercancel=null; }catch(_){}
+  _paintStars(d.c, v);
+  setLocalScore(d.tcd, d.idx, v);   // 로컬만 저장
+  scheduleRender();                  // 총합 갱신(트래픽 없음)
+}
+
+/* ---- 면접 질문 제출 (익명). 학생은 questions 전체를 구독하지 않고 내 질문만 로컬 보관 ---- */
+function _myqKey(){ return 'startup_myq_'+(ME&&ME.cd); }
+function getMyQ(){ try{ return JSON.parse(localStorage.getItem(_myqKey())||'{}')||{}; }catch(_){ return {}; } }
+function saveMyQ(m){ try{ localStorage.setItem(_myqKey(), JSON.stringify(m)); }catch(_){} }
+function interviewQuestionsCard(isTeacher){
+  const qs = entries(DB.interview && DB.interview.questions).sort((a,b)=>(a[1].at||0)-(b[1].at||0));
+  const targets = entries(DB.businesses).filter(([cd,b])=>b.status==='approved');
+  if(!isTeacher && phase()!==1) return '';   // 면접 질문은 1일차에만 (2일차부터 숨김)
+  if(!isTeacher && !targets.length) return '';
+  const tgtName = q => q.targetCd ? (obj(obj(DB.businesses)[q.targetCd]).name || nmeOf(q.targetCd)) : '전체';
+  let h = '<div class="card"><h2>❓ 사업가 면접 질문</h2>';
+
+  if(isTeacher){
+    h += '<p class="muted">학생들이 낸 질문입니다(선생님에게는 <b>작성자 이름</b>이 보여요). 면접 때 읽어주세요. 부적절한 질문은 삭제할 수 있어요.</p>';
+    if(!qs.length) h += '<div class="empty">아직 제출된 질문이 없어요.</div>';
+    qs.forEach(([id,q])=>{
+      h += `<div class="list-item"><div class="row" style="justify-content:space-between;flex-wrap:nowrap;gap:8px"><span><span class="badge b-ok">🙋 ${esc(nmeOf(q.byCd))}</span> <span class="badge b-info">${esc(tgtName(q))}</span> ${esc(q.text)}</span><button class="btn-red btn-sm" onclick="delQuestion('${id}')">삭제</button></div></div>`;
+    });
+    h += '</div>';
+    return h;
+  }
+
+  // 학생·사장: 질문 작성 (남의 질문은 안 받음 — 내 질문만 로컬 보관)
+  const myq = getMyQ();
+  const editId = window._editQid && myq[window._editQid] ? window._editQid : null;
+  const editQ = editId ? myq[editId] : null;
+  h += '<p class="muted">사업가에게 궁금한 점을 <b>익명</b>으로 물어보세요.'+(editId?' <b style="color:#c46a12">(수정 중)</b>':'')+'</p>';
+  h += '<div class="field"><label>질문 대상</label><select id="qTarget"><option value="" '+(editQ&&!editQ.targetCd?'selected':'')+'>전체 사업가</option>';
+  targets.forEach(([cd,b])=>{ if(cd!==ME.cd) h += `<option value="${cd}" ${editQ&&editQ.targetCd===cd?'selected':''}>${esc(b.name||nmeOf(cd))}</option>`; });
+  h += '</select></div>';
+  h += '<div class="field"><textarea id="qText" placeholder="질문을 적어주세요">'+(editQ?esc(editQ.text||''):'')+'</textarea></div>';
+  if(editId) h += '<div class="row"><button class="btn-gray btn-sm" onclick="cancelEditQuestion()">취소</button><button class="btn-org btn-sm" onclick="submitQuestion()">✏️ 수정 완료</button></div>';
+  else h += '<button class="btn-org btn-sm" onclick="submitQuestion()">📨 질문 제출</button>';
+  // 내가 낸 질문만 표시 + 수정/삭제
+  const mine = Object.entries(myq).sort((a,b)=>(b[1].at||0)-(a[1].at||0));
+  if(mine.length){
+    h += '<div class="divider"></div><div class="muted" style="margin-bottom:6px">내가 낸 질문 ('+mine.length+')</div>';
+    mine.forEach(([id,q])=>{
+      const tn = q.targetCd ? (obj(obj(DB.businesses)[q.targetCd]).name || nmeOf(q.targetCd)) : '전체';
+      h += `<div class="list-item"><div class="row" style="justify-content:space-between;flex-wrap:nowrap;gap:8px"><span><span class="badge b-info">${esc(tn)}</span> ${esc(q.text)}</span><span class="row"><button class="btn-gray btn-sm" onclick="editQuestion('${id}')">수정</button><button class="btn-gray btn-sm" onclick="delQuestion('${id}')">삭제</button></span></div></div>`;
+    });
+  }
+  h += '</div>';
+  return h;
+}
+function editQuestion(id){ window._editQid = id; render(); const t=$('qText'); if(t){ t.focus(); try{ t.setSelectionRange(t.value.length,t.value.length); }catch(_){} } }
+function cancelEditQuestion(){ window._editQid = null; render(); }
+function submitQuestion(){
+  const text = ($('qText').value||'').trim();
+  if(!text){ toast('질문을 적어주세요.'); return; }
+  const target = ($('qTarget') ? $('qTarget').value : '') || '';
+  const m = getMyQ();
+  if(window._editQid && m[window._editQid]){
+    const id = window._editQid; window._editQid = null;
+    S.child('interview/questions/'+id).update({ text, targetCd:target });   // 서버 질문 수정
+    m[id] = { text, targetCd:target, at:(m[id].at||Date.now()) }; saveMyQ(m);
+    toast('질문을 수정했어요');
+  } else {
+    const ref = S.child('interview/questions').push({ text, targetCd:target, byCd:ME.cd, at:TS });
+    m[ref.key] = { text, targetCd:target, at:Date.now() }; saveMyQ(m);
+    toast('질문을 제출했어요! 📨');
+  }
+  render();
+}
+function delQuestion(id){ S.child('interview/questions/'+id).remove(); const m=getMyQ(); if(m[id]){ delete m[id]; saveMyQ(m); } if(window._editQid===id) window._editQid=null; if(!IS_TEACHER) render(); }
+
+/* ============================================================
+   일반 학생 뷰
+============================================================ */
+function viewStudent(){
+  let h = '';
+  const p = phase();
+  const biz = obj(obj(DB.businesses)[ME.cd]);
+  const civil = obj(obj(DB.civilServants)[ME.cd]);
+  const civilActive = civil.status==='approved' || civil.status==='submitted';
+
+  // 진로 작성(사업계획서·공무원 신청)은 0일차에만 표시.
+  // 다음 일차로 넘어가면 숨기고, 0일차로 돌아오면 작성 중이던 초안(서버+로컬)이 다시 뜸.
+  if(p===0){
+    if(!biz.status && !civil.status){
+      h += '<div class="card"><h2>🧭 무엇에 도전할까요?</h2><p class="muted"><b>사장 도전</b>과 <b>공무원 신청</b>을 <b>둘 다</b> 할 수 있어요! 단, 사장이 되면 공무원은 겸업할 수 없어요. 각각 서류를 써서 제출하면 선생님이 정합니다. 탈락하면 실업자로 다음에 일자리를 구해요.</p></div>';
+    }
+    if(biz.status) h += planEditorCard(biz);
+    else h += '<div class="card"><h2>🏪 사장 도전</h2><p class="muted">사업계획서를 써서 제출하면 사장 후보가 돼요.</p><button class="btn-org" onclick="startBusiness()">📋 사업계획서 쓰기</button></div>';
+    if(civil.status) h += civilCard(civil);
+    else h += '<div class="card"><h2>🏛️ 공무원 신청</h2><p class="muted">공무원이 되어 우리반 살림(실업자 관리·검사 등)을 맡을 수 있어요.</p><button class="btn-grn" onclick="startCivil()">🏛️ 공무원 신청서 쓰기</button></div>';
+  } else if(civil.status==='approved'){
+    h += civilCard(civil);   // 1일차+ 에서도 임용된 공무원은 상태만 표시
+  }
+  h += civilBoothCard();   // 3일차+: 임용된 공무원은 공무원 키오스크 부스로 이동
+
+  // 사업가 면접: 질문 먼저, 그 아래 채점표 (누구나 참여, 1일차부터)
+  h += interviewQuestionsCard(false);
+  h += interviewScoreCard(ME.cd);
+
+  // 공무원(임용/심사중)은 알바 지원 안 함
+  if(!civilActive){
+    h += studentOffersCard();
+    h += studentContractCard();  // 2일차+: 아르바이트 근로계약서 서명
+    h += joblessGuideCard();   // 2일차+, 아무 곳도 합격 못한 실업자 안내
+    h += studentJobsCard();    // 3일차 추가 채용 공고는 실업자 안내 아래에 배치
+  }
+  return h;
+}
+/* 2일차+ 미취업(실업자) 안내: 합격·대기 offer가 하나도 없을 때만 */
+function joblessGuideCard(){
+  if(phase()<2) return '';
+  const offers = entries(obj(DB.offers)[ME.cd]);
+  if(offers.some(([bc,o])=>o.status==='accepted' || o.status==='pending')) return '';
+  return '<div class="card"><h2>💪 아직 취업하지 못했나요?</h2>'
+    + '<p class="muted">괜찮아요! <b>실업자</b>도 할 수 있는 일이 있어요.<br>'
+    + '• 🏛️ <b>고용노동부</b>에서 공부하며 <b>자격증</b>을 딸 수 있어요.<br>'
+    + '• 🧹 <b>청소</b>를 하면 <b>일당</b>을 받을 수 있어요.</p></div>';
+}
+
+/* ---- 공무원 신청 ---- */
+function civilCard(c){
+  c = obj(c); const st = c.status;
+  let h = '<div class="card"><h2>🏛️ 공무원 신청 ';
+  h += st==='approved' ? '<span class="badge b-ok">임용됨</span>' : st==='rejected' ? '<span class="badge b-no">반려됨</span>' : '<span class="badge b-wait">심사중</span>';
+  h += '</h2>';
+  if(st==='approved'){ clearDraftLocal('civil'); h += '<div class="badge b-ok">축하해요! 공무원으로 임용되었어요.</div></div>'; return h; }
+  const editable = st!=='submitted';
+  if(!editable) clearDraftLocal('civil');
+  const d = editable ? (getDraftLocal('civil')||{}) : {};
+  const pick = (k, fb)=> (d[k]!==undefined ? d[k] : fb);
+  const dis = editable ? '' : 'disabled';
+  const oi = editable ? 'oninput="autosaveCivil()"' : '';
+  h += `<div class="field"><label>지원 동기 (왜 공무원이 되고 싶나요?)</label><textarea id="cs_motive" ${oi} ${dis}>${esc(pick('motive', c.motive||''))}</textarea></div>`;
+  h += `<div class="field"><label>당신의 장점은 무엇입니까? (꼼꼼함·책임감·경력 등)</label><textarea id="cs_strength" ${oi} ${dis}>${esc(pick('strength', c.strength||''))}</textarea></div>`;
+  h += `<div class="field"><label>당신의 단점은 무엇이며 어떻게 극복할 것입니까?</label><textarea id="cs_weakness" ${oi} ${dis}>${esc(pick('weakness', c.weakness||''))}</textarea></div>`;
+  h += `<div class="field"><label>다짐 및 각오</label><textarea id="cs_resolve" ${oi} ${dis}>${esc(pick('resolve', c.resolve||''))}</textarea></div>`;
+  if(st!=='submitted') h += '<div class="row"><button class="btn-gray btn-sm" onclick="cancelCivilDraft()">그만두기</button><button class="btn-gray btn-sm" onclick="saveCivil(false)">임시 저장</button><button class="btn-grn" onclick="saveCivil(true)">📨 신청하기</button></div>';
+  else h += '<div class="empty">✅ 신청 완료! 선생님 심사를 기다리는 중이에요.<br><span class="muted">제출한 신청서는 수정·취소할 수 없어요.</span></div>';
+  h += '</div>';
+  return h;
+}
+// 공무원(임용) 학생: 3일차부터 공무원 키오스크 부스로 이동(손님 받기 모드)
+function civilBoothCard(){
+  if(phase()<2) return '';   // 공무원 부스 이동은 2~3일차
+  if(obj(obj(DB.civilServants)[ME.cd]).status!=='approved') return '';
+  const gov = entries(obj(window._kioskBooths)).filter(([id,b])=> b && b.isGov);
+  let h = '<div class="card"><h2>🏛️ 공무원 부스 (키오스크)</h2><p class="muted">버튼을 누르면 공무원 부스가 새 창에서 열려요. <b>손님 받기</b>로 업무를 처리하세요. (부스 내용은 선생님이 준비합니다)</p>';
+  if(!gov.length){ h += '<div class="empty">선생님이 공무원 부스를 아직 만들지 않았어요.</div></div>'; return h; }
+  h += '<div class="row" style="flex-wrap:wrap;gap:8px">';
+  gov.forEach(([id,b])=>{ h += `<button class="btn-grn btn-sm" onclick="openGovBooth('${id}')">🏛️ ${esc(b.name||'공무원 부스')} 이동</button>`; });
+  h += '</div></div>';
+  return h;
+}
+function openGovBooth(id){ window.open('키오스크.html?booth='+encodeURIComponent(id)+'&me='+encodeURIComponent((ME&&ME.cd)||'')+'&sale=1', '_blank'); }
+function startCivil(){ S.child('civilServants/'+ME.cd).update({cd:ME.cd, nm:ME.nm, status:'draft', createdAt:TS, updatedAt:TS}); toast('공무원 신청서를 작성해 주세요!'); }
+function cancelCivilDraft(){ prettyConfirm('공무원 신청 그만두기', '작성 중인 공무원 신청서를 <b>삭제</b>할까요?<br>(제출 전이라 다시 시작할 수 있어요)', ()=>{ clearDraftLocal('civil'); S.child('civilServants/'+ME.cd).remove().then(()=>toast('공무원 신청을 그만뒀어요')); }, '🗑️'); }
+function saveCivil(submit){
+  const data = { cd:ME.cd, nm:ME.nm, motive:$('cs_motive').value.trim(),
+    resolve:$('cs_resolve').value.trim(), strength:$('cs_strength').value.trim(), weakness:$('cs_weakness').value.trim(), status:submit?'submitted':'draft', updatedAt:TS };
+  if(submit && !data.motive){ toast('지원 동기를 적어주세요.'); return; }
+  const doSave = ()=> S.child('civilServants/'+ME.cd).update(data).then(()=>{ clearDraftLocal('civil'); toast(submit?'신청 완료!':'저장했어요'); });
+  if(submit) prettyConfirm('🏛️ 공무원 신청', '신청하면 <b style="color:#c0392b">수정·취소할 수 없어요.</b><br>다시 확인하고 신청할까요?', doSave);
+  else doSave();
+}
+function approveCivil(cd){
+  if(obj(obj(DB.businesses)[cd]).status==='approved'){ prettyConfirm('임용할 수 없어요', esc(nmeOf(cd))+' 학생은 <b>이미 사장으로 승인</b>됐어요.<br>공무원으로 임용하려면 먼저 하단 <b>역할 관리</b>에서 사장에서 빼주세요.', null, '⚠️'); return; }
+  S.child('civilServants/'+cd).update({status:'approved', approvedAt:TS}); toast(nmeOf(cd)+' 공무원 임용!');
+}
+function rejectCivil(cd){ if(!confirm(nmeOf(cd)+' 공무원 신청을 반려할까요?'))return; S.child('civilServants/'+cd).update({status:'rejected'}); }
+
+/* 합격 통지 — 중복합격 선택 */
+function studentOffersCard(){
+  if(phase()<2) return '';   // 합격 통지·채용 확정은 발표(2일차)부터 표시 (1일차엔 숨김)
+  const myOffers = entries(obj(DB.offers)[ME.cd]);
+  const pending = myOffers.filter(([bc,o])=>o.status==='pending');
+  const accepted = myOffers.find(([bc,o])=>o.status==='accepted');
+  let h='';
+  if(accepted){
+    const bc=accepted[0], o=accepted[1];
+    const cname = obj(obj(DB.businesses)[bc]).name || (nmeOf(bc)+'의 가게');
+    h += `<div class="card"><h2>🎉 채용 확정</h2><div class="badge b-ok">🏪 ${esc(cname)} (사장 ${esc(nmeOf(bc))}) 에 입사했어요! 시급 ${esc(o.offerPay||0)} 쿠키</div></div>`;
+    h += boothLinkCard(bc, '상점');   // 2일차+: 배정된 상점(부스) 이동
+    return h;
+  }
+  if(!pending.length) return '';
+  h += '<div class="card"><h2>📣 합격 통지 <span class="badge b-ok">'+pending.length+'</span></h2>';
+  if(pending.length>1) h += '<p class="muted">여러 곳에 합격했어요! <b>한 곳만</b> 선택할 수 있습니다.</p>';
+  pending.forEach(([bc,o])=>{
+    const cname = obj(obj(DB.businesses)[bc]).name || (nmeOf(bc)+'의 가게');
+    h += '<div class="list-item"><div class="biz-head">';
+    h += `<b>🏪 ${esc(cname)}</b><span class="muted">사장 ${esc(nmeOf(bc))} · 시급 ${esc(o.offerPay||0)} 쿠키</span></div>`;
+    h += `<div class="row" style="margin-top:6px"><button class="btn-grn btn-sm" onclick="confirmAccept('${bc}')">수락</button><button class="btn-gray btn-sm" onclick="declineOffer('${bc}')">거절</button></div>`;
+    h += '</div>';
+  });
+  h += '</div>';
+  return h;
+}
+
+/* 수락 전 예쁜 확인창 — 수락은 한 곳만, 취소 불가 안내 */
+function confirmAccept(bizCd){
+  const cname = obj(obj(DB.businesses)[bizCd]).name || (nmeOf(bizCd)+'의 가게');
+  prettyConfirm('입사 수락', '🏪 <b>'+esc(cname)+'</b> 에 입사할까요?<br><b style="color:#c0392b">수락하면 취소할 수 없고</b>, 다른 회사 합격은 자동으로 거절돼요. (한 곳만 입사 가능)', ()=>acceptOffer(bizCd), '🎉');
+}
+
+/* 수락: acceptedLock 전역 잠금 → offer accepted → 나머지 자동 거절 */
+function acceptOffer(bizCd){
+  const acd = ME.cd;
+  S.child('acceptedLock/'+acd).transaction(cur=>{
+    if(cur && cur!==bizCd) return;   // 이미 다른 곳 확정 → abort
+    return bizCd;
+  }, (err,committed,snap)=>{
+    if(err) return toast('오류가 발생했어요');
+    if(!committed){ toast('이미 다른 곳에 입사했어요.'); return; }
+    // offer 확정
+    S.child('offers/'+acd+'/'+bizCd+'/status').transaction(st=> st==='pending'||st==='accepted' ? 'accepted' : undefined,
+      (e2,c2)=>{
+        if(!c2){ // 통지가 사라졌거나 상태 이상 → 잠금 해제
+          S.child('acceptedLock/'+acd).remove();
+          return toast('통지 상태가 변경되어 처리하지 못했어요.');
+        }
+        S.child('offers/'+acd+'/'+bizCd).update({decidedAt:TS});
+        S.child('hires/'+bizCd+'/'+acd).set({weeklyPay:(obj(obj(obj(DB.offers)[acd])[bizCd]).offerPay)||0, confirmedAt:TS});
+        // 나머지 pending offer 자동 거절
+        entries(obj(DB.offers)[acd]).forEach(([bc,o])=>{
+          if(bc!==bizCd && o.status==='pending'){
+            S.child('offers/'+acd+'/'+bc+'/status').set('declined');
+            S.child('offers/'+acd+'/'+bc+'/decidedAt').set(TS);
+          }
+        });
+        toast('입사 확정! 🎉');
+      });
+  });
+}
+function declineOffer(bizCd){
+  if(!confirm('이 회사의 합격을 거절할까요?'))return;
+  const acd = ME.cd;
+  S.child('offers/'+acd+'/'+bizCd+'/status').transaction(st=> st==='pending' ? 'declined' : undefined,
+    (e,c)=>{ if(c){ S.child('offers/'+acd+'/'+bizCd+'/decidedAt').set(TS); toast('거절했어요. 사장이 다른 지원자를 뽑을 수 있어요.'); } });
+}
+
+/* 채용공고 목록 + 지원 */
+function studentJobsCard(){
+  const p = phase();
+  if(p<1) return '';                                   // 채용공고·지원은 1일차(모집) 또는 2~3일차(추가 채용)
+  const rehirePhase = (p>=2);                          // 2~3일차 = 추가 채용
+  const locked = !!obj(DB.acceptedLock)[ME.cd];
+  if(rehirePhase && locked) return '';                 // 추가채용은 아직 취업 못한 실업자에게만
+  const biz = obj(DB.businesses);
+  const approvedBiz = entries(biz).filter(([cd,b])=>b.status==='approved');
+  if(!approvedBiz.length) return '';                   // 교사가 사업가를 승인해야 채용공고가 뜸
+  let posts = entries(DB.jobPosts).filter(([bc,pt])=> pt.postedAt && obj(biz[bc]).status==='approved');
+  if(rehirePhase) posts = posts.filter(([bc,pt])=> pt.rehire && pt.open);   // 2~3일차엔 추가 채용 중인 공고만
+  let h = '<div class="card"><h2>📢 '+(rehirePhase?'추가 채용 공고':'채용 공고')+'</h2>';
+  if(!posts.length){ h += '<div class="empty">'+(rehirePhase?'추가 채용 중인 회사가 없어요.':'아직 올라온 공고가 없어요.')+'</div></div>'; return h; }
+  posts.forEach(([bc,pt])=>{
+    const bname = obj(biz[bc]).name || nmeOf(bc);
+    const myResume = getResumeLocal(bc) || {};                   // 이력서 내용은 로컬 프리필(남의 이력서 안 받음)
+    const applied = !!obj(obj(DB.applicantIndex)[ME.cd])[bc];    // 지원 여부는 역인덱스로 판정
+    const bz = obj(biz[bc]);
+    h += '<div class="list-item"><div class="biz-head">';
+    h += `<b>${esc(bname)}</b>`+(pt.open?'<span class="badge b-ok">모집중</span>':'<span class="badge b-no">마감</span>')+'</div>';
+    h += `<div class="kv"><b>담당업무</b> ${esc(pt.duty||'-')}<br><b>모집인원</b> ${esc(pt.headcount||1)}명 · <b>근무시간</b> ${esc(pt.workDays||'-')}<br><b>자격·우대</b> ${esc(pt.qualification||'-')}<br><b>시급</b> ${esc(pt.weeklyPay||0)} 쿠키<br><b>성과급</b> ${bz.bonus==='있음'?'있음':'없음'} · <b>4대 보험</b> ${bz.ins4==='있음'?'있음':'없음'}${bz.condition?'<br><b>기타</b> '+esc(bz.condition):''}</div>`;
+    if(bc===ME.cd){ h+='<div class="muted" style="margin-top:6px">내 회사예요.</div>'; }
+    else if(locked){ h+='<div class="muted" style="margin-top:6px">이미 입사가 확정되어 지원할 수 없어요.</div>'; }
+    else if(applied){
+      h += `<div class="row" style="margin-top:6px"><span class="badge b-info">지원 완료</span><button class="btn-gray btn-sm" onclick="toggleResume('${bc}')">이력서 수정</button></div>`;
+      h += resumeForm(bc, myResume, true);
+    }
+    else if(pt.open){
+      h += `<button class="btn-org btn-sm" style="margin-top:6px" onclick="toggleResume('${bc}')">📝 이력서 쓰고 지원하기</button>`;
+      h += resumeForm(bc, myResume, true);
+    } else {
+      h += '<div class="muted" style="margin-top:6px">모집이 마감되었어요.</div>';
+    }
+    h += '</div>';
+  });
+  h += '</div>';
+  return h;
+}
+function resumeForm(bc, r, hidden){
+  r = obj(r);
+  let h = `<div id="resume_${bc}" class="${hidden?'hidden':''}" style="margin-top:8px;border-top:1px dashed var(--line);padding-top:10px">`;
+  h += `<div class="field"><label>이 회사에 지원한 동기는 무엇인가요?</label><textarea id="r_motive_${bc}">${esc(r.motive||'')}</textarea></div>`;
+  h += `<div class="field"><label>내 성격의 장점은 무엇인가요?</label><textarea id="r_pros_${bc}">${esc(r.pros||'')}</textarea></div>`;
+  h += `<div class="field"><label>내 성격의 단점은 무엇이며 어떻게 극복할 것인가요?</label><textarea id="r_cons_${bc}">${esc(r.cons||'')}</textarea></div>`;
+  h += `<div class="field"><label>우리 회사의 업무에 도움이 될 관련 경험은 무엇인가요?</label><textarea id="r_career_${bc}">${esc(r.career||'')}</textarea></div>`;
+  h += `<div class="field"><label>입사 후 나의 다짐과 포부는 무엇인가요?</label><textarea id="r_resolve_${bc}">${esc(r.resolve||'')}</textarea></div>`;
+  h += `<div class="field"><label>희망하는 시급(쿠키)은 얼마인가요?</label><input id="r_pay_${bc}" type="number" min="0" value="${esc(r.wantPay||'')}"></div>`;
+  h += `<button class="btn-org btn-sm" onclick="submitResume('${bc}')">제출/저장</button></div>`;
+  return h;
+}
+function toggleResume(bc){ const el=$('resume_'+bc); if(el) el.classList.toggle('hidden'); }
+function _resumeKey(bc){ return 'startup_resume_'+(ME&&ME.cd)+'_'+bc; }
+function getResumeLocal(bc){ try{ return JSON.parse(localStorage.getItem(_resumeKey(bc))||'null'); }catch(_){ return null; } }
+function submitResume(bc){
+  const data = {
+    motive:$('r_motive_'+bc).value.trim(), pros:$('r_pros_'+bc).value.trim(), cons:$('r_cons_'+bc).value.trim(),
+    career:$('r_career_'+bc).value.trim(), resolve:$('r_resolve_'+bc).value.trim(),
+    wantPay:parseInt($('r_pay_'+bc).value)||0, submittedAt:TS
+  };
+  if(!data.motive){ toast('지원 동기를 적어주세요.'); return; }
+  // 익명 지원: 이력서 내용에 본인 이름(성 포함/성 제외)이 들어가면 제출 차단
+  const nm = (ME.nm||'').trim();
+  const given = nm.length>=2 ? nm.slice(1) : '';   // 성 제외 이름(예: 박지혜→지혜)
+  const blob = [data.motive, data.pros, data.cons, data.career, data.resolve].join(' ');
+  if(nm && (blob.includes(nm) || (given.length>=2 && blob.includes(given)))){
+    prettyConfirm('이름은 쓸 수 없어요', '이력서는 <b>익명</b>이에요. 내용에 이름(<b>'+esc(nm)+'</b> 또는 <b>'+esc(given)+'</b>)이 들어가면 제출할 수 없어요.<br>이름을 지우고 다시 제출해 주세요.', null, '🙈');
+    return;
+  }
+  // 이력서엔 이름 저장 안 함(익명). 본인 조회용 역인덱스만 별도.
+  S.child('resumes/'+bc+'/'+ME.cd).update(data);
+  S.child('applicantIndex/'+ME.cd+'/'+bc).set(true);
+  try{ localStorage.setItem(_resumeKey(bc), JSON.stringify(data)); }catch(_){}   // 로컬 프리필용 보관
+  toast('지원 완료! 📨');
+}
+
+/* ============================================================
+   공용: Cloudinary 업로드 · 서명패드 · 인쇄(A4 세로)
+============================================================ */
+async function _cldUpload(dataUrl){
+  const fd = new FormData(); fd.append('file', dataUrl); fd.append('upload_preset', CLD_PRESET);
+  const res = await fetch('https://api.cloudinary.com/v1_1/'+CLD_CLOUD+'/image/upload', {method:'POST', body:fd});
+  if(!res.ok) throw new Error('upload '+res.status);
+  const j = await res.json(); return j.secure_url||'';
+}
+let _signCtx=null;
+function openSignPad(title, onDone){
+  let ov = $('signOverlay');
+  if(!ov){ ov = document.createElement('div'); ov.id='signOverlay'; ov.className='pc-overlay'; document.body.appendChild(ov); }
+  ov.innerHTML = '<div class="pc-box" style="max-width:440px"><h3>'+esc(title)+'</h3>'
+    + '<p class="muted" style="margin:-4px 0 10px">아래 칸에 손가락(또는 마우스)으로 서명하세요.</p>'
+    + '<canvas id="signCanvas" width="400" height="190" style="width:100%;border:1.5px dashed #cfd4da;border-radius:12px;background:#fff;touch-action:none;cursor:crosshair"></canvas>'
+    + '<div class="pc-btns" style="margin-top:12px"><button class="btn-gray" onclick="_signClear()">지우기</button><button class="btn-gray" onclick="_signCancel()">취소</button><button class="btn-grn" id="signOkBtn">서명 완료</button></div></div>';
+  ov.classList.add('show');
+  const cv=$('signCanvas'), ctx=cv.getContext('2d');
+  ctx.lineWidth=2.6; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#16233d';
+  let drawing=false,last=null,dirty=false;
+  const pos=e=>{ const r=cv.getBoundingClientRect(); const t=(e.touches&&e.touches[0])||e; return {x:(t.clientX-r.left)*(cv.width/r.width), y:(t.clientY-r.top)*(cv.height/r.height)}; };
+  const down=e=>{ e.preventDefault(); drawing=true; last=pos(e); try{ cv.setPointerCapture(e.pointerId); }catch(_){} };
+  const move=e=>{ if(!drawing)return; e.preventDefault(); const p=pos(e); ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke(); last=p; dirty=true; };
+  const up=()=>{ drawing=false; };
+  if(window.PointerEvent){   // 포인터 이벤트(터치·펜·마우스 통합) — 최신 태블릿
+    cv.addEventListener('pointerdown',down); cv.addEventListener('pointermove',move); cv.addEventListener('pointerup',up); window.addEventListener('pointerup',up);
+  } else {                   // 폴백: 터치 + 마우스
+    cv.addEventListener('touchstart',down,{passive:false}); cv.addEventListener('touchmove',move,{passive:false}); cv.addEventListener('touchend',up);
+    cv.addEventListener('mousedown',down); cv.addEventListener('mousemove',move); window.addEventListener('mouseup',up);
+  }
+  _signCtx={ov,up};
+  const _cleanup=()=>{ window.removeEventListener('pointerup',up); window.removeEventListener('mouseup',up); };
+  window._signClear=()=>{ ctx.clearRect(0,0,cv.width,cv.height); dirty=false; };
+  window._signCancel=()=>{ ov.classList.remove('show'); _cleanup(); };
+  $('signOkBtn').onclick=()=>{
+    if(!dirty){ toast('서명을 그려주세요'); return; }
+    const url=cv.toDataURL('image/png'); ov.classList.remove('show'); _cleanup(); onDone(url);
+  };
+}
+// 서명 그리기 → Cloudinary 업로드 → cb(secureUrl)
+function captureSign(title, cb){ openSignPad(title, async(dataUrl)=>{ toast('서명 업로드 중…'); try{ const url=await _cldUpload(dataUrl); if(!url) throw 0; cb(url); }catch(_){ toast('업로드 실패 · 다시 시도해 주세요'); } }); }
+// A4 세로 인쇄: 새 창에 문서 HTML을 쓰고 인쇄
+function printDoc(title, bodyHtml){
+  const w = window.open('', '_blank', 'width=820,height=1100');
+  if(!w){ toast('팝업이 차단되었어요. 허용해 주세요.'); return; }
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title>'
+    + '<style>@page{size:A4 portrait;margin:16mm} *{box-sizing:border-box} body{font-family:"Malgun Gothic",sans-serif;color:#1a1a1a;line-height:1.7} '
+    + '.doc{max-width:180mm;margin:0 auto} h1{text-align:center;font-size:24px;margin:0 0 4px} .sub{text-align:center;color:#666;margin-bottom:22px} '
+    + '.art{margin:14px 0} .art b{display:block;margin-bottom:2px} .fill{border-bottom:1px solid #333;padding:0 6px;font-weight:700} '
+    + '.sign-row{display:flex;justify-content:space-between;gap:24px;margin-top:34px} .sign-box{flex:1;text-align:center} '
+    + '.sign-img{height:60px;object-fit:contain;display:block;margin:6px auto} .sign-line{border-top:1px solid #333;margin-top:4px;padding-top:4px} '
+    + 'table{width:100%;border-collapse:collapse;margin:10px 0} td,th{border:1px solid #999;padding:7px 9px;font-size:14px;text-align:left} '
+    + '@media print{.noprint{display:none}}</style></head><body><div class="doc">'+bodyHtml+'</div>'
+    + '<div class="noprint" style="text-align:center;margin:22px"><button onclick="window.print()" style="padding:10px 22px;font-size:15px;border-radius:8px;border:0;background:#2e7d32;color:#fff;cursor:pointer">🖨 인쇄</button></div>'
+    + '<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print()},350)}</scr'+'ipt></body></html>');
+  w.document.close();
+}
+
+/* ============================================================
+   투자약정서 (교사 → 사장, 1일차)
+============================================================ */
+function investmentDocHtml(cd){
+  const b = obj(obj(DB.businesses)[cd]); const inv = obj(b.investment);
+  const bn = b.name || nmeOf(cd);
+  const tSign = obj(DB.meta).teacherSignUrl, bSign = inv.bossSignUrl;
+  const img = u=> u? '<img class="sign-img" src="'+esc(u)+'">' : '<div class="sign-img"></div>';
+  return '<h1>('+esc(bn)+') 투자 약정서</h1>'
+    + '<p>투자자 <span class="fill">선생님</span>(이하 \'갑\'이라 한다)와(과) 대표자 <span class="fill">'+esc(nmeOf(cd))+'</span>(이하 \'을\'이라 한다)는 다음과 같은 조건으로 투자 계약을 체결한다.</p>'
+    + '<div class="art"><b>제1조 (계약의 목적)</b>본 계약은 \'을\'의 기업 <span class="fill">'+esc(bn)+'</span>에 관하여 투자함에 따라 그 구체적인 내용과 필요한 제반 사항을 결정하고 \'갑\'과 \'을\' 사이의 권리·의무관계를 명확히 규정함을 그 목적으로 한다.</div>'
+    + '<div class="art"><b>제2조 (투자의 전제조건)</b>\'갑\'은 본 계약에 따른 투자를 위해 \'을\'이 다음의 조건을 충족할 것을 요구할 수 있다. 매출 이익의 <span class="fill">'+esc(inv.pct||0)+'</span> %를 지급한다.</div>'
+    + '<div class="art"><b>제3조 (투자금의 지급)</b>\'갑\'은 아래 내용으로 \'을\'에게 투자금을 지급하기로 한다.<br>1. 투자금액: 일금 <span class="fill">'+esc(inv.won||0)+'</span>원과 <span class="fill">'+esc(inv.cookie||0)+'</span> 쿠키<br>2. 지급시기: 활동 시작 시</div>'
+    + '<div class="art"><b>제4조 (전용 금지)</b>\'을\'은 투자금에 대하여 경영상의 목적으로만 사용이 가능하며 기타의 부동산 구입이나 개인적 용도 등의 경영 이외의 목적으로 사용할 수 없다.</div>'
+    + '<div class="sign-row"><div class="sign-box"><div>투자자(갑): 선생님</div>'+img(tSign)+'<div class="sign-line">(서명)</div></div>'
+    + '<div class="sign-box"><div>대표자(을): '+esc(nmeOf(cd))+'</div>'+img(bSign)+'<div class="sign-line">(서명)</div></div></div>';
+}
+function printInvestment(cd){ printDoc('투자약정서', investmentDocHtml(cd)); }
+// 교사 서명 이미지 업로드(1회) → meta.teacherSignUrl (투자약정서 갑 서명으로 자동 사용)
+function uploadTeacherSign(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(!f)return; const rd=new FileReader();
+    rd.onload=async()=>{ toast('교사 서명 업로드 중…'); try{ const url=await _cldUpload(rd.result); await S.child('meta/teacherSignUrl').set(url); toast('교사 서명 등록 완료 ✔'); }catch(_){ toast('업로드 실패'); } };
+    rd.readAsDataURL(f); };
+  inp.click();
+}
+// 사장(학생) 화면: 받은 투자약정서 전문 보기 + Cloudinary 서명해서 보내기 (인쇄는 교사만)
+function bossInvestmentCard(cd){
+  if(phase()<1) return '';
+  const inv = obj(obj(obj(DB.businesses)[cd]).investment);
+  if(!inv.sentAt) return '<div class="card"><h2>📜 투자약정서</h2><div class="empty">선생님이 투자약정서를 보내면 여기에 표시돼요.</div></div>';
+  const bn = obj(obj(DB.businesses)[cd]).name || nmeOf(cd);
+  const tSign = obj(DB.meta).teacherSignUrl, bSign = inv.bossSignUrl;
+  const sImg = u=> u? '<img src="'+esc(u)+'" style="height:44px;display:block;margin:4px auto">' : '<span class="muted" style="font-size:12px">(서명 대기)</span>';
+  let h = '<div class="card"><h2>📜 투자약정서 <span class="badge b-ok">도착</span></h2>';
+  h += '<div class="nograb" oncontextmenu="return false" ondragstart="return false" style="border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;font-size:14px;line-height:1.75">';
+  h += `<div style="text-align:center;font-weight:800;font-size:16px;margin-bottom:8px">(${esc(bn)}) 투자 약정서</div>`;
+  h += `투자자 <b>선생님</b>(갑)와 대표자 <b>${esc(nmeOf(cd))}</b>(을)는 다음과 같은 조건으로 투자 계약을 체결한다.`;
+  h += `<div style="margin-top:8px"><b>제1조 (목적)</b> 을의 기업 <b>${esc(bn)}</b>에 투자한다.</div>`;
+  h += `<div style="margin-top:6px"><b>제2조 (전제조건)</b> 매출 이익의 <b>${esc(inv.pct||0)}%</b>를 지급한다.</div>`;
+  h += `<div style="margin-top:6px"><b>제3조 (투자금)</b> 일금 <b>${esc(inv.won||0)}원과 ${esc(inv.cookie||0)}쿠키</b>.</div>`;
+  h += `<div style="margin-top:6px"><b>제4조 (전용 금지)</b> 투자금은 경영상의 목적으로만 사용한다.</div>`;
+  h += '<div style="display:flex;justify-content:space-around;margin-top:14px;text-align:center">';
+  h += `<div>투자자(갑): 선생님${sImg(tSign)}</div>`;
+  h += `<div>대표자(을): ${esc(nmeOf(cd))}${sImg(bSign)}</div>`;
+  h += '</div></div>';
+  if(bSign) h += '<div class="badge b-ok" style="margin-top:8px">서명 완료 · 선생님께 보냄 🤝</div>';
+  else h += `<div class="row" style="margin-top:8px"><button class="btn-grn btn-sm" onclick="signInvestment('${cd}')">✍ 서명해서 보내기</button></div>`;
+  h += '</div>';
+  return h;
+}
+function signInvestment(cd){ captureSign('대표자(을) 서명', url=>{ S.child('businesses/'+cd+'/investment/bossSignUrl').set(url).then(()=>toast('서명을 선생님께 보냈어요! 🤝')); }); }
+// 교사: 회사별 투자약정서 설정/보내기 (companyDashboardCard에서 호출)
+function investmentEditor(cd){
+  const inv = obj(obj(obj(DB.businesses)[cd]).investment);
+  let h = '<div class="row" style="margin-top:8px;flex-wrap:wrap;gap:6px;align-items:center">';
+  h += `<span class="muted">투자약정</span>`;
+  h += `<input id="inv_won_${cd}" type="number" min="0" placeholder="원" value="${inv.won!=null?esc(inv.won):''}" style="width:80px">원`;
+  h += `<input id="inv_ck_${cd}" type="number" min="0" placeholder="쿠키" value="${inv.cookie!=null?esc(inv.cookie):''}" style="width:80px">쿠키`;
+  h += `<input id="inv_pct_${cd}" type="number" min="0" max="100" placeholder="%" value="${inv.pct!=null?esc(inv.pct):''}" style="width:60px">%`;
+  h += `<button class="btn-grn btn-sm" onclick="sendInvestment('${cd}')">${inv.sentAt?'수정 저장':'📨 보내기'}</button>`;
+  if(inv.sentAt){ h += '<span class="badge b-ok">전송됨</span>'; h += `<button class="btn-org btn-sm" onclick="printInvestment('${cd}')">🖨 투자약정서</button>`; if(inv.bossSignUrl) h += '<span class="badge b-ok">사장 서명✔</span>'; }
+  h += '</div>';
+  return h;
+}
+function sendInvestment(cd){
+  const won=parseInt($('inv_won_'+cd).value)||0, cookie=parseInt($('inv_ck_'+cd).value)||0, pct=parseInt($('inv_pct_'+cd).value)||0;
+  S.child('businesses/'+cd+'/investment').update({won, cookie, pct, sentAt:TS}).then(()=>toast('투자약정서를 보냈어요!'));
+}
+
+/* ============================================================
+   근로계약서 (사장 ↔ 아르바이트, 2일차) — Cloudinary 서명
+   contracts/<workerCd> = {employerCd, hourly, period, workHours, place, duty,
+                           ownerSignUrl, workerSignUrl, ownerSignedAt, workerSignedAt}
+============================================================ */
+function contractDocHtml(acd){
+  const c = obj(obj(DB.contracts)[acd]); const bc=c.employerCd;
+  const biz = obj(obj(DB.businesses)[bc]);
+  const bn = biz.name || nmeOf(bc);
+  const img = u=> u? '<img class="sign-img" src="'+esc(u)+'">' : '<div class="sign-img"></div>';
+  const yn = v => (v==='있음')?'있음':'없음';
+  return '<h1>('+esc(nmeOf(acd))+') 근로 계약서</h1>'
+    + '<p><span class="fill">'+esc(nmeOf(bc))+'</span>(이하 \'사업주\')과(와) <span class="fill">'+esc(nmeOf(acd))+'</span>(이하 \'근로자\')은 다음과 같이 근로계약을 체결한다.</p>'
+    + '<table><tr><th style="width:32%">담당 업무</th><td>'+esc(c.duty||'')+'</td></tr>'
+    + '<tr><th>근무 시간</th><td>'+esc(c.workHours||'')+'</td></tr>'
+    + '<tr><th>시급 (쿠키)</th><td>'+esc(c.hourly||0)+' 쿠키</td></tr>'
+    + '<tr><th>성과급</th><td>'+yn(c.bonus!=null?c.bonus:biz.bonus)+'</td></tr>'
+    + '<tr><th>4대 보험 적용</th><td>'+yn(c.ins4!=null?c.ins4:biz.ins4)+'</td></tr>'
+    + '<tr><th>연차유급휴가</th><td>근로기준법에서 정하는 바에 따라 부여함</td></tr>'
+    + '<tr><th>기타</th><td>'+esc((c.condition!=null?c.condition:biz.condition)||'-')+'</td></tr></table>'
+    + '<div class="art"><b>근로계약서 교부</b>사업주는 근로계약을 체결함과 동시에 본 계약서를 사본하여 근로자의 교부요구와 관계없이 근로자에게 교부함(근로기준법 제17조 이행).</div>'
+    + '<div class="art"><b>근로계약·취업규칙 등의 성실한 이행의무</b>사업주와 근로자는 각자가 근로계약, 취업규칙, 단체협약을 지키고 성실하게 이행하여야 함.</div>'
+    + '<div class="art"><b>기타</b>이 계약에 정함이 없는 사항은 근로기준법령에 의함.</div>'
+    + '<div class="sign-row"><div class="sign-box"><div>사업주(대표자): '+esc(nmeOf(bc))+'</div>'+img(c.ownerSignUrl)+'<div class="sign-line">(서명)</div></div>'
+    + '<div class="sign-box"><div>근로자: '+esc(nmeOf(acd))+'</div>'+img(c.workerSignUrl)+'<div class="sign-line">(서명)</div></div></div>';
+}
+function printContract(acd){ printDoc('근로계약서', contractDocHtml(acd)); }
+// 사장: 아르바이트별 근로계약서 작성/서명 (2일차)
+function bossContractCard(cd){
+  if(phase()<2) return '';
+  const albas = Object.keys(obj(obj(DB.hires)[cd]));
+  if(!albas.length) return '';
+  let h = '<div class="card"><h2>📝 근로계약서 작성 <span class="badge b-info">'+albas.length+'</span></h2>';
+  h += '<p class="muted">직원과 협의 후 근로계약서를 작성하세요. 양쪽이 서명하면 계약이 체결됩니다.</p>';
+  const post = obj(obj(DB.jobPosts)[cd]), biz = obj(obj(DB.businesses)[cd]);
+  const bname = biz.name || nmeOf(cd);
+  const _inp = 'border:1px solid #cfd4da;border-radius:6px;padding:3px 8px;font-size:14px;font-weight:700';
+  const _sImg = u=> u? '<img src="'+esc(u)+'" style="height:42px;display:block;margin:4px auto">' : '<span class="muted" style="font-size:12px">(미서명)</span>';
+  albas.forEach(acd=>{
+    const _raw = obj(obj(DB.contracts)[acd]);
+    const c = (_raw.employerCd===cd) ? _raw : {};   // 이 사장이 작성한 계약만 사용(재배정 stale은 무시하고 공고로 새로 채움)
+    // 저장 전(또는 stale)엔 채용공고 내용으로 채우고, 저장 후엔 입력값(빈칸 포함) 유지
+    const duty    = (c.duty!=null)     ? c.duty     : (post.duty||biz.duty||'');
+    const hours   = (c.workHours!=null)? c.workHours: (post.workDays||biz.workDays||'');
+    const base    = (c.hourly!=null)   ? c.hourly   : ((obj(obj(DB.hires)[cd])[acd].weeklyPay) || post.weeklyPay || 0);
+    const wBonus  = (c.bonus!=null)    ? c.bonus    : (biz.bonus||'없음');       // 계약 우선, 없으면 사업계획서
+    const wIns4   = (c.ins4!=null)     ? c.ins4     : (biz.ins4||'없음');
+    const wCond   = (c.condition!=null)? c.condition: (biz.condition||'');
+    const signed = !!c.ownerSignUrl;   // 사장 서명(제출) 완료 → 잠금
+    // 계약서 문서 형태(투자약정서와 동일). 서명 전엔 편집칸, 서명 후엔 잠금(클릭 시 안내)
+    h += '<div class="list-item" style="padding:0;border:0"><div style="border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;font-size:14px;line-height:1.9"'+(signed?' onclick="_contractLocked()"':'')+'>';
+    h += `<div style="text-align:center;font-weight:800;font-size:16px;margin-bottom:8px">(${esc(nmeOf(acd))}) 근로 계약서</div>`;
+    h += `사업주 <b>${esc(nmeOf(cd))}</b>(갑)과 근로자 <b>${esc(nmeOf(acd))}</b>(을)은 다음과 같이 근로계약을 체결한다.`;
+    if(signed){
+      h += `<div style="margin-top:8px"><b>담당 업무</b> ${esc(c.duty||'-')}</div>`;
+      h += `<div style="margin-top:6px"><b>근무 시간</b> ${esc(c.workHours||'-')}</div>`;
+      h += `<div style="margin-top:6px"><b>시급 (쿠키)</b> ${esc(c.hourly||0)} 쿠키</div>`;
+    } else {
+      h += `<div style="margin-top:8px"><b>담당 업무</b> <input id="ct_duty_${acd}" value="${esc(duty)}" style="${_inp};min-width:220px"></div>`;
+      h += `<div style="margin-top:6px"><b>근무 시간</b> <input id="ct_hours_${acd}" value="${esc(hours)}" style="${_inp};min-width:160px"></div>`;
+      h += `<div style="margin-top:6px"><b>시급 (쿠키)</b> <input id="ct_pay_${acd}" type="number" min="0" value="${esc(base)}" style="${_inp};width:100px"> 쿠키</div>`;
+    }
+    if(signed){
+      h += `<div style="margin-top:6px"><b>성과급</b> ${wBonus==='있음'?'있음':'없음'}</div>`;
+      h += `<div style="margin-top:6px"><b>4대 보험</b> ${wIns4==='있음'?'있음':'없음'}</div>`;
+      h += `<div style="margin-top:6px"><b>기타</b> ${esc(wCond||'-')}</div>`;
+    } else {
+      h += `<div style="margin-top:6px"><b>성과급</b> <select id="ct_bonus_${acd}" style="${_inp}">${_optSel(['없음','있음'], wBonus==='있음'?'있음':'없음')}</select></div>`;
+      h += `<div style="margin-top:6px"><b>4대 보험</b> <select id="ct_ins4_${acd}" style="${_inp}">${_optSel(['없음','있음'], wIns4==='있음'?'있음':'없음')}</select></div>`;
+      h += `<div style="margin-top:6px"><b>기타</b> <input id="ct_cond_${acd}" value="${esc(wCond)}" style="${_inp};min-width:200px"></div>`;
+    }
+    h += CONTRACT_CLAUSES;
+    h += '<div style="display:flex;justify-content:space-around;margin-top:16px;text-align:center">';
+    h += `<div>사업주(갑): ${esc(nmeOf(cd))}${_sImg(c.ownerSignUrl)}</div>`;
+    h += `<div>근로자(을): ${esc(nmeOf(acd))}${_sImg(c.workerSignUrl)}</div>`;
+    h += '</div></div>';
+    if(!signed){
+      h += `<div class="row" style="margin-top:8px"><button class="btn-grn btn-sm" onclick="signContract('owner','${acd}')">✍ 사장 서명 (제출)</button></div>`;
+    } else if(c.workerSignUrl){
+      h += '<div class="badge b-ok" style="margin-top:8px">계약 체결 완료! 🤝</div>';
+    } else {
+      h += '<div class="muted" style="margin-top:8px">✅ 제출 완료 · 근로자 서명을 기다리는 중이에요.</div>';
+    }
+    h += '</div>';
+  });
+  h += '</div>';
+  return h;
+}
+function saveContract(acd){
+  const bc = ME.cd;
+  const pay = parseInt($('ct_pay_'+acd).value)||0;
+  S.child('contracts/'+acd).update({ employerCd:bc,
+    duty:$('ct_duty_'+acd).value.trim(), workHours:$('ct_hours_'+acd).value.trim(), hourly:pay,
+    bonus:$('ct_bonus_'+acd).value, ins4:$('ct_ins4_'+acd).value, condition:$('ct_cond_'+acd).value.trim(), updatedAt:TS });
+  S.child('hires/'+bc+'/'+acd+'/weeklyPay').set(pay);   // 최종 시급을 정산에 반영
+  toast('근로계약서를 저장했어요');
+}
+// 근로계약서 표준 조항(화면용) — 사장·직원 계약서 하단에 공통 첨부
+const CONTRACT_CLAUSES = '<div style="margin-top:12px;border-top:1px dashed var(--line);padding-top:8px"><b>근로계약서 교부</b><br>사업주는 근로계약을 체결함과 동시에 본 계약서를 사본하여 근로자의 교부요구와 관계없이 근로자에게 교부함(근로기준법 제17조 이행).</div>'
+  + '<div style="margin-top:8px"><b>근로계약·취업규칙 등의 성실한 이행의무</b><br>사업주와 근로자는 각자가 근로계약, 취업규칙, 단체협약을 지키고 성실하게 이행하여야 함.</div>'
+  + '<div style="margin-top:8px"><b>기타</b><br>이 계약에 정함이 없는 사항은 근로기준법령에 의함.</div>';
+function _contractLocked(){ prettyConfirm('수정할 수 없어요', '이미 <b>서명·제출</b>한 근로계약서는 수정할 수 없어요.', null, '🔒'); }
+function signContract(role, acd){
+  const label = role==='owner'?'사장 서명':'근로자 서명';
+  // ⚠️ 입력값은 서명패드를 열기 전에(클릭 시점) 미리 읽어둔다.
+  // 서명하는 몇 초 동안 구독 업데이트로 카드가 재렌더되면 입력칸이 DB값으로 초기화되어 빈 내용이 저장될 수 있음.
+  let fields = null;
+  if(role==='owner'){
+    const _v = id => { const el=$(id); return el? el.value.trim() : undefined; };
+    const _p = $('ct_pay_'+acd);
+    const _bo=$('ct_bonus_'+acd), _in=$('ct_ins4_'+acd);
+    fields = { duty:_v('ct_duty_'+acd), workHours:_v('ct_hours_'+acd), hourly:_p?(parseInt(_p.value)||0):undefined,
+      bonus:_bo?_bo.value:undefined, ins4:_in?_in.value:undefined, condition:_v('ct_cond_'+acd) };
+  }
+  const doSign = ()=> captureSign(label, url=>{
+    const key = role==='owner'?'ownerSignUrl':'workerSignUrl';
+    // 소유자 서명은 항상 현재 사장(ME.cd)으로 확정(옛 employerCd 상속 금지). 근로자는 자기 계약의 employerCd 사용
+    const upd = { employerCd:(role==='owner'? ME.cd : ((obj(obj(DB.contracts)[acd]).employerCd)||_bossOf(acd))) };
+    upd[key]=url; upd[role==='owner'?'ownerSignedAt':'workerSignedAt']=TS;
+    // 사장이 저장을 누르지 않고 서명해도 (클릭 시점에 읽어둔) 편집 내용이 함께 저장됨
+    if(role==='owner' && fields){
+      if(fields.duty!==undefined) upd.duty=fields.duty;
+      if(fields.workHours!==undefined) upd.workHours=fields.workHours;
+      if(fields.bonus!==undefined) upd.bonus=fields.bonus;
+      if(fields.ins4!==undefined) upd.ins4=fields.ins4;
+      if(fields.condition!==undefined) upd.condition=fields.condition;
+      if(fields.hourly!==undefined){ upd.hourly=fields.hourly; S.child('hires/'+ME.cd+'/'+acd+'/weeklyPay').set(fields.hourly); }
+    }
+    S.child('contracts/'+acd).update(upd).then(()=>toast('서명 완료! 🤝'));
+  });
+  // 사장 서명은 제출=잠금이므로 한 번 더 확인
+  if(role==='owner') prettyConfirm('사장 서명 · 제출', '서명해서 제출하면 <b style="color:#c0392b">계약 내용을 더 이상 수정할 수 없어요.</b><br>지금 내용 그대로 서명할까요?', doSign, '✍');
+  else doSign();
+}
+// 아르바이트(학생): 내 근로계약서 확인 + 서명 (2일차)
+function studentContractCard(){
+  if(phase()<2) return '';
+  const acc = entries(obj(DB.offers)[ME.cd]).find(([bc,o])=>o.status==='accepted');
+  if(!acc) return '';
+  const bc = acc[0];
+  const _rawC = obj(obj(DB.contracts)[ME.cd]);
+  const c = (_rawC.employerCd===bc) ? _rawC : {};   // 현재 사장(bc)의 계약만 인정(재배정 stale 무시)
+  const biz = obj(obj(DB.businesses)[bc]);
+  const bname = biz.name || nmeOf(bc);
+  let h = '<div class="card nograb" oncontextmenu="return false" ondragstart="return false"><h2>📝 근로계약서</h2>';
+  // 사장이 계약서를 저장하기 전
+  if(!c.employerCd){ h += '<div class="empty">사장이 근로계약서를 작성하면 여기에 표시돼요.</div></div>'; return h; }
+  // 계약서 형태로 표시(투자약정서와 동일한 문서 스타일)
+  const sImg = u=> u? '<img src="'+esc(u)+'" style="height:44px;display:block;margin:4px auto">' : '<span class="muted" style="font-size:12px">(미서명)</span>';
+  h += '<div style="border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;font-size:14px;line-height:1.85">';
+  h += `<div style="text-align:center;font-weight:800;font-size:16px;margin-bottom:8px">(${esc(nmeOf(ME.cd))}) 근로 계약서</div>`;
+  h += `사업주 <b>${esc(nmeOf(bc))}</b>(갑)과 근로자 <b>${esc(nmeOf(ME.cd))}</b>(을)은 다음과 같이 근로계약을 체결한다.`;
+  h += `<div style="margin-top:8px"><b>담당 업무</b> ${esc(c.duty||'-')}</div>`;
+  h += `<div style="margin-top:6px"><b>근무 시간</b> ${esc(c.workHours||'-')}</div>`;
+  h += `<div style="margin-top:6px"><b>시급 (쿠키)</b> ${esc(c.hourly||0)} 쿠키</div>`;
+  h += `<div style="margin-top:6px"><b>성과급</b> ${(c.bonus!=null?c.bonus:biz.bonus)==='있음'?'있음':'없음'}</div>`;
+  h += `<div style="margin-top:6px"><b>4대 보험</b> ${(c.ins4!=null?c.ins4:biz.ins4)==='있음'?'있음':'없음'}</div>`;
+  h += `<div style="margin-top:6px"><b>기타</b> ${esc((c.condition!=null?c.condition:biz.condition)||'-')}</div>`;
+  h += CONTRACT_CLAUSES;
+  h += '<div style="display:flex;justify-content:space-around;margin-top:16px;text-align:center">';
+  h += `<div>사업주(갑): ${esc(nmeOf(bc))}${sImg(c.ownerSignUrl)}</div>`;
+  h += `<div>근로자(을): ${esc(nmeOf(ME.cd))}${sImg(c.workerSignUrl)}</div>`;
+  h += '</div></div>';
+  if(c.ownerSignUrl){
+    if(c.workerSignUrl) h += '<div class="badge b-ok" style="margin-top:8px">계약 체결 완료! 🤝</div>';
+    else h += `<div class="row" style="margin-top:8px"><button class="btn-grn btn-sm" onclick="signContract('worker','${ME.cd}')">✍ 계약서에 서명하기</button></div>`;
+  } else {
+    h += '<div class="muted" style="margin-top:8px">사장 서명을 기다리는 중이에요.</div>';
+  }
+  h += '</div>';
+  return h;
+}
+</script>
+</body>
+</html>
