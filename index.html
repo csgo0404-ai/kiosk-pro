@@ -1782,7 +1782,7 @@ function investmentDocHtml(cd){
   return '<h1>('+esc(bn)+') 투자 약정서</h1>'
     + '<p>투자자 <span class="fill">선생님</span>(이하 \'갑\'이라 한다)와(과) 대표자 <span class="fill">'+esc(nmeOf(cd))+'</span>(이하 \'을\'이라 한다)는 다음과 같은 조건으로 투자 계약을 체결한다.</p>'
     + '<div class="art"><b>제1조 (계약의 목적)</b>본 계약은 \'을\'의 기업 <span class="fill">'+esc(bn)+'</span>에 관하여 투자함에 따라 그 구체적인 내용과 필요한 제반 사항을 결정하고 \'갑\'과 \'을\' 사이의 권리·의무관계를 명확히 규정함을 그 목적으로 한다.</div>'
-    + '<div class="art"><b>제2조 (투자의 전제조건)</b>\'갑\'은 본 계약에 따른 투자를 위해 \'을\'이 다음의 조건을 충족할 것을 요구할 수 있다. 매출 이익의 <span class="fill">'+esc(inv.pct||0)+'</span> %를 지급한다.</div>'
+    + '<div class="art"><b>제2조 (투자의 전제조건)</b>\'갑\'은 본 계약에 따른 투자를 위해 \'을\'이 다음의 조건을 충족할 것을 요구할 수 있다. 총 매출의 <span class="fill">'+esc(inv.pct||0)+'</span> %를 지급한다.</div>'
     + '<div class="art"><b>제3조 (투자금의 지급)</b>\'갑\'은 아래 내용으로 \'을\'에게 투자금을 지급하기로 한다.<br>1. 투자금액: 일금 <span class="fill">'+esc(inv.won||0)+'</span>원과 <span class="fill">'+esc(inv.cookie||0)+'</span> 쿠키<br>2. 지급시기: 활동 시작 시</div>'
     + '<div class="art"><b>제4조 (전용 금지)</b>\'을\'은 투자금에 대하여 경영상의 목적으로만 사용이 가능하며 기타의 부동산 구입이나 개인적 용도 등의 경영 이외의 목적으로 사용할 수 없다.</div>'
     + '<div class="sign-row"><div class="sign-box"><div>투자자(갑): 선생님</div>'+img(tSign)+'<div class="sign-line">(서명)</div></div>'
@@ -1810,7 +1810,7 @@ function bossInvestmentCard(cd){
   h += `<div style="text-align:center;font-weight:800;font-size:16px;margin-bottom:8px">(${esc(bn)}) 투자 약정서</div>`;
   h += `투자자 <b>선생님</b>(갑)와 대표자 <b>${esc(nmeOf(cd))}</b>(을)는 다음과 같은 조건으로 투자 계약을 체결한다.`;
   h += `<div style="margin-top:8px"><b>제1조 (목적)</b> 을의 기업 <b>${esc(bn)}</b>에 투자한다.</div>`;
-  h += `<div style="margin-top:6px"><b>제2조 (전제조건)</b> 매출 이익의 <b>${esc(inv.pct||0)}%</b>를 지급한다.</div>`;
+  h += `<div style="margin-top:6px"><b>제2조 (전제조건)</b> 총 매출의 <b>${esc(inv.pct||0)}%</b>를 지급한다.</div>`;
   h += `<div style="margin-top:6px"><b>제3조 (투자금)</b> 일금 <b>${esc(inv.won||0)}원과 ${esc(inv.cookie||0)}쿠키</b>.</div>`;
   h += `<div style="margin-top:6px"><b>제4조 (전용 금지)</b> 투자금은 경영상의 목적으로만 사용한다.</div>`;
   h += '<div style="display:flex;justify-content:space-around;margin-top:14px;text-align:center">';
