@@ -848,6 +848,7 @@ function resetAll(){
   }, '🧹');
 }
 function _doResetAll(){
+  window._bizPubHash = {};   // 슬림미러 해시가드 초기화 → 재생성한 회사가 bizPub에 확실히 반영되게(초기화 후 stale-skip 방지)
   const tSign = obj(DB.meta).teacherSignUrl;   // 교사 서명은 보존
   // 사장별 부스(kiosk_booths/sb_*)와 관련 데이터도 제거 — 공무원(isGov) 등 그 외 부스는 보존
   const rootUpd = {};
