@@ -190,6 +190,7 @@
     <h3>설정</h3>
     <div class="pc-msg">자료를 백업(내보내기)하거나 백업 파일로 되돌리고, 전체 초기화할 수 있어요.</div>
     <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn-grn" onclick="pushUpdate()">🔄 업데이트 (학생 새로고침)</button>
       <button class="btn-grn" onclick="exportData()">📤 자료 내보내기 (백업)</button>
       <button class="btn-org" onclick="document.getElementById('importFile').click()">📥 자료 불러오기</button>
       <button class="btn-red" onclick="closeSettings();resetAll()">🧹 전체 초기화</button>
@@ -288,6 +289,26 @@ function pcConfirm(){ const f=_pcYes; pcClose(); if(f) f(); }
 /* 교사 설정: 내보내기 / 불러오기 / 초기화 */
 function openSettings(){ $('setOverlay').classList.add('show'); }
 function closeSettings(){ $('setOverlay').classList.remove('show'); }
+/* 교사: 학생에게 새로고침 신호(meta.forceReloadAt). 학생은 다음 접속/수신 시 캐시 우회 새로고침(로컬 캐시·초안은 보존) */
+/* 학생: 교사 업데이트 신호 수신 시 캐시 우회 새로고침(로컬스토리지=명단캐시·초안은 보존). seen 마커로 재로드 루프 방지 */
+function _maybeForceReload(m){
+  if(IS_TEACHER) return;
+  const v = +((m && m.forceReloadAt) || 0);
+  if(!v) return;
+  let seen = 0; try{ seen = +localStorage.getItem('startup_reloadSeen') || 0; }catch(_){}
+  if(v > seen){
+    if(typeof isEditing==='function' && isEditing()){ setTimeout(()=>_maybeForceReload(m), 3000); return; }   // 입력 중이면 미저장 유실 방지 위해 잠깐 뒤 재시도
+    try{ localStorage.setItem('startup_reloadSeen', String(v)); }catch(_){}   // 먼저 기록 → 새로고침 후 루프 방지
+    try{ const u = new URL(location.href); u.searchParams.set('v', v); location.replace(u.toString()); }
+    catch(_){ location.reload(); }
+  }
+}
+function pushUpdate(){
+  prettyConfirm('업데이트 배포', '접속 중이거나 이후 접속하는 <b>학생 화면을 새로고침</b>해서 최신 버전으로 맞춥니다.<br><span class="muted">학생의 로컬 저장(명단 캐시·작성 초안)은 지워지지 않아요.</span>', ()=>{
+    closeSettings();
+    S.child('meta/forceReloadAt').set(TS).then(()=>toast('학생 새로고침 신호를 보냈어요 🔄')).catch(()=>toast('전송 실패'));
+  }, '🔄');
+}
 function exportData(){
   try{
     const blob = new Blob([JSON.stringify(DB||{}, null, 2)], {type:'application/json'});
@@ -478,7 +499,7 @@ function subscribeStudent(){
   const setSlice = (k, v)=>{ DB[k]=v; scheduleRender(); };
   const setIv = (k, v)=>{ DB.interview=DB.interview||{}; DB.interview[k]=v; scheduleRender(); };
   const setMine = (k, v)=>{ DB[k]=DB[k]||{}; DB[k][cd]=v; scheduleRender(); };
-  S.child('meta').on('value', s=>{ setSlice('meta', s.val()||{}); _maybeSubContracts(); });
+  S.child('meta').on('value', s=>{ const mv=s.val()||{}; setSlice('meta', mv); _maybeSubContracts(); _maybeForceReload(mv); });
   // egress 절감: 학생은 무거운 businesses 전체(desc·plan·budget·investment·서명URL) 대신
   //   ① 슬림 미러 bizPub(전 회사, 남이 필요한 필드만) + ② 내 회사만 풀 구독 → DB.businesses로 병합.
   //   (남 회사 읽기는 name·status·bonus·ins4·condition·ceo만 쓰므로 bizPub로 충분, 내 회사는 풀로 유지)
@@ -818,7 +839,15 @@ function approveBiz(cd){
   }).then(()=>toast(nmeOf(cd)+' 사장 승인! 채용공고 게시됨'));
 }
 function rejectBiz(cd){ if(!confirm(nmeOf(cd)+' 사업계획서를 반려할까요?'))return; S.child('businesses/'+cd).update({status:'rejected'}); }
-function resetAll(){ if(!confirm('창업 프로젝트 전체 데이터를 삭제합니다. 계속할까요?'))return; if(!confirm('정말 삭제할까요? 되돌릴 수 없습니다.'))return;
+function resetAll(){
+  prettyConfirm('전체 초기화', '창업 프로젝트 <b style="color:#c0392b">전체 데이터를 삭제</b>합니다.<br>되돌릴 수 없어요. 정말 진행할까요?', ()=>{
+    const pw = prompt('전체 초기화 — 교사 비밀번호를 입력하세요');
+    if(pw===null) return;                                   // 취소
+    if(String(pw).trim()!=='csgo10'){ toast('비밀번호가 올바르지 않습니다'); return; }
+    _doResetAll();
+  }, '🧹');
+}
+function _doResetAll(){
   const tSign = obj(DB.meta).teacherSignUrl;   // 교사 서명은 보존
   // 사장별 부스(kiosk_booths/sb_*)와 관련 데이터도 제거 — 공무원(isGov) 등 그 외 부스는 보존
   const rootUpd = {};
