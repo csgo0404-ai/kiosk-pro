@@ -42,6 +42,21 @@
   .applicant{border:1.5px solid var(--line);border-radius:12px;padding:12px;background:#fafbfc}
   .applicant.picked{border-color:var(--grn);background:#f1fbf5}
   .applicant.reserved{border-color:#f0b429;background:#fffaf0}
+  /* 지원자 카드(예쁜 버전) */
+  .appl{border:1.5px solid #e3e7ee;border-radius:16px;background:#fff;overflow:hidden;box-shadow:0 2px 8px rgba(60,80,120,.06)}
+  .appl.picked{border-color:var(--grn)}
+  .appl.reserved{border-color:#f0b429}
+  .appl-top{display:flex;align-items:center;gap:10px;padding:11px 14px;background:linear-gradient(135deg,#eef2fb,#e3e9f7)}
+  .appl.picked .appl-top{background:linear-gradient(135deg,#e8f8ef,#d3efdf)}
+  .appl.reserved .appl-top{background:linear-gradient(135deg,#fff6e5,#ffe9c4)}
+  .appl-ava{flex:0 0 auto;width:44px;height:44px;border-radius:50%;background:#fff;border:1.5px solid #cfd8ea;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .appl-id{flex:1 1 auto;min-width:0}
+  .appl-no{font-size:17px;font-weight:900;color:#3a4a6b;word-break:break-all}
+  .appl-pay{flex:0 0 auto;font-size:12px;font-weight:800;color:#c9520a;background:#fff;border:1px solid #ffd9bf;border-radius:20px;padding:3px 10px;white-space:nowrap}
+  .appl-body{padding:8px 14px 12px}
+  .appl-row{padding:6px 0;border-bottom:1px solid #f2f4f7;font-size:13.5px;line-height:1.5}
+  .appl-row:last-child{border-bottom:0}
+  .appl-row .l{font-size:11px;font-weight:800;color:#9aa0a6;display:block;margin-bottom:1px}
   .anon-tag{font-weight:800;color:var(--org)}
   #loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
   #loginView.hidden{display:none}
@@ -109,6 +124,25 @@
   .star .fill{position:absolute;left:0;top:0;overflow:hidden;color:#f5b301;width:0}
   .biz-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
   .list-item{border:1px solid var(--line);border-radius:11px;padding:12px;margin-bottom:9px;background:#fff}
+  /* 숫자 + 단위 입력 */
+  .num-wrap{display:flex;align-items:center;gap:7px}
+  .num-wrap input{flex:1;min-width:0}
+  .num-wrap .unit{font-weight:800;color:#7a7f86;white-space:nowrap}
+  /* 채용공고 카드 */
+  .job{border:1.5px solid #ffd9bf;border-radius:16px;padding:0;margin-bottom:14px;background:#fff;overflow:hidden;box-shadow:0 2px 8px rgba(245,124,43,.08)}
+  .job-top{display:flex;align-items:center;gap:12px;padding:14px 16px;background:linear-gradient(135deg,#fff4ec,#ffe7d6)}
+  .job-logo{flex:0 0 auto;width:52px;height:52px;border-radius:14px;background:#fff;border:1.5px solid #ffd0ae;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 2px 5px rgba(245,124,43,.12)}
+  .job-id{flex:1 1 auto;min-width:0}
+  .job-name{font-size:19px;font-weight:900;color:#c9520a;line-height:1.2;word-break:break-all}
+  .job-boss{display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:13px;font-weight:800;color:#7a5a45;background:#fff;border:1px solid #ffd9bf;border-radius:20px;padding:2px 10px}
+  .job-body{padding:12px 16px 14px}
+  .job-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+  .job-cell{background:#fafbfc;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .job-cell .l{font-size:11px;font-weight:800;color:#9aa0a6;letter-spacing:.02em}
+  .job-cell .v{font-size:14px;font-weight:800;color:#3a3f45;margin-top:2px;word-break:break-all}
+  .job-cell.wide{grid-column:1 / -1}
+  .job-pill{display:inline-block;font-size:12px;font-weight:800;color:#178254;background:#e7f6ef;border-radius:20px;padding:2px 9px;margin-right:5px}
+  .job-pill.off{color:#9aa0a6;background:#f0f1f3}
 </style>
 </head>
 <body>
@@ -285,6 +319,42 @@ function phase(){ return (DB.meta && typeof DB.meta.phase==='number') ? Math.min
 function nmeOf(cd){ return (ROSTER[cd] && ROSTER[cd].nm) || ('('+cd+')'); }
 function obj(v){ return v && typeof v==='object' ? v : {}; }
 function entries(v){ return Object.entries(obj(v)); }
+/* 근로계약서 키: 사장코드_근로자코드 (겸직 시 사장별로 별도 계약 보관) */
+function _ck(bc, acd){ return bc+'_'+acd; }
+/* upd 객체에 특정 근로자의 모든 사장 계약 삭제를 추가(고용 정리 시) */
+function _clearWorkerContracts(upd, acd){ Object.keys(obj(DB.contracts)).forEach(k=>{ if(k.endsWith('_'+acd)) upd['contracts/'+k]=null; }); }
+
+/* 이벤트상점 쿠키 잔액 조정용 멀티패스 업데이트 조각을 만든다(쓰지는 않음).
+   delta 양수=차감(잔액↓), 음수=지급(잔액↑). EventShop 잔액=…−shopUsed 구조라 shopUsed를 원자적 increment
+   (동시 경합 유실 방지, 쿠키 직접증가 금지). 코드→키 매핑은 즉석 조회(교사 세션이 실행).
+   반환 {updates(ROOT 기준 경로), missing:[계정없는 코드…]} — 호출부가 상태변경과 합쳐 한 번의 ROOT.update로 원자 커밋. */
+/* 코드→EventShop키 매핑: stu 전체를 매번 읽으면 읽기 폭증 → 60초 캐시(키는 안정적).
+   loadRoster가 이미 읽은 스냅샷으로 시드되므로 평소엔 추가 읽기 0. */
+async function _shopKeyMap(force){
+  const now = Date.now();
+  if(!force && window._shopKeyCache && (now-(window._shopKeyCacheAt||0) < 60000)) return window._shopKeyCache;
+  const snap = await ROOT.child('EventShop/stu').once('value');
+  const map = {};
+  snap.forEach(ch=>{ const s=ch.val(); if(s && s.cd!=null) map[String(s.cd).trim()]=ch.key; });
+  window._shopKeyCache = map; window._shopKeyCacheAt = now;
+  return map;
+}
+async function _cookieUpdates(deltaByCode){
+  const clean = {};
+  Object.keys(deltaByCode||{}).forEach(c=>{ const d=Math.round(deltaByCode[c]||0); if(d!==0) clean[String(c).trim()]=d; });
+  const updates = {}; const missing = [];
+  if(!Object.keys(clean).length) return { updates, missing };
+  let keyByCode = await _shopKeyMap();
+  // 캐시에 없는 코드가 있으면(신규 학생 등) 딱 한 번 강제 새로고침 → 정확성 유지, 트래픽 최소
+  if(Object.keys(clean).some(c=> keyByCode[c]==null)) keyByCode = await _shopKeyMap(true);
+  Object.keys(clean).forEach(code=>{
+    const k = keyByCode[code];
+    if(k==null){ missing.push(code); return; }
+    updates['EventShop/stu/'+k+'/shopUsed']   = firebase.database.ServerValue.increment(clean[code]);
+    updates['EventShop/stu/'+k+'/updatedAt']  = Date.now();
+  });
+  return { updates, missing };
+}
 
 /* ============================================================
    로그인
@@ -297,14 +367,22 @@ function switchLogin(k){
   $('loginMsg').textContent='';
 }
 
-async function loadRoster(){
-  // 네트워크 우선(최신 명단 보장) + 실패/빈스냅샷일 때만 캐시 폴백(신규 학생 로그인 차단 방지)
+async function loadRoster(force){
+  // 캐시 우선(12시간 TTL): EventShop/stu 는 inv(인벤토리)까지 포함돼 무거우므로 매 로드마다 읽지 않음(egress 대폭 절감).
+  // 캐시에 없는 코드로 로그인 시도 시에만 force=true 로 네트워크 강제 조회(신규 학생 대응).
   let cache=null; try{ cache=JSON.parse(localStorage.getItem('startup_roster')||'null'); }catch(_){}
+  const FRESH = 30*24*60*60*1000;   // 명단 캐시 최대한 길게(30일). 신규/변경은 로그인 미스 시 강제조회로 커버
+  if(!force && cache && cache.map && cache.at && (Date.now()-cache.at < FRESH)){
+    ROSTER = cache.map;
+    if(cache.keys){ window._shopKeyCache = cache.keys; window._shopKeyCacheAt = cache.at; }   // 지급용 코드→키도 캐시 시드
+    return;   // 네트워크 읽기 생략
+  }
   try{
     const snap = await ROOT.child('EventShop/stu').once('value');
-    const r = {};
-    snap.forEach(ch=>{ const s=ch.val(); if(s&&s.cd!=null){ const cd=String(s.cd).trim(); if(cd) r[cd]={ nm:s.nm||cd, no:s.no }; } });
-    if(Object.keys(r).length){ ROSTER=r; try{ localStorage.setItem('startup_roster', JSON.stringify({at:Date.now(), map:r})); }catch(_){}; return; }
+    const r = {}; const km = {};
+    snap.forEach(ch=>{ const s=ch.val(); if(s&&s.cd!=null){ const cd=String(s.cd).trim(); if(cd){ r[cd]={ nm:s.nm||cd, no:s.no }; km[cd]=ch.key; } } });
+    window._shopKeyCache = km; window._shopKeyCacheAt = Date.now();   // 코드→키 캐시 시드(지급 시 추가 읽기 방지)
+    if(Object.keys(r).length){ ROSTER=r; try{ localStorage.setItem('startup_roster', JSON.stringify({at:Date.now(), map:r, keys:km})); }catch(_){}; return; }
     if(cache && cache.map) ROSTER=cache.map;               // 빈 스냅샷 방어
   }catch(e){
     if(cache && cache.map){ ROSTER=cache.map; }            // 오프라인/실패 시에만 캐시
@@ -318,6 +396,7 @@ async function doStuLogin(){
   $('loginMsg').textContent='확인 중...';
   try{
     if(!Object.keys(ROSTER).length) await loadRoster();
+    if(!ROSTER[code]) await loadRoster(true);   // 캐시에 없으면 최신 명단 강제 조회(신규 학생)
     if(!ROSTER[code]){ $('loginMsg').textContent='명단에 없는 코드예요. 다시 확인해 주세요.'; return; }
     ME = { cd:code, nm:ROSTER[code].nm, no:ROSTER[code].no };
     IS_TEACHER = false;
@@ -357,6 +436,7 @@ window.addEventListener('load', async ()=>{
     const urlStu = new URLSearchParams(location.search).get('stu');
     if(urlStu){
       await loadRoster();
+      if(!ROSTER[urlStu]) await loadRoster(true);
       if(ROSTER[urlStu]){ ME={cd:urlStu, nm:ROSTER[urlStu].nm, no:ROSTER[urlStu].no}; IS_TEACHER=false; enterApp(); return; }
     }
     if(localStorage.getItem('startup_teacher')==='1'){
@@ -365,6 +445,7 @@ window.addEventListener('load', async ()=>{
     const code = localStorage.getItem('startup_stuCode');
     if(code){
       await loadRoster();
+      if(!ROSTER[code]) await loadRoster(true);
       if(ROSTER[code]){ ME={cd:code,nm:ROSTER[code].nm,no:ROSTER[code].no}; enterApp(); return; }
     }
   }catch(e){ console.error('auto-login', e); }
@@ -381,14 +462,14 @@ function enterApp(){
   $('gearBtn').style.display = IS_TEACHER ? '' : 'none';
   if(IS_TEACHER){
     // 교사(1명)는 전체 구독 — 대시보드/승인/집계에 필요
-    S.on('value', snap=>{ DB = snap.val() || {}; _autoFillDeclines(); _autoPublishAll(); _ensureBooths(); scheduleRender(); });
+    S.on('value', snap=>{ DB = snap.val() || {}; _autoFillDeclines(); _autoPublishAll(); _ensureBooths(); _syncBizPub(); scheduleRender(); });
     // 키오스크 부스 자동 생성용: 기존 부스 목록 파악
     DBROOT.child('kiosk_booths').on('value', s=>{ window._kioskBooths=s.val()||{}; window._kioskBoothsLoaded=true; _ensureBooths(); });
   } else {
     subscribeStudent();   // 학생은 필요한 노드만 구독(트래픽·프라이버시 절감)
   }
   document.addEventListener('focusout', ()=>{ if(_pendingRender) setTimeout(scheduleRender, 60); });
-  if(!IS_TEACHER) _initIdle();   // 유휴 오프라인은 학생만(교사는 실시간 모니터링 유지)
+  _initIdle();   // 유휴 오프라인: 교사 5분 · 학생 10분(복귀 시 자동 goOnline·재동기화, 쓰기는 큐잉)
 }
 
 /* 학생 세션: 남의 이력서·점수·offer를 받지 않고 필요한 노드만 구독 */
@@ -397,8 +478,27 @@ function subscribeStudent(){
   const setSlice = (k, v)=>{ DB[k]=v; scheduleRender(); };
   const setIv = (k, v)=>{ DB.interview=DB.interview||{}; DB.interview[k]=v; scheduleRender(); };
   const setMine = (k, v)=>{ DB[k]=DB[k]||{}; DB[k][cd]=v; scheduleRender(); };
-  S.child('meta').on('value', s=>setSlice('meta', s.val()||{}));
-  S.child('businesses').on('value', s=>setSlice('businesses', s.val()||{}));   // 공고·면접대상 (전체 필요)
+  S.child('meta').on('value', s=>{ setSlice('meta', s.val()||{}); _maybeSubContracts(); });
+  // egress 절감: 학생은 무거운 businesses 전체(desc·plan·budget·investment·서명URL) 대신
+  //   ① 슬림 미러 bizPub(전 회사, 남이 필요한 필드만) + ② 내 회사만 풀 구독 → DB.businesses로 병합.
+  //   (남 회사 읽기는 name·status·bonus·ins4·condition·ceo만 쓰므로 bizPub로 충분, 내 회사는 풀로 유지)
+  let _bizPub = {}, _bizFull = null, _ownBiz = null, _fbRef = null;
+  const _rebuildBiz = ()=>{
+    const base = Object.keys(_bizPub).length ? _bizPub : (_bizFull || {});   // bizPub 있으면 슬림, 비면 폴백(businesses)
+    const m = Object.assign({}, base);
+    delete m[cd];                  // 내 회사는 슬림(bizPub)으로 채우지 않음 → 풀 도착 전 빈칸/덮어쓰기 방지
+    if(_ownBiz) m[cd] = _ownBiz;   // 내 회사는 오직 풀(_ownBiz)로만
+    DB.businesses = m; scheduleRender();
+  };
+  const _fbCb = s=>{ _bizFull = s.val()||{}; _rebuildBiz(); };
+  const _syncFallback = ()=>{   // bizPub 비어있으면 businesses 전체로 임시 폴백, 채워지면 해제(egress 복귀)
+    const empty = !Object.keys(_bizPub).length;
+    if(empty && !_fbRef){ _fbRef = S.child('businesses'); _fbRef.on('value', _fbCb); }
+    else if(!empty && _fbRef){ _fbRef.off('value', _fbCb); _fbRef = null; _bizFull = null; }
+  };
+  // bizPub 첫 스냅샷이 비었을 때만 폴백 부착(정상 케이스엔 full businesses 안 읽음 → 초기 egress 절감 유지)
+  S.child('bizPub').on('value', s=>{ _bizPub = s.val()||{}; _syncFallback(); _rebuildBiz(); });   // 슬림·저용량
+  S.child('businesses/'+cd).on('value', s=>{ _ownBiz = s.val()||null; _rebuildBiz(); });   // 내 회사만 풀
   S.child('jobPosts').on('value', s=>{ setSlice('jobPosts', s.val()||{}); _maybeAutoCloseRehire(); });
   S.child('interview/config').on('value', s=>setIv('config', s.val()||{}));
   // interview/questions는 학생 미구독 — 남의 질문 안 받고 내 질문만 로컬 보관(트래픽 절감)
@@ -412,7 +512,15 @@ function subscribeStudent(){
   S.child('resumes/'+cd).on('value', s=>setMine('resumes', s.val()||{}));
   S.child('selections/'+cd).on('value', s=>setMine('selections', s.val()||{}));
   S.child('hires/'+cd).on('value', s=>{ setMine('hires', s.val()||{}); _maybeAutoCloseRehire(); });   // 수락(입사확정)한 직원 → 추가채용 자동마감 체크
-  S.child('contracts').on('value', s=>setSlice('contracts', s.val()||{}));   // 근로계약(worker코드 키). 사장·아르바이트 모두 필요 → 전체(작음)
+  S.child('payroll/'+cd).on('value', s=>setMine('payroll', s.val()||{}));   // 사장: 내 회사 월급 정산 요청/결과
+  // 근로계약(contracts)은 2일차부터만 쓰이므로 그때 lazy 구독 → 0·1일차 팬아웃 절감
+  window._contractsSubbed = false;
+  window._maybeSubContracts = function(){
+    if(window._contractsSubbed || phase()<2) return;
+    window._contractsSubbed = true;
+    S.child('contracts').on('value', s=>setSlice('contracts', s.val()||{}));   // 사장코드_근로자코드 키, 전체(작음)
+  };
+  _maybeSubContracts();
   DBROOT.child('kiosk_booths').on('value', s=>{ window._kioskBooths=s.val()||{}; scheduleRender(); });   // 공무원 부스 링크용(작음)
 }
 
@@ -421,7 +529,7 @@ let _idleTimer=null;
 function _goActive(){
   if(window._dbOffline){ try{ firebase.database().goOnline(); }catch(_){}; window._dbOffline=false; }
   clearTimeout(_idleTimer);
-  _idleTimer=setTimeout(()=>{ try{ firebase.database().goOffline(); window._dbOffline=true; }catch(_){} }, 10*60*1000);
+  _idleTimer=setTimeout(()=>{ try{ firebase.database().goOffline(); window._dbOffline=true; }catch(_){} }, (IS_TEACHER?5:10)*60*1000);
 }
 function _initIdle(){
   ['click','keydown','pointerdown','touchstart'].forEach(ev=>document.addEventListener(ev, _goActive, {passive:true}));
@@ -434,9 +542,19 @@ function isEditing(){
   const ae = document.activeElement;
   return ae && $('mainArea').contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName);
 }
+/* 렌더 합치기: 즉시 1회(응답성) + 버스트는 120ms 간격으로 코얼레스.
+   교사 기기는 학생 30명의 모든 변경 델타를 받아 full 재렌더가 몰릴 수 있어 CPU/배터리 절감. 동작·정합성은 동일. */
+let _renderCoalesceTimer=null, _renderMore=false;
 function scheduleRender(){
   if(isEditing() || window._starDragging){ _pendingRender = true; return; }
-  _pendingRender = false; render();
+  _pendingRender = false;
+  if(_renderCoalesceTimer){ _renderMore = true; return; }   // 이미 방금 렌더함 → 뒤이은 버스트는 합침
+  render();
+  _renderCoalesceTimer = setTimeout(function _tick(){
+    if(_renderMore && !(isEditing() || window._starDragging)){ _renderMore=false; render(); _renderCoalesceTimer=setTimeout(_tick,120); }
+    else if(_renderMore){ /* 편집 중이면 보류 후 focusout에서 처리 */ _pendingRender=true; _renderMore=false; _renderCoalesceTimer=null; }
+    else { _renderCoalesceTimer=null; }
+  }, 120);
 }
 
 /* 현재 사용자의 사업(사장 트랙) */
@@ -467,14 +585,62 @@ function viewTeacher(){
   // 일차별 관리 화면
   if(p===0){ h += bizApprovalCard(); h += civilApprovalCard(); }
   else if(p===1){ h += interviewSetupCard(); h += interviewResultCard(); h += interviewQuestionsCard(true); h += companyDashboardCard(); }
-  else if(p===2){ h += companyDashboardCard(); }
-  else if(p===3){ h += teacherBoothsCard(); }
+  else if(p===2){ h += companyDashboardCard(); h += teacherPayrollCard(); }
+  else if(p===3){ h += teacherBoothsCard(); h += teacherPayrollCard(); }
 
   // 항상 하단: 학생 현황(드래그)
   h += teacherStatusBoard();
   return h;
 }
 function setTeacherDay(i){ window._teacherDay = i; try{ localStorage.setItem('startup_teacherDay', i); }catch(_){}; render(); }
+
+/* 교사: 사업계획서의 '직원 모집' 내용 표시/수정 (승인 카드에서 사용).
+   수정은 businesses/<cd>에 직접 write → 학생(businesses 전체 구독)에게 바로 반영 */
+function _recruitYN(v){ return v==='있음' ? '있음' : '없음'; }
+function recruitSection(cd, b){
+  b = obj(b);
+  if((window._bizRecEdit||{})[cd]) return recruitEditor(cd, b);
+  return `<div class="kv" style="background:#f6f8fb"><b>📢 직원 모집</b><br>`
+    + `<b>담당업무</b> ${esc(b.duty||'-')}<br>`
+    + `<b>모집인원</b> ${_numShow(b.headcount, '명')} · <b>근무시간</b> ${_numShow(b.workDays, '시간')}<br>`
+    + `<b>자격·우대</b> ${esc(b.qualification||'-')}<br>`
+    + `<b>시급</b> ${esc(b.weeklyPay!=null?b.weeklyPay+' 쿠키':'-')} · <b>성과급</b> ${_recruitYN(b.bonus)} · <b>4대보험</b> ${_recruitYN(b.ins4)}<br>`
+    + `<b>기타</b> ${esc(b.condition||'-')}</div>`;
+}
+function recruitEditor(cd, b){
+  b = obj(b);
+  let h = '<div class="kv" style="background:#eef5ff"><div style="font-weight:800;margin-bottom:6px">📢 직원 모집 수정</div>';
+  h += `<div class="field"><label>담당 업무</label><textarea id="er_duty_${cd}">${esc(b.duty||'')}</textarea></div>`;
+  h += _numField('모집 인원', 'er_head_'+cd, b.headcount!=null?b.headcount:'', '명');
+  h += _numField('근무 시간', 'er_days_'+cd, b.workDays!=null?b.workDays:'', '시간');
+  h += `<div class="field"><label>자격 및 우대사항</label><textarea id="er_qual_${cd}">${esc(b.qualification||'')}</textarea></div>`;
+  h += _numField('시급', 'er_pay_'+cd, b.weeklyPay!=null?b.weeklyPay:'', '쿠키');
+  h += '<div class="field"><label>성과급</label><select id="er_bonus_'+cd+'">'+_optSel(['없음','있음'], b.bonus||'없음')+'</select></div>';
+  h += '<div class="field"><label>4대 보험 적용</label><select id="er_ins4_'+cd+'">'+_optSel(['없음','있음'], b.ins4||'없음')+'</select></div>';
+  h += `<div class="field"><label>기타</label><textarea id="er_cond_${cd}">${esc(b.condition||'')}</textarea></div>`;
+  h += `<div class="row" style="justify-content:flex-end"><button class="btn-grn btn-sm" onclick="saveBizRecruit('${cd}')">💾 저장</button><button class="btn-gray btn-sm" onclick="toggleBizRecruit('${cd}')">취소</button></div>`;
+  h += '</div>';
+  return h;
+}
+function toggleBizRecruit(cd){ window._bizRecEdit = window._bizRecEdit || {}; window._bizRecEdit[cd] = !window._bizRecEdit[cd]; scheduleRender(); }
+function saveBizRecruit(cd){
+  const g = id => $(id);
+  if(!g('er_duty_'+cd)) return;   // 에디터가 없으면 무시
+  const upd = {
+    duty:          g('er_duty_'+cd).value.trim(),
+    headcount:     Math.max(0, parseInt(g('er_head_'+cd).value)||0),
+    workDays:      g('er_days_'+cd).value.trim(),
+    qualification: g('er_qual_'+cd).value.trim(),
+    weeklyPay:     Math.max(0, parseInt(g('er_pay_'+cd).value)||0),
+    bonus:         g('er_bonus_'+cd).value,
+    ins4:          g('er_ins4_'+cd).value,
+    condition:     g('er_cond_'+cd).value.trim()
+  };
+  S.child('businesses/'+cd).update(upd).then(()=>{
+    window._bizRecEdit = window._bizRecEdit || {}; window._bizRecEdit[cd] = false;
+    toast('모집 내용을 수정했어요 — 학생에게 반영됩니다'); scheduleRender();
+  }).catch(()=>toast('저장 실패 — 다시 시도해 주세요'));
+}
 
 /* 0일차: 사업계획서 승인 큐 */
 function bizApprovalCard(){
@@ -486,7 +652,8 @@ function bizApprovalCard(){
     h += '<div class="list-item">';
     h += `<div class="biz-head"><b>${esc(b.name||'(업체명 미정)')}</b><span class="muted">대표: ${esc(nmeOf(cd))}</span></div>`;
     h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')}</div>`;
-    h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-grn btn-sm" onclick="approveBiz('${cd}')">✅ 승인</button><button class="btn-gray btn-sm" onclick="rejectBiz('${cd}')">반려</button><button class="btn-red btn-sm" onclick="deleteBiz('${cd}')">삭제</button></div>`;
+    h += recruitSection(cd, b);
+    h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-grn btn-sm" onclick="approveBiz('${cd}')">✅ 승인</button><button class="btn-org btn-sm" onclick="toggleBizRecruit('${cd}')">${(window._bizRecEdit||{})[cd]?'✖ 수정 닫기':'✏️ 모집 수정'}</button><button class="btn-gray btn-sm" onclick="rejectBiz('${cd}')">반려</button><button class="btn-red btn-sm" onclick="deleteBiz('${cd}')">삭제</button></div>`;
     h += '</div>';
   });
   const approvedB = entries(biz).filter(([cd,b])=>b.status==='approved');
@@ -496,7 +663,8 @@ function bizApprovalCard(){
       h += '<div class="list-item">';
       h += `<div class="biz-head"><b>${esc(b.name||'(업체명 미정)')}</b><span class="badge b-ok">사장 ${esc(nmeOf(cd))}</span></div>`;
       h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')}</div>`;
-      h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-gray btn-sm" onclick="revokeBiz('${cd}')">↩️ 승인취소</button><button class="btn-red btn-sm" onclick="deleteBiz('${cd}')">삭제</button></div>`;
+      h += recruitSection(cd, b);
+      h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-org btn-sm" onclick="toggleBizRecruit('${cd}')">${(window._bizRecEdit||{})[cd]?'✖ 수정 닫기':'✏️ 모집 수정'}</button><button class="btn-gray btn-sm" onclick="revokeBiz('${cd}')">↩️ 승인취소</button><button class="btn-red btn-sm" onclick="deleteBiz('${cd}')">삭제</button></div>`;
       h += '</div>';
     });
   }
@@ -506,6 +674,7 @@ function bizApprovalCard(){
 /* 사업 정리 업데이트: 채용공고·선발·합격통지 정리. statusVal=null이면 레코드 삭제, 값이면 status 변경 */
 function _bizPurgeUpd(cd, statusVal){
   const upd = { ['jobPosts/'+cd]:null, ['selections/'+cd]:null, ['hires/'+cd]:null };
+  Object.keys(obj(DB.contracts)).forEach(k=>{ if(k.indexOf(cd+'_')===0) upd['contracts/'+k]=null; });   // 이 사장이 맺은 근로계약 정리
   entries(DB.offers).forEach(([acd, byBiz])=>{ if(obj(byBiz)[cd]){ upd['offers/'+acd+'/'+cd]=null; if(obj(obj(byBiz)[cd]).status==='accepted') upd['acceptedLock/'+acd]=null; } });
   if(statusVal===null) upd['businesses/'+cd]=null; else upd['businesses/'+cd+'/status']=statusVal;
   return upd;
@@ -568,28 +737,34 @@ function companyDashboardCard(){
       const off = obj(obj(DB.offers)[acd])[cd];
       if(off&&off.status==='accepted')acc++; else if(off&&off.status==='declined')dec++; else pend++;
     });
+    const showResults = phase()>=2;   // 발표·합격통지 결과는 2일차+ 전용(1일차로 돌아오면 숨김)
     h += '<div class="list-item"><div class="biz-head">';
     h += `<b>${esc(b.name||nmeOf(cd))}</b><span class="muted">대표 ${esc(nmeOf(cd))}</span></div>`;
-    h += `<div class="kv"><b>모집</b> ${post?esc(post.headcount||'?'):'공고 전'}명 · <b>지원</b> ${applicants.length} · <b>선발</b> ${Object.keys(hired).length}(후보 ${Object.keys(reserve).length}) · <b>수락</b> ${acc} / 대기 ${pend} / 거절 ${dec}`;
-    h += `${sel.published?' · <span class="badge b-ok">발표됨</span>':' · <span class="badge b-wait">발표 전</span>'}</div>`;
-    // 각 회사별 뽑힌 학생 이름 표시 (수락✅ / 거절❌ / 대기⏳)
+    h += `<div class="kv"><b>모집</b> ${post?esc(post.headcount||'?'):'공고 전'}명 · <b>지원</b> ${applicants.length} · <b>선발</b> ${Object.keys(hired).length}(후보 ${Object.keys(reserve).length})`;
+    if(showResults){
+      h += ` · <b>수락</b> ${acc} / 대기 ${pend} / 거절 ${dec}`;
+      h += sel.published?' · <span class="badge b-ok">발표됨</span>':' · <span class="badge b-wait">발표 전</span>';
+    }
+    h += '</div>';
+    // 각 회사별 뽑힌 학생 이름 표시 (2일차+엔 수락✅/거절❌/대기⏳, 1일차엔 이름만)
     const hiredKeys = Object.keys(hired);
     if(hiredKeys.length){
       const names = hiredKeys.map(acd=>{
+        if(!showResults) return esc(nmeOf(acd));
         const off = obj(obj(DB.offers)[acd])[cd];
         const ic = (off&&off.status==='accepted')?'✅':(off&&off.status==='declined')?'❌':'⏳';
         return esc(nmeOf(acd))+ic;
       }).join(', ');
-      h += `<div class="kv" style="margin-top:2px"><b>뽑힌 학생</b> ${names}</div>`;
+      h += `<div class="kv" style="margin-top:2px"><b>${showResults?'뽑힌 학생':'선발자'}</b> ${names}</div>`;
     }
     // 투자약정서 설정/보내기 (1일차부터)
     if(phase()>=1) h += investmentEditor(cd);
     // 근로계약서 인쇄 (2일차부터, 계약서가 작성된 아르바이트별)
     if(phase()>=2){
-      const _albas = Object.keys(obj(obj(DB.hires)[cd])).filter(acd=>obj(DB.contracts)[acd]);
+      const _albas = Object.keys(obj(obj(DB.hires)[cd])).filter(acd=>obj(DB.contracts)[_ck(cd,acd)]);
       if(_albas.length){
         h += '<div class="row" style="margin-top:6px;flex-wrap:wrap;gap:6px;align-items:center"><span class="muted">근로계약서</span>';
-        _albas.forEach(acd=>{ const _c=obj(DB.contracts)[acd]; const _done=_c.ownerSignUrl&&_c.workerSignUrl; h += `<button class="btn-org btn-sm" onclick="printContract('${acd}')">🖨 ${esc(nmeOf(acd))}${_done?' ✔':''}</button>`; });
+        _albas.forEach(acd=>{ const _c=obj(obj(DB.contracts)[_ck(cd,acd)]); const _done=_c.ownerSignUrl&&_c.workerSignUrl; h += `<button class="btn-org btn-sm" onclick="printContract('${cd}','${acd}')">🖨 ${esc(nmeOf(acd))}${_done?' ✔':''}</button>`; });
         h += '</div>';
       }
     }
@@ -683,18 +858,25 @@ function _roleCol(role, list){
   return h;
 }
 function _bossOf(cd){ const acc = entries(obj(DB.offers)[cd]).find(([bc,o])=>o.status==='accepted'); return acc?acc[0]:null; }
+/* 겸직: 이 학생이 근무하는 모든 사장(수락된 통지 전부) */
+function _bossesOf(cd){ return entries(obj(DB.offers)[cd]).filter(([bc,o])=>o.status==='accepted').map(([bc])=>bc); }
 function teacherStatusBoard(){
   const cds = Object.keys(ROSTER).sort((a,b)=>(ROSTER[a].no||0)-(ROSTER[b].no||0));
   let h = '<div class="card"><h2>👥 학생 현황 · 역할 관리</h2>';
   if(!cds.length){ h += '<div class="empty">명단을 불러오지 못했어요.</div></div>'; return h; }
-  const bosses=[], civils=[], jobless=[], empByBoss={};
+  const bosses=[], civils=[], jobless=[], empByBoss={}; const albaSet=new Set();
   cds.forEach(cd=>{ const r=stuRole(cd);
     if(r==='boss') bosses.push(cd);
     else if(r==='civil') civils.push(cd);
-    else if(r==='alba'){ const bc=_bossOf(cd)||'_none'; (empByBoss[bc]=empByBoss[bc]||[]).push(cd); }
+    else if(r==='alba'){
+      albaSet.add(cd);
+      const bl=_bossesOf(cd);   // 겸직이면 근무하는 모든 사장 아래에 표시
+      if(bl.length) bl.forEach(bc=>(empByBoss[bc]=empByBoss[bc]||[]).push(cd));
+      else (empByBoss['_none']=empByBoss['_none']||[]).push(cd);
+    }
     else jobless.push(cd);
   });
-  const albaCount = Object.values(empByBoss).reduce((s,a)=>s+a.length,0);
+  const albaCount = albaSet.size;   // 인원수는 중복 제외(겸직 1명은 1명)
   // 상단: 공무원 · 사장 · 아르바이트(사장 우측) / 하단: 실업자
   h += '<div class="rb-top">';
   h += _roleCol('civil', civils);
@@ -743,7 +925,7 @@ function assignAlbaToBoss(cd, bc){
     const upd = {};
     upd['businesses/'+cd]=null; upd['jobPosts/'+cd]=null; upd['selections/'+cd]=null;   // 사장 역할 해제
     upd['civilServants/'+cd]=null;                                                       // 공무원 해제
-    upd['contracts/'+cd]=null;                                                           // 옛 사장 근로계약(서명 포함) 제거 → 새 사장이 다시 작성
+    _clearWorkerContracts(upd, cd);                                                      // 옛 사장 근로계약(서명 포함) 제거 → 새 사장이 다시 작성
     // 다른 사장에게 걸린 기존 고용 해제
     entries(obj(DB.offers)[cd]).forEach(([obc,o])=>{ if((o.status==='accepted'||o.status==='pending') && obc!==bc) upd['offers/'+cd+'/'+obc+'/status']='declined'; });
     entries(DB.hires).forEach(([obc,hs])=>{ if(obj(hs)[cd] && obc!==bc) upd['hires/'+obc+'/'+cd]=null; });
@@ -766,7 +948,7 @@ function _applyStuRole(cd, role, nm, label){
   const clearBiz = ()=>{ upd['businesses/'+cd]=null; upd['jobPosts/'+cd]=null; upd['selections/'+cd]=null; };
   const clearCivil = ()=>{ upd['civilServants/'+cd]=null; };
   const clearEmployment = ()=>{
-    upd['acceptedLock/'+cd]=null; upd['contracts/'+cd]=null;   // 근로계약(서명 포함)도 함께 정리
+    upd['acceptedLock/'+cd]=null; _clearWorkerContracts(upd, cd);   // 근로계약(서명 포함)도 함께 정리
     entries(obj(DB.offers)[cd]).forEach(([bc,o])=>{ if(o.status==='accepted'||o.status==='pending') upd['offers/'+cd+'/'+bc+'/status']='declined'; });
     entries(DB.hires).forEach(([bc,hs])=>{ if(obj(hs)[cd]) upd['hires/'+bc+'/'+cd]=null; });
   };
@@ -809,13 +991,15 @@ function viewBoss(){
   }
 
   // 승인된 사장 (사업가는 본인이 면접 대상이라 면접 질문·채점은 보지 않음)
-  h += bossBoothCard(cd);    // 3일차: 우리 부스(키오스크) — 최상단
-  h += bossInvestmentCard(cd); // 1일차+: 선생님이 보낸 투자약정서
+  h += bossBoothCard(cd);      // 3일차: 우리 부스 — 최상단 (2일차 이하엔 빈 카드)
+  h += bossResultCard(cd);     // 2일차+: 우리 회사 직원 — 상단(2일차)/부스 하단(3일차)
+  h += bossPayrollCard(cd);    // 2일차+: 월급 지급 — 직원 카드 바로 아래
+  if(phase()<2) h += bossInvestmentCard(cd);   // 1일차: 투자약정서는 상단 유지
   h += bossJobPostCard(cd);
-  h += bossHiringCard(cd);   // 1일차: 지원자 심사·선발
-  h += bossContractCard(cd); // 2일차+: 아르바이트 근로계약서 작성·서명
-  h += bossResultCard(cd);   // 2일차+: 우리 회사 직원(채용 결과)
-  h += bossRehireCard(cd);   // 3일차: 추가 채용공고 + 실업자 추가 채용
+  h += bossHiringCard(cd);     // 1일차: 지원자 심사·선발
+  h += bossContractCard(cd);   // 2일차+: 아르바이트 근로계약서 작성·서명
+  if(phase()>=2) h += bossInvestmentCard(cd);  // 2일차+: 투자약정서를 근로계약서 하단으로 이동
+  h += bossRehireCard(cd);     // 3일차: 추가 채용공고 + 실업자 추가 채용
   return h;
 }
 /* 사장/알바 공용: 회사 부스(키오스크) 열기 링크 (2일차부터) */
@@ -824,7 +1008,7 @@ function boothLinkCard(ownerCd, title){
   return '<div class="card"><h2>🖥️ '+title+'</h2><p class="muted">버튼을 누르면 우리 가게 <b>키오스크 부스</b>가 새 창에서 열려요. 여기서 손님을 받고 물건을 팔아요.</p>'
        + '<button class="btn-grn" onclick="openBooth(\''+ownerCd+'\')">🖥️ 상점 이동</button></div>';
 }
-function bossBoothCard(cd){ return boothLinkCard(cd, '우리 부스 (키오스크)'); }
+function bossBoothCard(cd){ return boothLinkCard(cd, '우리 부스'); }
 /* 사장: 채용 결과 — 수락(입사확정)한 직원 표시 (2일차부터) */
 function bossResultCard(cd){
   if(phase()<2) return '';
@@ -839,6 +1023,55 @@ function bossResultCard(cd){
   return h;
 }
 
+/* 사장: 월급 지급 — 직원별 금액 확인 후 교사에게 정산 요청 (2일차+)
+   payroll/<사장코드>/<reqId> = {bossCd, items:[{cd,pay}], total, status:pending|paying|paid|rejected} */
+function bossPayrollCard(cd){
+  if(phase()<2) return '';
+  const myHires = obj(obj(DB.hires)[cd]);
+  const emps = Object.keys(myHires);
+  if(!emps.length) return '';
+  const reqs = obj(obj(DB.payroll)[cd]);
+  const pending = entries(reqs).filter(([id,r])=>r && (r.status==='pending'||r.status==='paying'));
+  const locked = pending.length>0;
+  let h = '<div class="card"><h2>💰 월급 지급</h2>';
+  h += '<p class="muted">직원에게 줄 월급을 확인하고 <b>정산 요청</b>을 보내세요. 선생님이 승인하면 직원 통장에 쿠키가 들어가고, 회사(사장) 쿠키에서 그만큼 빠져나가요.</p>';
+  let total = 0;
+  emps.forEach(acd=>{
+    const pay = (obj(myHires[acd]).weeklyPay)||0; total += pay;
+    h += `<div class="list-item"><b>🙋 ${esc(nmeOf(acd))}</b> <span style="margin-left:auto"><input id="pay_${esc(cd)}_${esc(acd)}" type="number" min="0" value="${esc(pay)}" style="width:90px" ${locked?'disabled':''}> 쿠키</span></div>`;
+  });
+  if(locked){
+    const r = pending[0][1];
+    h += `<div class="empty">⏳ 정산 요청을 보냈어요 (총 ${esc(r.total||0)}쿠키). 선생님 승인을 기다리는 중…</div>`;
+  } else {
+    h += `<div class="row" style="justify-content:space-between;align-items:center;margin-top:8px"><span class="muted">기본 합계 ${esc(total)}쿠키</span><button class="btn-grn" onclick="requestPayroll('${esc(cd)}')">📨 월급 지급 요청</button></div>`;
+  }
+  const paid = entries(reqs).filter(([id,r])=>r && r.status==='paid').sort((a,b)=>(b[1].paidAt||0)-(a[1].paidAt||0)).slice(0,3);
+  if(paid.length){
+    h += '<div class="divider"></div><div class="muted" style="margin-bottom:4px">최근 지급</div>';
+    paid.forEach(([id,r])=>{ h += `<div class="list-item"><span>✅ 총 ${esc(r.total||0)}쿠키</span> <span class="muted" style="margin-left:auto">${(r.items||[]).map(it=>esc(nmeOf(it.cd))+' '+esc(it.pay)).join(', ')}</span></div>`; });
+  }
+  if(!locked && entries(reqs).some(([id,r])=>r && r.status==='rejected')){
+    h += '<div class="empty" style="color:#c0392b">지난 요청이 거절되었어요. 금액을 확인하고 다시 요청해 주세요.</div>';
+  }
+  h += '</div>';
+  return h;
+}
+function requestPayroll(cd){
+  const myHires = obj(obj(DB.hires)[cd]);
+  const items = []; let total = 0;
+  Object.keys(myHires).forEach(acd=>{
+    const el = $('pay_'+cd+'_'+acd);
+    const pay = Math.max(0, parseInt(el && el.value)||0);
+    if(pay>0){ items.push({cd:acd, pay}); total += pay; }
+  });
+  if(!items.length){ toast('지급할 금액을 입력하세요'); return; }
+  prettyConfirm('월급 지급 요청', '직원 <b>'+items.length+'명</b>에게 <b>총 '+total+'쿠키</b>를 지급하도록 선생님께 정산을 요청할까요?<br><span class="muted">승인되면 회사(사장) 쿠키에서 '+total+'쿠키가 빠져나가요.</span>', ()=>{
+    const ref = S.child('payroll/'+cd).push();
+    ref.set({ bossCd:cd, items, total, status:'pending', requestedAt:TS }).then(()=>toast('정산 요청을 보냈어요! 📨')).catch(()=>toast('요청 실패'));
+  }, '💰');
+}
+
 function bizStatusBadge(st){
   if(st==='approved') return '<span class="badge b-ok">사장 승인됨</span>';
   if(st==='submitted') return '<span class="badge b-wait">승인 대기</span>';
@@ -848,6 +1081,13 @@ function bizStatusBadge(st){
 
 /* ---- 자동 로컬 임시저장: 임시저장을 안 눌러도 입력을 localStorage에 보관.
        서버 수신 지연·재렌더로 인한 입력 유실/덮어쓰기 방지(로컬 우선 프리필) ---- */
+/* 숫자만 입력받고 뒤에 단위(명/시간/쿠키 등)를 붙여 보여주는 입력 필드 */
+function _numField(label, id, val, unit, attr){
+  const v = (val==null || val==='') ? '' : esc(val);
+  return `<div class="field"><label>${label}</label><div class="num-wrap"><input id="${id}" type="number" min="0" step="1" inputmode="numeric" onkeydown="if(['e','E','+','-','.'].includes(event.key))event.preventDefault()" ${attr||''} value="${v}"><span class="unit">${unit}</span></div></div>`;
+}
+/* 근무시간 등 숫자 표시에 단위 붙이기(빈값이면 -) */
+function _numShow(v, unit){ return (v==null || v==='') ? '-' : (esc(v)+unit); }
 function _draftKey(kind){ return 'startup_draft_'+kind+'_'+(ME&&ME.cd); }
 function getDraftLocal(kind){ try{ return JSON.parse(localStorage.getItem(_draftKey(kind))||'null'); }catch(_){ return null; } }
 function setDraftLocal(kind, data){ try{ localStorage.setItem(_draftKey(kind), JSON.stringify(data)); }catch(_){} }
@@ -873,10 +1113,10 @@ function planEditorCard(b){
   h += `<div class="field"><label>예산 신청 (0~10,000원)</label><input id="p_cost" type="number" min="0" max="10000" step="100" ${oi} value="${esc(pick('cost', bg.cost!=null?bg.cost:''))}" ${dis} placeholder="0 ~ 10000"></div>`;
   h += '<div class="divider"></div><div style="font-weight:800;color:#5a5f66;margin-bottom:6px">📢 직원 모집 — 사장님이 된다면 직원을 어떻게 뽑을까요?</div>';
   h += `<div class="field"><label>담당 업무</label><textarea id="p_duty" ${oi} ${dis} placeholder="예: 홍보와 물품 판매하기">${esc(pick('duty', b.duty||''))}</textarea></div>`;
-  h += `<div class="field"><label>모집 인원</label><input id="p_head" type="number" min="0" ${oi} value="${esc(pick('head', b.headcount!=null?b.headcount:''))}" ${dis} placeholder="예: 0명"></div>`;
-  h += `<div class="field"><label>근무 시간</label><input id="p_days" ${oi} value="${esc(pick('days', b.workDays||''))}" ${dis} placeholder="예: 0시간"></div>`;
+  h += _numField('모집 인원', 'p_head', pick('head', b.headcount!=null?b.headcount:''), '명', oi+' '+dis);
+  h += _numField('근무 시간', 'p_days', pick('days', b.workDays!=null?b.workDays:''), '시간', oi+' '+dis);
   h += `<div class="field"><label>자격 및 우대사항</label><textarea id="p_qual" ${oi} ${dis} placeholder="예: 미술을 좋아하는 사람 우대">${esc(pick('qual', b.qualification||''))}</textarea></div>`;
-  h += `<div class="field"><label>시급 (쿠키)</label><input id="p_pay" type="number" min="0" ${oi} value="${esc(pick('pay', b.weeklyPay!=null?b.weeklyPay:''))}" ${dis} placeholder="예: 시간당 0쿠키"></div>`;
+  h += _numField('시급', 'p_pay', pick('pay', b.weeklyPay!=null?b.weeklyPay:''), '쿠키', oi+' '+dis);
   h += '<div class="field"><label>성과급</label><select id="p_bonus" '+(editable?'onchange="autosavePlan()"':'disabled')+'>'+_optSel(['없음','있음'], pick('bonus', b.bonus||'없음'))+'</select></div>';
   h += '<div class="field"><label>4대 보험 적용</label><select id="p_ins4" '+(editable?'onchange="autosavePlan()"':'disabled')+'>'+_optSel(['없음','있음'], pick('ins4', b.ins4||'없음'))+'</select></div>';
   h += `<div class="field"><label>기타</label><textarea id="p_cond" ${oi} ${dis} placeholder="예: 주 1회 간식·휴가 지급">${esc(pick('cond', b.condition||''))}</textarea></div>`;
@@ -936,7 +1176,7 @@ function bossJobPostCard(cd){
   if(!post.postedAt) return '';   // 채용공고는 사업계획서에 작성 → 승인 시 자동 게시
   const _b = obj(obj(DB.businesses)[cd]);
   let h = '<div class="card"><h2>📢 내 채용공고 '+(post.open?'<span class="badge b-ok">모집중</span>':'<span class="badge b-no">마감</span>')+'</h2>';
-  h += `<div class="kv"><b>담당업무</b> ${esc(post.duty||'-')}<br><b>모집인원</b> ${esc(post.headcount||1)}명 · <b>근무시간</b> ${esc(post.workDays||'-')}<br><b>자격·우대</b> ${esc(post.qualification||'-')}<br><b>시급</b> ${esc(post.weeklyPay||0)} 쿠키<br><b>성과급</b> ${_b.bonus==='있음'?'있음':'없음'} · <b>4대 보험</b> ${_b.ins4==='있음'?'있음':'없음'}${_b.condition?'<br><b>기타</b> '+esc(_b.condition):''}</div>`;
+  h += `<div class="kv"><b>담당업무</b> ${esc(post.duty||'-')}<br><b>모집인원</b> ${_numShow(post.headcount||1, '명')} · <b>근무시간</b> ${_numShow(post.workDays, '시간')}<br><b>자격·우대</b> ${esc(post.qualification||'-')}<br><b>시급</b> ${esc(post.weeklyPay||0)} 쿠키<br><b>성과급</b> ${_b.bonus==='있음'?'있음':'없음'} · <b>4대 보험</b> ${_b.ins4==='있음'?'있음':'없음'}${_b.condition?'<br><b>기타</b> '+esc(_b.condition):''}</div>`;
   h += '<p class="muted" style="margin-top:6px">채용공고 내용은 사업계획서에 작성했어요.</p>';
   h += `<div class="row"><button class="btn-gray btn-sm" onclick="togglePost(${!post.open})">${post.open?'모집 마감':'모집 재개'}</button></div>`;
   h += '</div>';
@@ -965,10 +1205,10 @@ function bossRehireCard(cd){
   const _b = obj(obj(DB.businesses)[cd]);
   const rd = getRehireDraft(); const rpk=(k,fb)=> (rd[k]!==undefined? rd[k] : fb);
   h += `<div class="field"><label>담당업무</label><textarea id="rh_duty" oninput="autosaveRehire()">${esc(rpk('duty', post.duty||''))}</textarea></div>`;
-  h += `<div class="field"><label>추가 모집 인원 (명)</label><input id="rh_head" type="number" min="1" oninput="autosaveRehire()" value="${esc(rpk('head', post.rehireQuota||1))}"></div>`;
-  h += `<div class="field"><label>근무시간</label><input id="rh_days" oninput="autosaveRehire()" value="${esc(rpk('days', post.workDays||''))}"></div>`;
+  h += _numField('추가 모집 인원', 'rh_head', rpk('head', post.rehireQuota||1), '명', 'oninput="autosaveRehire()"');
+  h += _numField('근무 시간', 'rh_days', rpk('days', post.workDays!=null?post.workDays:''), '시간', 'oninput="autosaveRehire()"');
   h += `<div class="field"><label>자격·우대</label><textarea id="rh_qual" oninput="autosaveRehire()">${esc(rpk('qual', post.qualification||''))}</textarea></div>`;
-  h += `<div class="field"><label>시급 (쿠키)</label><input id="rh_pay" type="number" min="0" oninput="autosaveRehire()" value="${esc(rpk('pay', post.weeklyPay||0))}"></div>`;
+  h += _numField('시급', 'rh_pay', rpk('pay', post.weeklyPay||0), '쿠키', 'oninput="autosaveRehire()"');
   h += '<div class="field"><label>성과급</label><select id="rh_bonus" onchange="autosaveRehire()">'+_optSel(['없음','있음'], rpk('bonus', _b.bonus||'없음'))+'</select></div>';
   h += '<div class="field"><label>4대 보험 적용</label><select id="rh_ins4" onchange="autosaveRehire()">'+_optSel(['없음','있음'], rpk('ins4', _b.ins4||'없음'))+'</select></div>';
   h += `<div class="field"><label>기타</label><textarea id="rh_cond" oninput="autosaveRehire()">${esc(rpk('cond', post.condition||''))}</textarea></div>`;
@@ -996,16 +1236,13 @@ function _rehireApplicants(cd, post){
   apps.forEach(([acd,r],i)=>{
     const picked = !!hired[acd], confirmed = !!myHires[acd];
     const lock = obj(DB.acceptedLock)[acd];
-    const employedElsewhere = lock && lock!==cd && !confirmed;   // 다른 회사에 취직함
+    const employedElsewhere = lock && lock!==cd && !confirmed;   // 다른 회사에 근무 중(겸직 지원 가능)
     const reveal = picked || confirmed;   // 채용 통지를 보낸 뒤(또는 확정)에만 이름 공개
-    h += '<div class="applicant">';
-    h += `<div class="anon-tag">지원자 #${i+1}${reveal?(' · '+esc(nmeOf(acd))):''}</div>`;
-    h += `<div class="kv"><b>지원동기</b> ${esc(r.motive||'-')}<br><b>성격 장점</b> ${esc(r.pros||'-')}<br><b>성격 단점·극복</b> ${esc(r.cons||'-')}<br><b>관련 경험</b> ${esc(r.career||'-')}<br><b>다짐·포부</b> ${esc(r.resolve||'-')}<br><b>희망 시급</b> ${esc(r.wantPay||'-')} 쿠키</div>`;
-    if(confirmed) h += '<div class="badge b-ok" style="margin-top:8px">채용 확정</div>';
-    else if(employedElsewhere) h += '<div class="badge b-no" style="margin-top:8px">🚫 다른 회사에 취직함</div>';
-    else if(picked) h += '<div class="badge b-wait" style="margin-top:8px">통지 대기(수락 기다리는 중)</div>';
-    else h += `<div class="row" style="margin-top:8px"><button class="btn-grn btn-sm" onclick="rehireOffer('${cd}','${acd}',${offerPay})">📣 채용 통지 (시급 ${offerPay})</button></div>`;
-    h += '</div>';
+    let act;
+    if(confirmed) act = '<div class="row" style="margin-top:8px"><span class="badge b-ok">채용 확정</span></div>';
+    else if(picked) act = '<div class="row" style="margin-top:8px"><span class="badge b-wait">통지 대기(수락 기다리는 중)</span></div>';
+    else act = `<div class="row" style="margin-top:8px;flex-wrap:wrap;gap:6px;align-items:center">${employedElsewhere?'<span class="badge b-info">💼 다른 곳 근무 중(겸직)</span>':''}<button class="btn-grn btn-sm" onclick="rehireOffer('${cd}','${acd}',${offerPay})">📣 채용 통지 (시급 ${offerPay})</button></div>`;
+    h += _applCard(i+1, r, {picked, name: reveal?nmeOf(acd):''}, act);
   });
   h += '</div>';
   return h;
@@ -1056,7 +1293,7 @@ function rehireOffer(cd, acd, pay){
     S.child('selections/'+cd+'/hired/'+acd).transaction(cur=> cur ? cur : {offerPay:pay, at:TS}, (e,committed)=>{
       if(e){ toast('오류가 발생했어요'); return; }
       if(!committed){ toast('이미 통지한 지원자예요.'); return; }
-      S.child('offers/'+acd+'/'+cd).update({status:'pending', offerPay:pay, notifiedAt:TS});
+      S.child('offers/'+acd+'/'+cd).update({status:'pending', offerPay:pay, notifiedAt:TS, rehire:true});   // 추가채용 통지(겸직 수락 대상)
       S.child('selections/'+cd+'/published').set(true);   // 통지가 보이도록 발표 상태 유지
       toast('합격 통지를 보냈어요! 📣');
     });
@@ -1064,6 +1301,23 @@ function rehireOffer(cd, acd, pay){
 }
 
 /* ---------- 익명 선발 / 발표 / 재선발 ---------- */
+/* 지원자 카드(예쁜 버전) — name이 있으면 실명 공개, 없으면 익명. actionsHtml는 하단 버튼/배지 */
+function _applCard(no, r, opts, actionsHtml){
+  r = obj(r); opts = opts || {};
+  const cls = opts.picked ? 'picked' : (opts.reserved ? 'reserved' : '');
+  let h = `<div class="appl ${cls}">`;
+  h += `<div class="appl-top"><div class="appl-ava">👤</div><div class="appl-id"><div class="appl-no">지원자 #${no}${opts.name?(' · '+esc(opts.name)):''}</div></div>`;
+  h += `<span class="appl-pay">희망 시급 ${esc(r.wantPay!=null?r.wantPay:0)}🍪</span></div>`;
+  h += '<div class="appl-body">';
+  h += `<div class="appl-row"><span class="l">지원 동기</span>${esc(r.motive||'-')}</div>`;
+  h += `<div class="appl-row"><span class="l">성격 장점</span>${esc(r.pros||'-')}</div>`;
+  h += `<div class="appl-row"><span class="l">성격 단점·극복</span>${esc(r.cons||'-')}</div>`;
+  h += `<div class="appl-row"><span class="l">관련 경험</span>${esc(r.career||'-')}</div>`;
+  h += `<div class="appl-row"><span class="l">다짐·포부</span>${esc(r.resolve||'-')}</div>`;
+  h += (actionsHtml||'');
+  h += '</div></div>';
+  return h;
+}
 function bossHiringCard(cd){
   if(phase()!==1) return '';   // 지원자 심사·선발은 1일차에만 (발표·재선발은 교사 페이지)
   const post = obj(obj(DB.jobPosts)[cd]);
@@ -1077,31 +1331,21 @@ function bossHiringCard(cd){
   h += `<p class="muted">모집 ${quota}명. 이력서는 <b>익명</b>이며, 발표 전까지 이름이 공개되지 않습니다.</p>`;
   if(!apps.length){ h += '<div class="empty">아직 지원자가 없습니다.</div></div>'; return h; }
 
-  const published = !!sel.published;
+  // 1일차 심사에서는 published(교사 발표) 상태와 무관하게 항상 선발 버튼을 노출(발표 후 1일차로 돌아와도 선택 가능)
   h += '<div class="grid">';
+  const confirmedHires = obj(obj(DB.hires)[cd]);   // 이미 입사 확정(수락)된 직원 → 취소 불가(서버 상태 어긋남 방지)
   apps.forEach(([acd,r],i)=>{
     const isHired = !!hired[acd], isRes = !!reserve[acd];
+    const isConfirmed = !!confirmedHires[acd];
     const resOrd = isRes ? (obj(reserve[acd]).order||'') : '';   // 후보 순번
-    h += `<div class="applicant ${isHired?'picked':(isRes?'reserved':'')}">`;
-    h += `<div class="anon-tag">지원자 #${i+1}${published?(' · '+esc(nmeOf(acd))):''}</div>`;
-    h += `<div class="kv"><b>지원동기</b> ${esc(r.motive||'-')}<br><b>성격 장점</b> ${esc(r.pros||'-')}<br><b>성격 단점·극복</b> ${esc(r.cons||'-')}<br><b>관련 경험</b> ${esc(r.career||'-')}<br><b>다짐·포부</b> ${esc(r.resolve||'-')}<br><b>희망 시급</b> ${esc(r.wantPay||'-')} 쿠키</div>`;
-    if(!published){
-      h += '<div class="row" style="margin-top:8px">';
-      if(isHired) h += `<button class="btn-gray btn-sm" onclick="unpick('${cd}','${acd}')">채용 취소</button><span class="badge b-ok">채용</span>`;
-      else if(isRes) h += `<button class="btn-gray btn-sm" onclick="unpick('${cd}','${acd}')">후보 취소</button><span class="badge b-wait">후보${resOrd}</span>`;
-      else h += `<button class="btn-grn btn-sm" onclick="pickHire('${cd}','${acd}',${r.wantPay||0})">채용</button><button class="btn-pink btn-sm" onclick="pickReserve('${cd}','${acd}')">후보 추가</button>`;
-      h += '</div>';
-    } else {
-      const off = obj(obj(DB.offers)[acd])[cd];
-      if(isHired){
-        if(off&&off.status==='accepted') h += '<div class="badge b-ok" style="margin-top:8px">수락 · 채용확정</div>';
-        else if(off&&off.status==='declined') h += '<div class="badge b-no" style="margin-top:8px">거절함</div>';
-        else h += '<div class="badge b-wait" style="margin-top:8px">통지 대기</div>';
-      } else if(isRes){
-        h += `<div class="row" style="margin-top:8px"><span class="badge b-wait">후보${resOrd}</span><button class="btn-grn btn-sm" onclick="promoteReserve('${cd}','${acd}',${r.wantPay||0})">추가 채용</button></div>`;
-      }
-    }
-    h += '</div>';
+    let act = '<div class="row" style="margin-top:8px">';
+    if(isConfirmed) act += '<span class="badge b-ok">입사 확정</span>';   // 발표·수락 완료 → 심사에서 변경 불가
+    else if(isHired) act += `<button class="btn-gray btn-sm" onclick="unpick('${cd}','${acd}')">채용 취소</button><span class="badge b-ok">채용</span>`;
+    else if(isRes) act += `<button class="btn-gray btn-sm" onclick="unpick('${cd}','${acd}')">후보 취소</button><span class="badge b-wait">후보${resOrd}</span>`;
+    else act += `<button class="btn-grn btn-sm" onclick="pickHire('${cd}','${acd}',${r.wantPay||0})">채용</button><button class="btn-pink btn-sm" onclick="pickReserve('${cd}','${acd}')">후보 추가</button>`;
+    act += '</div>';
+    // 사장에게는 항상 익명(실명은 교사 발표·수락 후 확정직원 카드에서만) → name 미전달
+    h += _applCard(i+1, r, {picked:isHired, reserved:isRes}, act);
   });
   h += '</div>';
 
@@ -1153,7 +1397,7 @@ function publish(cd){
 /* 교사 클라이언트에서 자동 후보 승격: 발표된 회사에서 합격자가 거절/타사수락(자동거절)하면
    그 자리를 후보 순서대로 자동 채워 offer 발송. 멱등(처리 후 재실행 시 변경 없음). */
 function _autoFillDeclines(){
-  if(!IS_TEACHER) return;
+  if(!IS_TEACHER || phase()<2) return;   // 거절 자리 채우기·후보 승격은 발표(2일차+) 후처리 전용. 1일차엔 사장 선발을 건드리지 않음(깜빡→취소 방지)
   const biz = obj(DB.businesses);
   entries(biz).forEach(([cd,b])=>{
     if(b.status!=='approved') return;
@@ -1183,9 +1427,25 @@ function _autoFillDeclines(){
     }
   });
 }
+/* 교사 단일 작성 슬림 미러: 학생에게 뿌릴 businesses 공개필드만 bizPub/<cd>에 유지(해시가드로 변경분만 write, 삭제 정리).
+   학생 팬아웃에서 desc·plan·budget·investment(서명URL 포함)를 제외 → egress 절감. 단일 writer라 자가치유·안전. */
+function _syncBizPub(){
+  if(!IS_TEACHER) return;
+  window._bizPubHash = window._bizPubHash || {};
+  const biz = obj(DB.businesses), pub = obj(DB.bizPub);
+  const upd = {};
+  entries(biz).forEach(([cd,b])=>{
+    b = obj(b);
+    const slim = { name:b.name||'', status:b.status||'', bonus:b.bonus||'', ins4:b.ins4||'', condition:b.condition||'', ceo:b.ceo||'' };
+    const h = JSON.stringify(slim);
+    if(window._bizPubHash[cd] !== h){ upd['bizPub/'+cd] = slim; window._bizPubHash[cd] = h; }
+  });
+  Object.keys(pub).forEach(cd=>{ if(!biz[cd]){ upd['bizPub/'+cd] = null; delete window._bizPubHash[cd]; } });   // 삭제된 회사 미러 정리
+  if(Object.keys(upd).length){ S.update(upd).catch(()=>{}); }
+}
 /* 승인된 회사마다 키오스크 부스(kiosk_booths/sb_<사장코드>) 자동 생성 — 없을 때만. ownerCd로 키오스크 월급지급과도 연동 */
 function _ensureBooths(){
-  if(!IS_TEACHER || !window._kioskBoothsLoaded) return;
+  if(!IS_TEACHER || !window._kioskBoothsLoaded || phase()<2) return;   // 부스는 3일차 사용 → 그 전엔 생성/순회 생략(쓰기·CPU 절감, 필요 시 openBooth가 즉석 생성)
   const biz = obj(DB.businesses);
   const existing = window._kioskBooths || {};
   const upd = {};
@@ -1571,27 +1831,54 @@ function studentOffersCard(){
   if(phase()<2) return '';   // 합격 통지·채용 확정은 발표(2일차)부터 표시 (1일차엔 숨김)
   const myOffers = entries(obj(DB.offers)[ME.cd]);
   const pending = myOffers.filter(([bc,o])=>o.status==='pending');
-  const accepted = myOffers.find(([bc,o])=>o.status==='accepted');
+  const acceptedList = myOffers.filter(([bc,o])=>o.status==='accepted');
   let h='';
-  if(accepted){
-    const bc=accepted[0], o=accepted[1];
-    const cname = obj(obj(DB.businesses)[bc]).name || (nmeOf(bc)+'의 가게');
-    h += `<div class="card"><h2>🎉 채용 확정</h2><div class="badge b-ok">🏪 ${esc(cname)} (사장 ${esc(nmeOf(bc))}) 에 입사했어요! 시급 ${esc(o.offerPay||0)} 쿠키</div></div>`;
-    h += boothLinkCard(bc, '상점');   // 2일차+: 배정된 상점(부스) 이동
-    return h;
-  }
-  if(!pending.length) return '';
-  h += '<div class="card"><h2>📣 합격 통지 <span class="badge b-ok">'+pending.length+'</span></h2>';
-  if(pending.length>1) h += '<p class="muted">여러 곳에 합격했어요! <b>한 곳만</b> 선택할 수 있습니다.</p>';
-  pending.forEach(([bc,o])=>{
-    const cname = obj(obj(DB.businesses)[bc]).name || (nmeOf(bc)+'의 가게');
-    h += '<div class="list-item"><div class="biz-head">';
-    h += `<b>🏪 ${esc(cname)}</b><span class="muted">사장 ${esc(nmeOf(bc))} · 시급 ${esc(o.offerPay||0)} 쿠키</span></div>`;
-    h += `<div class="row" style="margin-top:6px"><button class="btn-grn btn-sm" onclick="confirmAccept('${bc}')">수락</button><button class="btn-gray btn-sm" onclick="declineOffer('${bc}')">거절</button></div>`;
+  if(acceptedList.length){
+    h += '<div class="card"><h2>🎉 채용 확정'+(acceptedList.length>1?' <span class="badge b-ok">'+acceptedList.length+'곳 겸직</span>':'')+'</h2>';
+    acceptedList.forEach(([bc,o])=>{
+      const cname = obj(obj(DB.businesses)[bc]).name || (nmeOf(bc)+'의 가게');
+      h += `<div class="list-item"><b>🏪 ${esc(cname)}</b> <span class="muted">사장 ${esc(nmeOf(bc))} · 시급 ${esc(o.offerPay||0)} 쿠키</span></div>`;
+    });
     h += '</div>';
-  });
-  h += '</div>';
+    acceptedList.forEach(([bc])=>{ h += boothLinkCard(bc, '상점'); });   // 3일차: 배정된 상점(부스) 이동
+  }
+  if(pending.length){
+    const canMulti = acceptedList.length>0;   // 이미 취업 → 새 통지는 겸직 수락
+    h += '<div class="card"><h2>📣 합격 통지 <span class="badge b-ok">'+pending.length+'</span></h2>';
+    if(canMulti) h += '<p class="muted">이미 근무 중이에요. 추가 채용에 <b>겸직</b>으로 입사할 수 있어요.</p>';
+    else if(pending.length>1) h += '<p class="muted">여러 곳에 합격했어요! <b>한 곳만</b> 선택할 수 있습니다.</p>';
+    pending.forEach(([bc,o])=>{
+      const cname = obj(obj(DB.businesses)[bc]).name || (nmeOf(bc)+'의 가게');
+      const multi = canMulti || !!o.rehire;   // 겸직 수락 경로(잠금·자동거절 없음)
+      h += '<div class="list-item"><div class="biz-head">';
+      h += `<b>🏪 ${esc(cname)}</b><span class="muted">사장 ${esc(nmeOf(bc))} · 시급 ${esc(o.offerPay||0)} 쿠키${multi?' · 겸직':''}</span></div>`;
+      h += `<div class="row" style="margin-top:6px"><button class="btn-grn btn-sm" onclick="${multi?'confirmAcceptRehire':'confirmAccept'}('${bc}')">수락</button><button class="btn-gray btn-sm" onclick="declineOffer('${bc}')">거절</button></div>`;
+      h += '</div>';
+    });
+    h += '</div>';
+  }
   return h;
+}
+/* 겸직 수락 확인창 — 기존 직장 유지, 자동 거절 없음 */
+function confirmAcceptRehire(bizCd){
+  const cname = obj(obj(DB.businesses)[bizCd]).name || (nmeOf(bizCd)+'의 가게');
+  prettyConfirm('겸직 입사 수락', '🏪 <b>'+esc(cname)+'</b> 에 <b>겸직</b>으로 입사할까요?<br><span class="muted">기존 직장은 그대로 두고 이 회사에도 함께 근무해요. 수락하면 취소할 수 없어요.</span>', ()=>acceptRehireOffer(bizCd), '🎉');
+}
+/* 겸직 수락: acceptedLock을 막지 않음(첫 취업이면 잠금, 아니면 유지). 다른 통지 자동 거절 안 함 */
+function acceptRehireOffer(bizCd){
+  const acd = ME.cd;
+  S.child('offers/'+acd+'/'+bizCd+'/status').transaction(st=> (st==='pending'||st==='accepted') ? 'accepted' : undefined,
+    (e,committed)=>{
+      if(e) return toast('오류가 발생했어요');
+      if(!committed) return toast('통지 상태가 변경되어 처리하지 못했어요.');
+      const offerPay = (obj(obj(obj(DB.offers)[acd])[bizCd]).offerPay)||0;
+      const upd = {};
+      upd['offers/'+acd+'/'+bizCd+'/decidedAt'] = TS;
+      upd['hires/'+bizCd+'/'+acd] = {weeklyPay:offerPay, confirmedAt:TS};
+      S.update(upd);
+      S.child('acceptedLock/'+acd).transaction(cur=> cur || bizCd);   // 첫 취업이면 잠금, 겸직이면 기존 유지
+      toast('입사 확정! 🎉');
+    });
 }
 
 /* 수락 전 예쁜 확인창 — 수락은 한 곳만, 취소 불가 안내 */
@@ -1642,7 +1929,7 @@ function studentJobsCard(){
   if(p<1) return '';                                   // 채용공고·지원은 1일차(모집) 또는 2~3일차(추가 채용)
   const rehirePhase = (p>=2);                          // 2~3일차 = 추가 채용
   const locked = !!obj(DB.acceptedLock)[ME.cd];
-  if(rehirePhase && locked) return '';                 // 추가채용은 아직 취업 못한 실업자에게만
+  // 1일차 초기 채용은 이중취업 방지(취업하면 숨김). 추가채용(2~3일차)은 재직자도 겸직으로 지원 가능 → 계속 표시
   const biz = obj(DB.businesses);
   const approvedBiz = entries(biz).filter(([cd,b])=>b.status==='approved');
   if(!approvedBiz.length) return '';                   // 교사가 사업가를 승인해야 채용공고가 뜸
@@ -1651,26 +1938,42 @@ function studentJobsCard(){
   let h = '<div class="card"><h2>📢 '+(rehirePhase?'추가 채용 공고':'채용 공고')+'</h2>';
   if(!posts.length){ h += '<div class="empty">'+(rehirePhase?'추가 채용 중인 회사가 없어요.':'아직 올라온 공고가 없어요.')+'</div></div>'; return h; }
   posts.forEach(([bc,pt])=>{
-    const bname = obj(biz[bc]).name || nmeOf(bc);
+    const bz = obj(biz[bc]);
+    const bname = bz.name || nmeOf(bc);
     const myResume = getResumeLocal(bc) || {};                   // 이력서 내용은 로컬 프리필(남의 이력서 안 받음)
     const applied = !!obj(obj(DB.applicantIndex)[ME.cd])[bc];    // 지원 여부는 역인덱스로 판정
-    const bz = obj(biz[bc]);
-    h += '<div class="list-item"><div class="biz-head">';
-    h += `<b>${esc(bname)}</b>`+(pt.open?'<span class="badge b-ok">모집중</span>':'<span class="badge b-no">마감</span>')+'</div>';
-    h += `<div class="kv"><b>담당업무</b> ${esc(pt.duty||'-')}<br><b>모집인원</b> ${esc(pt.headcount||1)}명 · <b>근무시간</b> ${esc(pt.workDays||'-')}<br><b>자격·우대</b> ${esc(pt.qualification||'-')}<br><b>시급</b> ${esc(pt.weeklyPay||0)} 쿠키<br><b>성과급</b> ${bz.bonus==='있음'?'있음':'없음'} · <b>4대 보험</b> ${bz.ins4==='있음'?'있음':'없음'}${bz.condition?'<br><b>기타</b> '+esc(bz.condition):''}</div>`;
-    if(bc===ME.cd){ h+='<div class="muted" style="margin-top:6px">내 회사예요.</div>'; }
-    else if(locked){ h+='<div class="muted" style="margin-top:6px">이미 입사가 확정되어 지원할 수 없어요.</div>'; }
+    h += '<div class="job">';
+    // 회사명 + 사장 이름 헤더
+    h += '<div class="job-top"><div class="job-logo">🏪</div><div class="job-id">'
+       + `<div class="job-name">${esc(bname)}</div>`
+       + `<div class="job-boss">👤 사장 ${esc(nmeOf(bc))}</div></div>`
+       + (pt.open?'<span class="badge b-ok">모집중</span>':'<span class="badge b-no">마감</span>')
+       + '</div>';
+    // 모집 정보
+    h += '<div class="job-body"><div class="job-grid">';
+    h += `<div class="job-cell wide"><div class="l">담당 업무</div><div class="v">${esc(pt.duty||'-')}</div></div>`;
+    h += `<div class="job-cell"><div class="l">모집 인원</div><div class="v">${esc(pt.headcount||1)}명</div></div>`;
+    h += `<div class="job-cell"><div class="l">근무 시간</div><div class="v">${_numShow(pt.workDays, '시간')}</div></div>`;
+    h += `<div class="job-cell"><div class="l">시급</div><div class="v">${esc(pt.weeklyPay||0)} 🍪</div></div>`;
+    h += `<div class="job-cell"><div class="l">복지</div><div class="v"><span class="job-pill${bz.bonus==='있음'?'':' off'}">성과급 ${bz.bonus==='있음'?'○':'×'}</span><span class="job-pill${bz.ins4==='있음'?'':' off'}">4대보험 ${bz.ins4==='있음'?'○':'×'}</span></div></div>`;
+    h += `<div class="job-cell wide"><div class="l">자격·우대</div><div class="v">${esc(pt.qualification||'-')}</div></div>`;
+    if(bz.condition) h += `<div class="job-cell wide"><div class="l">기타</div><div class="v">${esc(bz.condition)}</div></div>`;
+    h += '</div>';
+    if(bc===ME.cd){ h+='<div class="muted">내 회사예요.</div>'; }
+    else if(!rehirePhase && locked){ h+='<div class="muted">이미 입사가 확정되어 지원할 수 없어요.</div>'; }
+    else if(rehirePhase && obj(DB.acceptedLock)[ME.cd]===bc){ h+='<div class="muted">이미 근무 중인 회사예요.</div>'; }
     else if(applied){
-      h += `<div class="row" style="margin-top:6px"><span class="badge b-info">지원 완료</span><button class="btn-gray btn-sm" onclick="toggleResume('${bc}')">이력서 수정</button></div>`;
+      h += `<div class="row"><span class="badge b-info">지원 완료</span><button class="btn-gray btn-sm" onclick="toggleResume('${bc}')">이력서 수정</button><button class="btn-red btn-sm" onclick="cancelResume('${bc}')">지원 취소</button></div>`;
       h += resumeForm(bc, myResume, true);
     }
     else if(pt.open){
-      h += `<button class="btn-org btn-sm" style="margin-top:6px" onclick="toggleResume('${bc}')">📝 이력서 쓰고 지원하기</button>`;
+      if(rehirePhase && locked) h += '<div class="muted" style="margin-bottom:4px">💼 이미 근무 중이지만 <b>겸직</b>으로 지원할 수 있어요.</div>';
+      h += `<button class="btn-org btn-sm" onclick="toggleResume('${bc}')">📝 이력서 쓰고 지원하기</button>`;
       h += resumeForm(bc, myResume, true);
     } else {
-      h += '<div class="muted" style="margin-top:6px">모집이 마감되었어요.</div>';
+      h += '<div class="muted">모집이 마감되었어요.</div>';
     }
-    h += '</div>';
+    h += '</div></div>';
   });
   h += '</div>';
   return h;
@@ -1710,6 +2013,20 @@ function submitResume(bc){
   S.child('applicantIndex/'+ME.cd+'/'+bc).set(true);
   try{ localStorage.setItem(_resumeKey(bc), JSON.stringify(data)); }catch(_){}   // 로컬 프리필용 보관
   toast('지원 완료! 📨');
+}
+/* 학생: 제출한 이력서(지원) 취소 — 합격 통지/입사 확정 전에만 가능 */
+function cancelResume(bc){
+  if(obj(DB.acceptedLock)[ME.cd]===bc){ toast('이미 입사가 확정돼 취소할 수 없어요'); return; }
+  const off = obj(obj(obj(DB.offers)[ME.cd])[bc]);
+  if(off.status==='pending' || off.status==='accepted'){ toast('합격 통지가 와 있어요. 합격 통지에서 수락/거절해 주세요.'); return; }
+  const bn = obj(obj(DB.businesses)[bc]).name || nmeOf(bc);
+  prettyConfirm('지원 취소', '<b>'+esc(bn)+'</b>에 낸 이력서(지원)를 취소할까요?<br><span class="muted">지원이 삭제돼요. 원하면 나중에 다시 지원할 수 있어요.</span>', ()=>{
+    const upd = {};
+    upd['resumes/'+bc+'/'+ME.cd] = null;
+    upd['applicantIndex/'+ME.cd+'/'+bc] = null;
+    upd['selections/'+bc+'/hired/'+ME.cd] = null;   // 발표 전 선발됐던 경우 정리(댕글링 방지)
+    S.update(upd).then(()=>toast('지원을 취소했어요')).catch(()=>toast('취소 실패'));
+  }, '🗑️');
 }
 
 /* ============================================================
@@ -1832,22 +2149,115 @@ function investmentEditor(cd){
   h += `<input id="inv_ck_${cd}" type="number" min="0" placeholder="쿠키" value="${inv.cookie!=null?esc(inv.cookie):''}" style="width:80px">쿠키`;
   h += `<input id="inv_pct_${cd}" type="number" min="0" max="100" placeholder="%" value="${inv.pct!=null?esc(inv.pct):''}" style="width:60px">%`;
   h += `<button class="btn-grn btn-sm" onclick="sendInvestment('${cd}')">${inv.sentAt?'수정 저장':'📨 보내기'}</button>`;
-  if(inv.sentAt){ h += '<span class="badge b-ok">전송됨</span>'; h += `<button class="btn-org btn-sm" onclick="printInvestment('${cd}')">🖨 투자약정서</button>`; if(inv.bossSignUrl) h += '<span class="badge b-ok">사장 서명✔</span>'; }
+  if(inv.sentAt){ h += '<span class="badge b-ok">전송됨</span>'; h += `<button class="btn-org btn-sm" onclick="printInvestment('${cd}')">🖨 투자약정서</button>`; h += `<button class="btn-red btn-sm" onclick="cancelInvestment('${cd}')">🗑 취소</button>`; if(inv.bossSignUrl) h += '<span class="badge b-ok">사장 서명✔</span>'; }
   h += '</div>';
   return h;
 }
-function sendInvestment(cd){
-  const won=parseInt($('inv_won_'+cd).value)||0, cookie=parseInt($('inv_ck_'+cd).value)||0, pct=parseInt($('inv_pct_'+cd).value)||0;
-  S.child('businesses/'+cd+'/investment').update({won, cookie, pct, sentAt:TS}).then(()=>toast('투자약정서를 보냈어요!'));
+// 교사: 보낸 투자약정서 취소 — 지급했던 쿠키(paidCookie)를 회수하고 약정서 삭제
+async function cancelInvestment(cd){
+  if(window._invSending[cd]){ return; }
+  const inv = obj(obj(obj(DB.businesses)[cd]).investment);
+  if(!inv.sentAt){ toast('보낸 투자약정서가 없어요'); return; }
+  const back = inv.paidCookie||0;
+  const bn = obj(obj(DB.businesses)[cd]).name || nmeOf(cd);
+  prettyConfirm('투자약정서 취소', '<b>'+esc(bn)+'</b>의 투자약정서를 취소할까요?'+(back>0?'<br><span class="muted">지급했던 <b>'+back+'쿠키</b>를 회수하고 약정서를 삭제해요.</span>':'<br><span class="muted">약정서를 삭제해요.</span>'), async ()=>{
+    if(window._invSending[cd]){ return; }
+    window._invSending[cd] = true;
+    try{
+      // 쿠키 회수(양수=차감) + 약정서 삭제를 하나의 원자적 ROOT.update로
+      const { updates, missing } = await _cookieUpdates(back>0 ? { [cd]: back } : {});
+      if(missing.length){ toast('사장의 상점 계정을 찾지 못했어요'); return; }
+      updates['Startup/businesses/'+cd+'/investment'] = null;
+      await ROOT.update(updates);
+      toast(back>0 ? ('투자약정서를 취소하고 '+back+'쿠키를 회수했어요') : '투자약정서를 취소했어요');
+    }catch(e){ console.error(e); toast('취소 실패 — 다시 시도해 주세요'); }
+    finally{ window._invSending[cd] = false; }
+  }, '🗑️');
+}
+window._invSending = window._invSending || {};
+async function sendInvestment(cd){
+  if(window._invSending[cd]){ return; }          // 이중 클릭 방지(paidCookie 반영 전 재실행 → 이중지급 차단)
+  window._invSending[cd] = true;
+  const btn = (window.event && window.event.target) || null; if(btn){ btn.disabled=true; }
+  try{
+    const won=parseInt($('inv_won_'+cd).value)||0, cookie=parseInt($('inv_ck_'+cd).value)||0, pct=parseInt($('inv_pct_'+cd).value)||0;
+    const inv = obj(obj(obj(DB.businesses)[cd]).investment);
+    const already = inv.paidCookie||0;            // 이미 사장에게 지급한 투자 쿠키
+    const delta = cookie - already;               // 추가 지급분(수정 시 증감 반영)
+    const { updates, missing } = await _cookieUpdates(delta!==0 ? { [cd]: -delta } : {});   // 음수=지급(사장 잔액↑)
+    if(missing.length){ toast('사장의 상점 계정을 찾지 못했어요'); return; }
+    // 쿠키 이동 + paidCookie 기록을 하나의 원자적 ROOT.update로 → 부분 실패 시 이중지급 방지
+    const ip = 'Startup/businesses/'+cd+'/investment/';
+    updates[ip+'won']=won; updates[ip+'cookie']=cookie; updates[ip+'pct']=pct;
+    updates[ip+'paidCookie']=cookie; updates[ip+'sentAt']=firebase.database.ServerValue.TIMESTAMP;
+    await ROOT.update(updates);
+    toast(delta>0 ? ('투자금 '+delta+'쿠키를 사장에게 지급했어요! 💸') : (delta<0 ? ('투자금을 '+(-delta)+'쿠키 회수했어요') : '투자약정서를 저장했어요'));
+  }catch(e){ console.error(e); toast('전송 실패 — 다시 시도해 주세요'); if(btn){ btn.disabled=false; } }
+  finally{ window._invSending[cd] = false; }
+}
+
+/* ============================================================
+   월급 정산 (교사) — 사장의 지급 요청을 승인하면 직원 지급·사장 차감
+============================================================ */
+function teacherPayrollCard(){
+  const pr = obj(DB.payroll);
+  const pend = [];
+  entries(pr).forEach(([bcd, reqs])=> entries(reqs).forEach(([id,r])=>{ if(r && r.status==='pending') pend.push({bcd,id,r}); }));
+  pend.sort((a,b)=>(a.r.requestedAt||0)-(b.r.requestedAt||0));
+  let h = '<div class="card"><h2>💰 월급 정산 요청 <span class="badge b-wait">'+pend.length+'</span></h2>';
+  if(!pend.length){ h += '<div class="empty">대기 중인 월급 정산 요청이 없습니다.</div>'; }
+  pend.forEach(({bcd,id,r})=>{
+    const bn = obj(obj(DB.businesses)[bcd]).name || nmeOf(bcd);
+    h += '<div class="list-item">';
+    h += `<div class="biz-head"><b>${esc(bn)}</b><span class="muted">사장 ${esc(nmeOf(bcd))}</span></div>`;
+    h += '<div class="kv">'+(r.items||[]).map(it=>'🙋 '+esc(nmeOf(it.cd))+' — <b>'+esc(it.pay)+'</b>쿠키').join('<br>')+'</div>';
+    h += `<div class="row" style="justify-content:space-between;align-items:center;margin-top:6px"><span>총 <b>${esc(r.total||0)}</b>쿠키 지급 · 사장 <b>${esc(r.total||0)}</b>쿠키 차감</span><span><button class="btn-grn btn-sm" onclick="approvePayroll('${esc(bcd)}','${esc(id)}')">✅ 승인·지급</button> <button class="btn-gray btn-sm" onclick="rejectPayroll('${esc(bcd)}','${esc(id)}')">거절</button></span></div>`;
+    h += '</div>';
+  });
+  h += '</div>';
+  return h;
+}
+function approvePayroll(bcd, id){
+  const r = obj(obj(obj(DB.payroll)[bcd])[id]);
+  if(!r || r.status!=='pending'){ toast('이미 처리된 요청이에요'); return; }
+  const total = r.total||0;
+  const bn = obj(obj(DB.businesses)[bcd]).name || nmeOf(bcd);
+  prettyConfirm('월급 지급 승인', '<b>'+esc(bn)+'</b>의 월급 <b>총 '+total+'쿠키</b>를 지급할까요?<br><span class="muted">직원 통장에 쿠키가 들어가고, 사장 쿠키에서 '+total+'쿠키가 빠져나가요.</span>', async ()=>{
+    // 멱등 선점: pending → paying (이중 승인/이중 지급 방지)
+    let res;
+    try{ res = await S.child('payroll/'+bcd+'/'+id+'/status').transaction(cur=> cur==='pending' ? 'paying' : undefined); }
+    catch(e){ toast('처리 실패'); return; }
+    if(!res.committed){ toast('이미 처리 중이거나 완료된 요청이에요'); return; }
+    const delta = {};
+    (r.items||[]).forEach(it=>{ delta[it.cd] = (delta[it.cd]||0) - (it.pay||0); });   // 직원 지급(잔액↑)
+    delta[bcd] = (delta[bcd]||0) + total;                                             // 사장 차감(잔액↓)
+    try{
+      // 쿠키 이동 + 상태(paid)를 하나의 원자적 ROOT.update로 → 부분 실패 시 이중지급 방지
+      const { updates, missing } = await _cookieUpdates(delta);
+      updates['Startup/payroll/'+bcd+'/'+id+'/status'] = 'paid';
+      updates['Startup/payroll/'+bcd+'/'+id+'/paidAt']  = firebase.database.ServerValue.TIMESTAMP;
+      await ROOT.update(updates);
+      toast(missing.length ? ('지급 완료(계정 못 찾음 '+missing.length+'명)') : ('월급 '+total+'쿠키 지급 완료! 💸'));
+    }catch(e){
+      console.error(e);
+      S.child('payroll/'+bcd+'/'+id+'/status').set('pending');   // 원자 실패=아무것도 안 바뀜 → 안전하게 pending 복구
+      toast('지급 실패 — 다시 시도해 주세요');
+    }
+  }, '💰');
+}
+function rejectPayroll(bcd, id){
+  prettyConfirm('요청 거절', '이 월급 정산 요청을 거절할까요?', ()=>{
+    S.child('payroll/'+bcd+'/'+id).update({ status:'rejected', rejectedAt:TS }).then(()=>toast('거절했어요'));
+  }, '🚫');
 }
 
 /* ============================================================
    근로계약서 (사장 ↔ 아르바이트, 2일차) — Cloudinary 서명
-   contracts/<workerCd> = {employerCd, hourly, period, workHours, place, duty,
-                           ownerSignUrl, workerSignUrl, ownerSignedAt, workerSignedAt}
+   contracts/<사장코드_근로자코드> = {employerCd, hourly, period, workHours, place, duty,
+                           ownerSignUrl, workerSignUrl, ownerSignedAt, workerSignedAt}  (겸직: 사장별 별도 계약)
 ============================================================ */
-function contractDocHtml(acd){
-  const c = obj(obj(DB.contracts)[acd]); const bc=c.employerCd;
+function contractDocHtml(bc, acd){
+  const c = obj(obj(DB.contracts)[_ck(bc,acd)]);
   const biz = obj(obj(DB.businesses)[bc]);
   const bn = biz.name || nmeOf(bc);
   const img = u=> u? '<img class="sign-img" src="'+esc(u)+'">' : '<div class="sign-img"></div>';
@@ -1867,7 +2277,7 @@ function contractDocHtml(acd){
     + '<div class="sign-row"><div class="sign-box"><div>사업주(대표자): '+esc(nmeOf(bc))+'</div>'+img(c.ownerSignUrl)+'<div class="sign-line">(서명)</div></div>'
     + '<div class="sign-box"><div>근로자: '+esc(nmeOf(acd))+'</div>'+img(c.workerSignUrl)+'<div class="sign-line">(서명)</div></div></div>';
 }
-function printContract(acd){ printDoc('근로계약서', contractDocHtml(acd)); }
+function printContract(bc, acd){ printDoc('근로계약서', contractDocHtml(bc, acd)); }
 // 사장: 아르바이트별 근로계약서 작성/서명 (2일차)
 function bossContractCard(cd){
   if(phase()<2) return '';
@@ -1880,8 +2290,7 @@ function bossContractCard(cd){
   const _inp = 'border:1px solid #cfd4da;border-radius:6px;padding:3px 8px;font-size:14px;font-weight:700';
   const _sImg = u=> u? '<img src="'+esc(u)+'" style="height:42px;display:block;margin:4px auto">' : '<span class="muted" style="font-size:12px">(미서명)</span>';
   albas.forEach(acd=>{
-    const _raw = obj(obj(DB.contracts)[acd]);
-    const c = (_raw.employerCd===cd) ? _raw : {};   // 이 사장이 작성한 계약만 사용(재배정 stale은 무시하고 공고로 새로 채움)
+    const c = obj(obj(DB.contracts)[_ck(cd,acd)]);   // 사장코드_근로자코드 키로 이 사장의 계약만 사용
     // 저장 전(또는 stale)엔 채용공고 내용으로 채우고, 저장 후엔 입력값(빈칸 포함) 유지
     const duty    = (c.duty!=null)     ? c.duty     : (post.duty||biz.duty||'');
     const hours   = (c.workHours!=null)? c.workHours: (post.workDays||biz.workDays||'');
@@ -1918,7 +2327,7 @@ function bossContractCard(cd){
     h += `<div>근로자(을): ${esc(nmeOf(acd))}${_sImg(c.workerSignUrl)}</div>`;
     h += '</div></div>';
     if(!signed){
-      h += `<div class="row" style="margin-top:8px"><button class="btn-grn btn-sm" onclick="signContract('owner','${acd}')">✍ 사장 서명 (제출)</button></div>`;
+      h += `<div class="row" style="margin-top:8px"><button class="btn-grn btn-sm" onclick="signContract('owner','${cd}','${acd}')">✍ 사장 서명 (제출)</button></div>`;
     } else if(c.workerSignUrl){
       h += '<div class="badge b-ok" style="margin-top:8px">계약 체결 완료! 🤝</div>';
     } else {
@@ -1932,7 +2341,7 @@ function bossContractCard(cd){
 function saveContract(acd){
   const bc = ME.cd;
   const pay = parseInt($('ct_pay_'+acd).value)||0;
-  S.child('contracts/'+acd).update({ employerCd:bc,
+  S.child('contracts/'+_ck(bc,acd)).update({ employerCd:bc,
     duty:$('ct_duty_'+acd).value.trim(), workHours:$('ct_hours_'+acd).value.trim(), hourly:pay,
     bonus:$('ct_bonus_'+acd).value, ins4:$('ct_ins4_'+acd).value, condition:$('ct_cond_'+acd).value.trim(), updatedAt:TS });
   S.child('hires/'+bc+'/'+acd+'/weeklyPay').set(pay);   // 최종 시급을 정산에 반영
@@ -1943,7 +2352,7 @@ const CONTRACT_CLAUSES = '<div style="margin-top:12px;border-top:1px dashed var(
   + '<div style="margin-top:8px"><b>근로계약·취업규칙 등의 성실한 이행의무</b><br>사업주와 근로자는 각자가 근로계약, 취업규칙, 단체협약을 지키고 성실하게 이행하여야 함.</div>'
   + '<div style="margin-top:8px"><b>기타</b><br>이 계약에 정함이 없는 사항은 근로기준법령에 의함.</div>';
 function _contractLocked(){ prettyConfirm('수정할 수 없어요', '이미 <b>서명·제출</b>한 근로계약서는 수정할 수 없어요.', null, '🔒'); }
-function signContract(role, acd){
+function signContract(role, bc, acd){
   const label = role==='owner'?'사장 서명':'근로자 서명';
   // ⚠️ 입력값은 서명패드를 열기 전에(클릭 시점) 미리 읽어둔다.
   // 서명하는 몇 초 동안 구독 업데이트로 카드가 재렌더되면 입력칸이 DB값으로 초기화되어 빈 내용이 저장될 수 있음.
@@ -1957,8 +2366,7 @@ function signContract(role, acd){
   }
   const doSign = ()=> captureSign(label, url=>{
     const key = role==='owner'?'ownerSignUrl':'workerSignUrl';
-    // 소유자 서명은 항상 현재 사장(ME.cd)으로 확정(옛 employerCd 상속 금지). 근로자는 자기 계약의 employerCd 사용
-    const upd = { employerCd:(role==='owner'? ME.cd : ((obj(obj(DB.contracts)[acd]).employerCd)||_bossOf(acd))) };
+    const upd = { employerCd:bc };   // 키가 bc_acd로 분리되어 employerCd는 항상 bc
     upd[key]=url; upd[role==='owner'?'ownerSignedAt':'workerSignedAt']=TS;
     // 사장이 저장을 누르지 않고 서명해도 (클릭 시점에 읽어둔) 편집 내용이 함께 저장됨
     if(role==='owner' && fields){
@@ -1969,7 +2377,7 @@ function signContract(role, acd){
       if(fields.condition!==undefined) upd.condition=fields.condition;
       if(fields.hourly!==undefined){ upd.hourly=fields.hourly; S.child('hires/'+ME.cd+'/'+acd+'/weeklyPay').set(fields.hourly); }
     }
-    S.child('contracts/'+acd).update(upd).then(()=>toast('서명 완료! 🤝'));
+    S.child('contracts/'+_ck(bc,acd)).update(upd).then(()=>toast('서명 완료! 🤝'));
   });
   // 사장 서명은 제출=잠금이므로 한 번 더 확인
   if(role==='owner') prettyConfirm('사장 서명 · 제출', '서명해서 제출하면 <b style="color:#c0392b">계약 내용을 더 이상 수정할 수 없어요.</b><br>지금 내용 그대로 서명할까요?', doSign, '✍');
@@ -1978,40 +2386,41 @@ function signContract(role, acd){
 // 아르바이트(학생): 내 근로계약서 확인 + 서명 (2일차)
 function studentContractCard(){
   if(phase()<2) return '';
-  const acc = entries(obj(DB.offers)[ME.cd]).find(([bc,o])=>o.status==='accepted');
-  if(!acc) return '';
-  const bc = acc[0];
-  const _rawC = obj(obj(DB.contracts)[ME.cd]);
-  const c = (_rawC.employerCd===bc) ? _rawC : {};   // 현재 사장(bc)의 계약만 인정(재배정 stale 무시)
-  const biz = obj(obj(DB.businesses)[bc]);
-  const bname = biz.name || nmeOf(bc);
-  let h = '<div class="card nograb" oncontextmenu="return false" ondragstart="return false"><h2>📝 근로계약서</h2>';
-  // 사장이 계약서를 저장하기 전
-  if(!c.employerCd){ h += '<div class="empty">사장이 근로계약서를 작성하면 여기에 표시돼요.</div></div>'; return h; }
-  // 계약서 형태로 표시(투자약정서와 동일한 문서 스타일)
+  // 겸직: 내가 근로자인 모든 사장 계약(contracts/<사장>_<나>)을 표시
+  const mine = Object.entries(obj(DB.contracts))
+    .filter(([k,c])=> c && c.employerCd && k===_ck(c.employerCd, ME.cd))
+    .sort((a,b)=>(a[1].updatedAt||0)-(b[1].updatedAt||0));
+  if(!mine.length) return '';
   const sImg = u=> u? '<img src="'+esc(u)+'" style="height:44px;display:block;margin:4px auto">' : '<span class="muted" style="font-size:12px">(미서명)</span>';
-  h += '<div style="border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;font-size:14px;line-height:1.85">';
-  h += `<div style="text-align:center;font-weight:800;font-size:16px;margin-bottom:8px">(${esc(nmeOf(ME.cd))}) 근로 계약서</div>`;
-  h += `사업주 <b>${esc(nmeOf(bc))}</b>(갑)과 근로자 <b>${esc(nmeOf(ME.cd))}</b>(을)은 다음과 같이 근로계약을 체결한다.`;
-  h += `<div style="margin-top:8px"><b>담당 업무</b> ${esc(c.duty||'-')}</div>`;
-  h += `<div style="margin-top:6px"><b>근무 시간</b> ${esc(c.workHours||'-')}</div>`;
-  h += `<div style="margin-top:6px"><b>시급 (쿠키)</b> ${esc(c.hourly||0)} 쿠키</div>`;
-  h += `<div style="margin-top:6px"><b>성과급</b> ${(c.bonus!=null?c.bonus:biz.bonus)==='있음'?'있음':'없음'}</div>`;
-  h += `<div style="margin-top:6px"><b>4대 보험</b> ${(c.ins4!=null?c.ins4:biz.ins4)==='있음'?'있음':'없음'}</div>`;
-  h += `<div style="margin-top:6px"><b>기타</b> ${esc((c.condition!=null?c.condition:biz.condition)||'-')}</div>`;
-  h += CONTRACT_CLAUSES;
-  h += '<div style="display:flex;justify-content:space-around;margin-top:16px;text-align:center">';
-  h += `<div>사업주(갑): ${esc(nmeOf(bc))}${sImg(c.ownerSignUrl)}</div>`;
-  h += `<div>근로자(을): ${esc(nmeOf(ME.cd))}${sImg(c.workerSignUrl)}</div>`;
-  h += '</div></div>';
-  if(c.ownerSignUrl){
-    if(c.workerSignUrl) h += '<div class="badge b-ok" style="margin-top:8px">계약 체결 완료! 🤝</div>';
-    else h += `<div class="row" style="margin-top:8px"><button class="btn-grn btn-sm" onclick="signContract('worker','${ME.cd}')">✍ 계약서에 서명하기</button></div>`;
-  } else {
-    h += '<div class="muted" style="margin-top:8px">사장 서명을 기다리는 중이에요.</div>';
-  }
-  h += '</div>';
-  return h;
+  let out = '';
+  mine.forEach(([k,c])=>{
+    const bc = c.employerCd;
+    const biz = obj(obj(DB.businesses)[bc]);
+    let h = '<div class="card nograb" oncontextmenu="return false" ondragstart="return false"><h2>📝 근로계약서'+(mine.length>1?' — '+esc(biz.name||nmeOf(bc)):'')+'</h2>';
+    h += '<div style="border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;font-size:14px;line-height:1.85">';
+    h += `<div style="text-align:center;font-weight:800;font-size:16px;margin-bottom:8px">(${esc(nmeOf(ME.cd))}) 근로 계약서</div>`;
+    h += `사업주 <b>${esc(nmeOf(bc))}</b>(갑)과 근로자 <b>${esc(nmeOf(ME.cd))}</b>(을)은 다음과 같이 근로계약을 체결한다.`;
+    h += `<div style="margin-top:8px"><b>담당 업무</b> ${esc(c.duty||'-')}</div>`;
+    h += `<div style="margin-top:6px"><b>근무 시간</b> ${esc(c.workHours||'-')}</div>`;
+    h += `<div style="margin-top:6px"><b>시급 (쿠키)</b> ${esc(c.hourly||0)} 쿠키</div>`;
+    h += `<div style="margin-top:6px"><b>성과급</b> ${(c.bonus!=null?c.bonus:biz.bonus)==='있음'?'있음':'없음'}</div>`;
+    h += `<div style="margin-top:6px"><b>4대 보험</b> ${(c.ins4!=null?c.ins4:biz.ins4)==='있음'?'있음':'없음'}</div>`;
+    h += `<div style="margin-top:6px"><b>기타</b> ${esc((c.condition!=null?c.condition:biz.condition)||'-')}</div>`;
+    h += CONTRACT_CLAUSES;
+    h += '<div style="display:flex;justify-content:space-around;margin-top:16px;text-align:center">';
+    h += `<div>사업주(갑): ${esc(nmeOf(bc))}${sImg(c.ownerSignUrl)}</div>`;
+    h += `<div>근로자(을): ${esc(nmeOf(ME.cd))}${sImg(c.workerSignUrl)}</div>`;
+    h += '</div></div>';
+    if(c.ownerSignUrl){
+      if(c.workerSignUrl) h += '<div class="badge b-ok" style="margin-top:8px">계약 체결 완료! 🤝</div>';
+      else h += `<div class="row" style="margin-top:8px"><button class="btn-grn btn-sm" onclick="signContract('worker','${bc}','${ME.cd}')">✍ 계약서에 서명하기</button></div>`;
+    } else {
+      h += '<div class="muted" style="margin-top:8px">사장 서명을 기다리는 중이에요.</div>';
+    }
+    h += '</div>';
+    out += h;
+  });
+  return out;
 }
 </script>
 </body>

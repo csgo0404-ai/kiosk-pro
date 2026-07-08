@@ -816,7 +816,7 @@
     <div class="modal-overlay" id="payReqModal" onclick="closeModal('payReqModal')">
         <div class="purchase-modal-content" onclick="event.stopPropagation()" style="width:520px; max-width:94%;">
             <h2 id="payReqTitle" style="font-family:'Jua',sans-serif; color:#5D4037; text-align:center; margin:0 0 6px;">🧮 정산</h2>
-            <div style="text-align:center; color:#888; font-size:14px; margin-bottom:12px;">모든 장사가 끝난 후 정산하세요.<br>전체 수익에서 <b>투자금 일부</b>와 <b>직원 월급</b>을 빼면 <b>사장님 수익</b>이에요.</div>
+            <div style="text-align:center; color:#888; font-size:14px; margin-bottom:12px;">모든 장사가 끝난 후 정산하세요.<br>전체 수익에서 <b>투자금 일부</b>를 빼면 <b>사장님 수익</b>이에요.</div>
             <div id="payReqBody" style="max-height:52vh; overflow-y:auto;"></div>
             <div id="payReqTotal" style="text-align:right; font-weight:900; font-size:16px; margin:12px 4px;"></div>
             <div style="display:flex; gap:12px;">
@@ -2657,14 +2657,7 @@
             let bodyH = `<div style="background:#F7FBF7;border:1.5px solid #DFF0DF;border-radius:12px;padding:10px 12px;margin-bottom:10px;">
                 <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>💵 전체 수익</span><b>${revenue}🍪</b></div>
                 <div style="display:flex;justify-content:space-between;padding:2px 0;color:#C62828;"><span>🏦 투자금 반납 (수익의 ${investPct}%)</span><b>-${investRepay}🍪</b></div>
-            </div><div style="font-weight:900;color:#5D4037;margin:6px 2px;">👥 직원 월급 (성과급 추가 가능)</div>`;
-            bodyH += emps.length ? emps.map(e=>`
-                <div class="pay-row" data-cd="${e.cd}" data-base="${e.base}" data-name="${(e.name||'').replace(/"/g,'&quot;')}" style="display:flex; align-items:center; gap:8px; padding:9px 4px; border-bottom:1px solid #F0F0F0;">
-                    <div style="flex:1; font-weight:800; color:#3E2723;">${e.name||e.cd}</div>
-                    <div style="color:#888; font-size:13px;">기본 ${e.base}🍪</div>
-                    <label style="font-size:13px; color:#5D4037;">+성과급 <input type="number" class="pay-add" min="0" value="0" oninput="_payRecalc()" style="width:72px; padding:6px; border:1.5px solid #ddd; border-radius:8px;"></label>
-                    <div class="pay-line-total" style="font-weight:900; color:#E65100; width:74px; text-align:right;">${e.base}🍪</div>
-                </div>`).join('') : '<div style="color:#aaa;padding:8px 4px;">채용 확정된 직원이 없어요.</div>';
+            </div>`;   // 직원 월급 지급은 창업앱에서 별도 처리 → 정산에선 제외(수익−투자금반납=사장수익)
             document.getElementById('payReqBody').innerHTML = bodyH;
             _payRecalc();
             document.getElementById('payReqModal').style.display = 'flex';
@@ -2683,7 +2676,7 @@
             const revenue = ctx.revenue||0, investRepay = Math.round(revenue*(ctx.investPct||0)/100);
             const net = revenue - investRepay - empTotal;
             document.getElementById('payReqTotal').innerHTML =
-                `수익 ${revenue} − 투자금 ${investRepay} − 월급 ${empTotal} = 사장 <span style="color:${net<0?'#C62828':'#2E7D32'};">${net<0?net:'+'+net}🍪</span>`;
+                `수익 ${revenue} − 투자금 ${investRepay} = 사장 <span style="color:${net<0?'#C62828':'#2E7D32'};">${net<0?net:'+'+net}🍪</span>`;
         }
         function submitPayroll(){
             const ctx = window._payReqCtx; if(!ctx) return;
@@ -2714,7 +2707,7 @@
             const pending = reqs.filter(r => r.status === 'pending');
             const paid = Object.values((payrollData.paid) || {}).sort((a,b)=>(b.paidAt||0)-(a.paidAt||0));
             let h = `<h2 style="font-family:'Jua',sans-serif;color:#5D4037;margin:0 0 6px;">🧮 부스별 정산</h2>`;
-            h += `<p style="color:#888;margin:0 0 14px;">사장이 정산을 신청하면 승인합니다. <b>전체 수익 − 투자금 반납(수익의 %) − 직원 월급 = 사장 수익</b>(적자면 −). 직원 월급은 지급되고 사장 수익만큼 사장 쿠키에 반영돼요.</p>`;
+            h += `<p style="color:#888;margin:0 0 14px;">사장이 정산을 신청하면 승인합니다. <b>전체 수익 − 투자금 반납(수익의 %) = 사장 수익</b>(적자면 −). 사장 수익만큼 사장 쿠키에 반영돼요. (직원 월급은 창업앱에서 별도 지급)</p>`;
 
             h += `<h3 style="margin:16px 0 6px;">📨 정산 대기 (${pending.length})</h3>`;
             if (!pending.length) h += `<div style="color:#aaa;padding:12px;">대기 중인 정산 신청이 없어요.</div>`;
@@ -2726,8 +2719,8 @@
                         <b style="font-size:17px;">${r.bizName||r.boothName} <span style="color:#888;font-size:13px;">사장 ${_payName(r.ownerCd)}</span></b>
                         <span style="font-weight:900;color:${_net<0?'#C62828':'#2E7D32'};">사장 ${_net<0?_net:'+'+_net}🍪</span>
                     </div>
-                    <div style="font-size:13px;color:#666;margin:6px 0;">수익 ${r.revenue||0}🍪 − 투자금 반납 ${Math.round((r.revenue||0)*(r.investPct||0)/100)}🍪(수익의 ${r.investPct||0}%) − 월급 ${r.empTotal||r.total||0}🍪</div>
-                    <div style="margin:8px 0;">${rows}</div>
+                    <div style="font-size:13px;color:#666;margin:6px 0;">수익 ${r.revenue||0}🍪 − 투자금 반납 ${Math.round((r.revenue||0)*(r.investPct||0)/100)}🍪(수익의 ${r.investPct||0}%)</div>
+                    ${rows?`<div style="margin:8px 0;">${rows}</div>`:''}
                     <div style="display:flex;gap:8px;">
                         <button class="bm-btn bm-primary" onclick="approvePayroll('${r.id}')">✅ 승인 정산</button>
                         <button class="bm-btn bm-ghost" onclick="rejectPayroll('${r.id}')">신청 삭제</button>
@@ -2751,7 +2744,7 @@
                 paid.slice(0,30).forEach(p=>{
                     const _n = (p.bossNetPaid!=null)? p.bossNetPaid : (p.bossNet!=null? p.bossNet : ((p.revenue||0)-Math.round((p.revenue||0)*(p.investPct||0)/100)-(p.total||0)));
                     h += `<div style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:7px 4px;max-width:560px;">
-                        <span>${p.bizName||p.boothName} · 직원 ${(p.items||[]).length}명</span><b style="color:${_n<0?'#C62828':'#2E7D32'};">사장 ${_n<0?_n:'+'+_n}🍪</b></div>`;
+                        <span>${p.bizName||p.boothName}</span><b style="color:${_n<0?'#C62828':'#2E7D32'};">사장 ${_n<0?_n:'+'+_n}🍪</b></div>`;
                 });
             }
             body.innerHTML = h;
@@ -2763,7 +2756,7 @@
             if (!r) return;
             if (window._payrollBusy[reqId]) return;   // 처리 중 재클릭 차단
             const _net = (r.bossNet!=null)? r.bossNet : ((r.revenue||0)-Math.round((r.revenue||0)*(r.investPct||0)/100)-(r.total||0));
-            showPasswordModal(`${r.bizName||r.boothName} 정산 · 직원 ${r.items.length}명 월급 ${r.empTotal||r.total}🍪<br>사장 손익 <b style='color:${_net<0?'#C62828':'#2E7D32'}'>${_net<0?_net:'+'+_net}🍪</b><br><b style='color:#E65100'>교사 비밀번호</b>`, async (pw)=>{
+            showPasswordModal(`${r.bizName||r.boothName} 정산<br>사장 손익 <b style='color:${_net<0?'#C62828':'#2E7D32'}'>${_net<0?_net:'+'+_net}🍪</b><br><b style='color:#E65100'>교사 비밀번호</b>`, async (pw)=>{
                 if (!adminPwOk(pw)) return alert('비밀번호가 일치하지 않습니다.');
                 if (window._payrollBusy[reqId]) return;   // 이중 제출 가드(비원자 dbGet 보완)
                 window._payrollBusy[reqId] = true;
@@ -2811,7 +2804,7 @@
                 updates[`kiosk_payroll/requests/${reqId}`] = null;
                 try {
                     await window.dbUpdate(window.dbPath(window.db), updates);
-                    showInfo('🧮', '정산 완료', `직원 월급 ${empTotal}🍪 지급 · 사장 손익 ${net<0?net:'+'+net}🍪`);
+                    showInfo('🧮', '정산 완료', `사장 손익 ${net<0?net:'+'+net}🍪`);
                 } catch(e) { alert('정산 실패'); }
                 finally { delete window._payrollBusy[reqId]; }
             });
