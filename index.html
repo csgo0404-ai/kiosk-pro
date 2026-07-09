@@ -111,6 +111,12 @@
   .sb-table td.sb-boss{white-space:nowrap;width:1%}
   .sb-emps{min-height:38px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1.5px dashed transparent;border-radius:10px;padding:4px 6px;background:#fafbfc}
   .sb-emps.drag-over{border-color:var(--org);background:#fff5ec}
+  /* 채점표 가로 스크롤 — 예쁜 스크롤바 */
+  .hscroll{overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:#f7943b #ffe7d6}
+  .hscroll::-webkit-scrollbar{height:10px}
+  .hscroll::-webkit-scrollbar-track{background:#ffe7d6;border-radius:20px}
+  .hscroll::-webkit-scrollbar-thumb{background:linear-gradient(90deg,#f7943b,#ff6f3c);border-radius:20px;border:2px solid #ffe7d6}
+  .hscroll::-webkit-scrollbar-thumb:hover{background:linear-gradient(90deg,#ff7f1e,#ff5a24)}
   .score-table{border-collapse:collapse;font-size:13px}
   .score-table th,.score-table td{border:1px solid #dcdfe4;padding:6px 8px;text-align:center}
   .score-table th{background:#f7f8fa;white-space:nowrap;font-size:12.5px}
@@ -118,7 +124,7 @@
   .score-table td.it{font-weight:800;white-space:nowrap;text-align:left;background:#fafbfc}
   .score-table td.sumcell{font-weight:900;background:#fff7ee}
   .score-table td.sumcell.top{background:#fff0d6;color:#c46a12}
-  .stars{display:inline-flex;touch-action:none;cursor:pointer;user-select:none;-webkit-user-select:none;white-space:nowrap}
+  .stars{display:inline-flex;touch-action:manipulation;cursor:pointer;user-select:none;-webkit-user-select:none;white-space:nowrap}
   .stars.locked{cursor:default;opacity:.9}
   .star{position:relative;display:inline-block;width:1.25em;font-size:22px;line-height:1;color:#d5d9df}
   .star .fill{position:absolute;left:0;top:0;overflow:hidden;color:#f5b301;width:0}
@@ -137,10 +143,11 @@
   .job-boss{display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:13px;font-weight:800;color:#7a5a45;background:#fff;border:1px solid #ffd9bf;border-radius:20px;padding:2px 10px}
   .job-body{padding:12px 16px 14px}
   .job-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
-  .job-cell{background:#fafbfc;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .job-cell{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
   .job-cell .l{font-size:11px;font-weight:800;color:#9aa0a6;letter-spacing:.02em}
   .job-cell .v{font-size:14px;font-weight:800;color:#3a3f45;margin-top:2px;word-break:break-all}
   .job-cell.wide{grid-column:1 / -1}
+  .job-cell.biz .v{font-weight:700;white-space:pre-wrap;line-height:1.45}
   .job-pill{display:inline-block;font-size:12px;font-weight:800;color:#178254;background:#e7f6ef;border-radius:20px;padding:2px 9px;margin-right:5px}
   .job-pill.off{color:#9aa0a6;background:#f0f1f3}
 </style>
@@ -1538,7 +1545,14 @@ function _syncBizPub(){
   const upd = {};
   entries(biz).forEach(([cd,b])=>{
     b = obj(b);
+    const bg = obj(b.budget);
     const slim = { name:b.name||'', status:b.status||'', bonus:b.bonus||'', ins4:b.ins4||'', condition:b.condition||'', ceo:b.ceo||'' };
+    // 사업계획서 본문(desc·plan·budget)은 채용공고가 뜨는 '승인' 회사만 미러에 포함
+    //  → 0일차 초안 저장 churn으로 인한 bizPub 전체노드 재다운로드(egress 폭증) 방지.
+    if(b.status==='approved'){
+      slim.desc=b.desc||''; slim.plan=b.plan||''; slim.items=bg.items||'';
+      slim.cost=(bg.cost!=null?bg.cost:''); slim.cookie=(bg.cookie!=null?bg.cookie:'');
+    }
     const h = JSON.stringify(slim);
     if(window._bizPubHash[cd] !== h){ upd['bizPub/'+cd] = slim; window._bizPubHash[cd] = h; }
   });
@@ -1661,7 +1675,7 @@ function interviewResultCard(){
   const scores = obj(obj(DB.interview).scores);
   const totals = {};
   const cell='border:1px solid #ddd;padding:6px;text-align:center';
-  h += '<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;font-size:13px">';
+  h += '<div class="hscroll"><table style="border-collapse:collapse;width:100%;font-size:13px">';
   h += '<tr><th style="'+cell+';background:#f7f7f7;text-align:left">평가항목 ＼ 지원자</th>';
   targets.forEach(([cd,b])=> h += `<th style="${cell};background:#f7f7f7">${esc(b.name||nmeOf(cd))}<br><span class="muted">${esc(nmeOf(cd))}</span></th>`);
   h += '</tr>';
@@ -1699,11 +1713,10 @@ function interviewScoreCard(voterCd){
   // 로컬이 비어있고 서버에 제출본이 있으면 1회 시드(새로고침/다른 기기 복원)
   if(Object.keys(getLocalScores()).length===0){ const srv=obj(obj(obj(DB.interview).scores)[voterCd]); if(Object.keys(srv).length){ window._localScores=JSON.parse(JSON.stringify(srv)); _saveLocalScores(); } }
   const locked = Object.keys(obj(obj(obj(DB.interview).scores)[voterCd])).length>0;   // 제출하면 잠김(수정 불가)
-  let h = '<div class="card"><h2>🎤 사업가 면접 채점표</h2>';
-  h += locked ? '<p class="muted">✅ 이미 제출했어요. <b>점수는 수정할 수 없어요.</b></p>'
-              : '<p class="muted">별을 <b>클릭</b>하면 한 칸씩 채워지고 <b>같은 별을 다시 클릭</b>하면 해제돼요. 선택은 저장되어 기억돼요. 다 매긴 뒤 <b>제출하기</b>를 누르세요. <b>(제출하면 수정할 수 없어요)</b></p>';
+  let h = '<div class="card"><h2>🎤 사업가 평가표</h2>';
+  if(locked) h += '<p class="muted">✅ 이미 제출했어요. <b>점수는 수정할 수 없어요.</b></p>';
   if(!targets.length){ h += '<div class="empty">채점할 사업가가 없어요.</div></div>'; return h; }
-  h += '<div style="overflow-x:auto"><table class="score-table"><tr><th class="corner">평가항목 ＼ 지원자</th>';
+  h += '<div class="hscroll"><table class="score-table"><tr><th class="corner">평가항목 ＼ 지원자</th>';
   targets.forEach(([tcd,b])=>{ h += `<th>${esc(b.name||nmeOf(tcd))}</th>`; });
   h += '</tr>';
   items.forEach((it,idx)=>{
@@ -1722,9 +1735,8 @@ function interviewScoreCard(voterCd){
   h += '<tr><td class="it">총합</td>';
   sums.forEach(s=>{ const top=s>0&&s===maxSum; h += `<td class="sumcell${top?' top':''}">${Number.isInteger(s)?s:s.toFixed(1)}${top?' 🏆':''}</td>`; });
   h += '</tr></table></div>';
-  h += '<p class="muted" style="margin-top:6px">총합은 내가 각 사업가에게 준 점수의 합이에요. 🏆는 내가 가장 높게 준 사업가.</p>';
-  if(locked) h += '<div class="row" style="margin-top:6px"><span class="badge b-ok">✅ 제출 완료 · 수정 불가</span></div>';
-  else h += '<div class="row" style="margin-top:6px"><button class="btn-org" onclick="submitScores()">📨 제출하기</button><span class="badge b-wait">아직 미제출</span></div>';
+  if(locked) h += '<div class="row" style="margin-top:6px"><button class="btn-gray" disabled>✅ 제출됨</button></div>';
+  else h += '<div class="row" style="margin-top:6px"><button class="btn-org" onclick="submitScores()">📨 제출하기</button></div>';
   h += '</div>';
   return h;
 }
@@ -1738,12 +1750,19 @@ function submitScores(){
 function _starRatio(c, clientX){ const r=c.getBoundingClientRect(); let x=r.width?(clientX-r.left)/r.width:0; return Math.max(0,Math.min(1,x)); }
 function _paintStars(c, value){ c.querySelectorAll('.star').forEach((slot,i)=>{ const frac=Math.max(0,Math.min(1,value-i)); const f=slot.querySelector('.fill'); if(f) f.style.width=(frac*100)+'%'; }); }
 function starDown(e, tcd, idx){
-  e.preventDefault();
   const c=e.currentTarget, max=parseInt(c.dataset.max)||5, cur=localScoreOf(tcd,idx);
   window._starDrag={ tcd, idx, c, max, cur, moved:false, val:cur };
   window._starDragging=true;
-  try{ c.setPointerCapture(e.pointerId); }catch(_){}
-  c.onpointermove=starMove; c.onpointerup=starUp; c.onpointercancel=starUp;
+  // 마우스만 드래그-채점(포인터 캡처). 터치/펜은 캡처하지 않아 브라우저가 가로 스크롤을 처리 → 태블릿 스크롤 정상.
+  if(e.pointerType==='mouse'){ e.preventDefault(); try{ c.setPointerCapture(e.pointerId); }catch(_){} }
+  c.onpointermove=starMove; c.onpointerup=starUp; c.onpointercancel=starCancel;
+}
+/* 스크롤(팬)로 인식되어 취소되면 값 변경 없이 원상복구 */
+function starCancel(){
+  const d=window._starDrag; if(!d) return;
+  window._starDrag=null; window._starDragging=false;
+  try{ d.c.onpointermove=null; d.c.onpointerup=null; d.c.onpointercancel=null; }catch(_){}
+  _paintStars(d.c, d.cur);
 }
 function starMove(e){
   const d=window._starDrag; if(!d) return;
@@ -1772,7 +1791,7 @@ function interviewQuestionsCard(isTeacher){
   if(!isTeacher && phase()!==1) return '';   // 면접 질문은 1일차에만 (2일차부터 숨김)
   if(!isTeacher && !targets.length) return '';
   const tgtName = q => q.targetCd ? (obj(obj(DB.businesses)[q.targetCd]).name || nmeOf(q.targetCd)) : '전체';
-  let h = '<div class="card"><h2>❓ 사업가 면접 질문</h2>';
+  let h = '<div class="card"><h2>🎤 사업가에게 질문하기</h2>';
 
   if(isTeacher){
     h += '<p class="muted">학생들이 낸 질문입니다(선생님에게는 <b>작성자 이름</b>이 보여요). 면접 때 읽어주세요. 부적절한 질문은 삭제할 수 있어요.</p>';
@@ -1788,7 +1807,7 @@ function interviewQuestionsCard(isTeacher){
   const myq = getMyQ();
   const editId = window._editQid && myq[window._editQid] ? window._editQid : null;
   const editQ = editId ? myq[editId] : null;
-  h += '<p class="muted">사업가에게 궁금한 점을 <b>익명</b>으로 물어보세요.'+(editId?' <b style="color:#c46a12">(수정 중)</b>':'')+'</p>';
+  if(editId) h += '<p class="muted"><b style="color:#c46a12">(수정 중)</b></p>';
   h += '<div class="field"><label>질문 대상</label><select id="qTarget"><option value="" '+(editQ&&!editQ.targetCd?'selected':'')+'>전체 사업가</option>';
   targets.forEach(([cd,b])=>{ if(cd!==ME.cd) h += `<option value="${cd}" ${editQ&&editQ.targetCd===cd?'selected':''}>${esc(b.name||nmeOf(cd))}</option>`; });
   h += '</select></div>';
@@ -2053,6 +2072,15 @@ function studentJobsCard(){
        + '</div>';
     // 모집 정보
     h += '<div class="job-body"><div class="job-grid">';
+    // 사업계획서 내용(사업 설명·운영 계획·준비물·예산 신청)도 함께 보여주기 — 어떤 회사인지 알고 지원하도록
+    const _bud = obj(bz.budget);
+    const bItems = (bz.items!=null?bz.items:_bud.items);
+    const bCost  = (bz.cost!=null&&bz.cost!==''?bz.cost:_bud.cost);
+    const bCookie= (bz.cookie!=null&&bz.cookie!==''?bz.cookie:_bud.cookie);
+    if(bz.desc) h += `<div class="job-cell wide biz"><div class="l">🏢 사업 설명</div><div class="v">${esc(bz.desc)}</div></div>`;
+    if(bz.plan) h += `<div class="job-cell wide biz"><div class="l">📈 운영 계획</div><div class="v">${esc(bz.plan)}</div></div>`;
+    if(bItems) h += `<div class="job-cell wide biz"><div class="l">📦 준비물</div><div class="v">${esc(bItems)}</div></div>`;
+    if((bCost!=null&&bCost!=='')||(bCookie!=null&&bCookie!=='')) h += `<div class="job-cell wide biz"><div class="l">💰 예산 신청</div><div class="v">현금 ${esc(bCost||0)}원 · 쿠키 ${esc(bCookie||0)}🍪</div></div>`;
     h += `<div class="job-cell wide"><div class="l">담당 업무</div><div class="v">${esc(pt.duty||'-')}</div></div>`;
     h += `<div class="job-cell"><div class="l">모집 인원</div><div class="v">${esc(pt.headcount||1)}명</div></div>`;
     h += `<div class="job-cell"><div class="l">근무 시간</div><div class="v">${_numShow(pt.workDays, '시간')}</div></div>`;
