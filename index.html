@@ -630,7 +630,14 @@ function recruitSection(cd, b){
 }
 function recruitEditor(cd, b){
   b = obj(b);
-  let h = '<div class="kv" style="background:#eef5ff"><div style="font-weight:800;margin-bottom:6px">📢 직원 모집 수정</div>';
+  const bg = obj(b.budget);
+  let h = '<div class="kv" style="background:#eef5ff"><div style="font-weight:800;margin-bottom:6px">📋 사업계획서 수정</div>';
+  h += `<div class="field"><label>업체명</label><input id="eb_name_${cd}" value="${esc(b.name||'')}"></div>`;
+  h += `<div class="field"><label>사업설명</label><textarea id="eb_desc_${cd}">${esc(b.desc||'')}</textarea></div>`;
+  h += `<div class="field"><label>운영계획</label><textarea id="eb_plan_${cd}">${esc(b.plan||'')}</textarea></div>`;
+  h += `<div class="field"><label>준비물</label><textarea id="eb_items_${cd}">${esc(bg.items||'')}</textarea></div>`;
+  h += _numField('예산신청', 'eb_cost_'+cd, bg.cost!=null?bg.cost:'', '원');
+  h += '<div class="divider"></div><div style="font-weight:800;margin-bottom:6px">📢 직원 모집 수정</div>';
   h += `<div class="field"><label>담당 업무</label><textarea id="er_duty_${cd}">${esc(b.duty||'')}</textarea></div>`;
   h += _numField('모집 인원', 'er_head_'+cd, b.headcount!=null?b.headcount:'', '명');
   h += _numField('근무 시간', 'er_days_'+cd, b.workDays!=null?b.workDays:'', '시간');
@@ -648,6 +655,11 @@ function saveBizRecruit(cd){
   const g = id => $(id);
   if(!g('er_duty_'+cd)) return;   // 에디터가 없으면 무시
   const upd = {
+    name:          g('eb_name_'+cd).value.trim(),
+    desc:          g('eb_desc_'+cd).value.trim(),
+    plan:          g('eb_plan_'+cd).value.trim(),
+    'budget/items': g('eb_items_'+cd).value.trim(),
+    'budget/cost':  Math.max(0, parseInt(g('eb_cost_'+cd).value)||0),
     duty:          g('er_duty_'+cd).value.trim(),
     headcount:     Math.max(0, parseInt(g('er_head_'+cd).value)||0),
     workDays:      g('er_days_'+cd).value.trim(),
@@ -659,7 +671,7 @@ function saveBizRecruit(cd){
   };
   S.child('businesses/'+cd).update(upd).then(()=>{
     window._bizRecEdit = window._bizRecEdit || {}; window._bizRecEdit[cd] = false;
-    toast('모집 내용을 수정했어요 — 학생에게 반영됩니다'); scheduleRender();
+    toast('사업계획서를 수정했어요 — 학생에게 반영됩니다'); scheduleRender();
   }).catch(()=>toast('저장 실패 — 다시 시도해 주세요'));
 }
 
@@ -672,9 +684,9 @@ function bizApprovalCard(){
   submitted.forEach(([cd,b])=>{
     h += '<div class="list-item">';
     h += `<div class="biz-head"><b>${esc(b.name||'(업체명 미정)')}</b><span class="muted">대표: ${esc(nmeOf(cd))}</span></div>`;
-    h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')}</div>`;
+    if(!(window._bizRecEdit||{})[cd]) h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')}</div>`;
     h += recruitSection(cd, b);
-    h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-grn btn-sm" onclick="approveBiz('${cd}')">✅ 승인</button><button class="btn-org btn-sm" onclick="toggleBizRecruit('${cd}')">${(window._bizRecEdit||{})[cd]?'✖ 수정 닫기':'✏️ 모집 수정'}</button><button class="btn-gray btn-sm" onclick="rejectBiz('${cd}')">반려</button><button class="btn-red btn-sm" onclick="deleteBiz('${cd}')">삭제</button></div>`;
+    h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-grn btn-sm" onclick="approveBiz('${cd}')">✅ 승인</button><button class="btn-org btn-sm" onclick="toggleBizRecruit('${cd}')">${(window._bizRecEdit||{})[cd]?'✖ 수정 닫기':'✏️ 계획서 수정'}</button><button class="btn-gray btn-sm" onclick="rejectBiz('${cd}')">반려</button><button class="btn-red btn-sm" onclick="deleteBiz('${cd}')">삭제</button></div>`;
     h += '</div>';
   });
   const approvedB = entries(biz).filter(([cd,b])=>b.status==='approved');
@@ -683,9 +695,9 @@ function bizApprovalCard(){
     approvedB.forEach(([cd,b])=>{
       h += '<div class="list-item">';
       h += `<div class="biz-head"><b>${esc(b.name||'(업체명 미정)')}</b><span class="badge b-ok">사장 ${esc(nmeOf(cd))}</span></div>`;
-      h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')}</div>`;
+      if(!(window._bizRecEdit||{})[cd]) h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')}</div>`;
       h += recruitSection(cd, b);
-      h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-org btn-sm" onclick="toggleBizRecruit('${cd}')">${(window._bizRecEdit||{})[cd]?'✖ 수정 닫기':'✏️ 모집 수정'}</button><button class="btn-gray btn-sm" onclick="revokeBiz('${cd}')">↩️ 승인취소</button><button class="btn-red btn-sm" onclick="deleteBiz('${cd}')">삭제</button></div>`;
+      h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-org btn-sm" onclick="toggleBizRecruit('${cd}')">${(window._bizRecEdit||{})[cd]?'✖ 수정 닫기':'✏️ 계획서 수정'}</button><button class="btn-gray btn-sm" onclick="revokeBiz('${cd}')">↩️ 승인취소</button><button class="btn-red btn-sm" onclick="deleteBiz('${cd}')">삭제</button></div>`;
       h += '</div>';
     });
   }
@@ -706,7 +718,13 @@ function revokeBiz(cd){
     S.update(_bizPurgeUpd(cd,'submitted')).then(()=>toast(nmeOf(cd)+' 신청중으로 되돌림'));
   }, '↩️');
 }
-function deleteBiz(cd){ prettyConfirm('사업계획서 삭제', esc(nmeOf(cd))+' 학생의 <b>사업계획서를 삭제</b>할까요?<br>되돌릴 수 없어요.', ()=>{ S.update(_bizPurgeUpd(cd,null)).then(()=>toast('삭제했어요')); }, '🗑️'); }
+function deleteBiz(cd){
+  prettyConfirm('사업계획서 삭제', esc(nmeOf(cd))+' 학생의 <b>사업계획서를 삭제</b>할까요?<br>되돌릴 수 없어요.', ()=>{
+    prettyConfirm('한 번 더 확인', '정말 <b style="color:#c0392b">'+esc(nmeOf(cd))+'</b> 학생의 사업계획서를 삭제할까요?<br>채용공고·선발·계약도 함께 정리되며 <b>되돌릴 수 없어요.</b>', ()=>{
+      S.update(_bizPurgeUpd(cd,null)).then(()=>toast('삭제했어요'));
+    }, '🗑️');
+  }, '🗑️');
+}
 function revokeCivil(cd){ prettyConfirm('임용 취소', esc(nmeOf(cd))+' 학생을 <b>다시 "신청중"</b>으로 되돌릴까요?', ()=>{ S.child('civilServants/'+cd+'/status').set('submitted').then(()=>toast(nmeOf(cd)+' 신청중으로 되돌림')); }, '↩️'); }
 function deleteCivil(cd){ prettyConfirm('공무원 신청 삭제', esc(nmeOf(cd))+' 학생의 <b>공무원 신청서를 삭제</b>할까요?<br>되돌릴 수 없어요.', ()=>{ S.child('civilServants/'+cd).remove().then(()=>toast('삭제했어요')); }, '🗑️'); }
 /* 0일차: 공무원 신청 승인 큐 */
