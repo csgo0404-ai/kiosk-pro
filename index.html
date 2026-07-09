@@ -636,7 +636,8 @@ function recruitEditor(cd, b){
   h += `<div class="field"><label>사업설명</label><textarea id="eb_desc_${cd}">${esc(b.desc||'')}</textarea></div>`;
   h += `<div class="field"><label>운영계획</label><textarea id="eb_plan_${cd}">${esc(b.plan||'')}</textarea></div>`;
   h += `<div class="field"><label>준비물</label><textarea id="eb_items_${cd}">${esc(bg.items||'')}</textarea></div>`;
-  h += _numField('예산신청', 'eb_cost_'+cd, bg.cost!=null?bg.cost:'', '원');
+  h += _numField('예산신청 — 현금 (쿠팡·문구점·편의점에서 직접 구입, 투자 설명회 점수로 차등 지급)', 'eb_cost_'+cd, bg.cost!=null?bg.cost:'', '원');
+  h += _numField('예산신청 — 쿠키 (쿠키에 따라 투자 회수 % 결정)', 'eb_cookie_'+cd, bg.cookie!=null?bg.cookie:'', '쿠키');
   h += '<div class="divider"></div><div style="font-weight:800;margin-bottom:6px">📢 직원 모집 수정</div>';
   h += `<div class="field"><label>담당 업무</label><textarea id="er_duty_${cd}">${esc(b.duty||'')}</textarea></div>`;
   h += _numField('모집 인원', 'er_head_'+cd, b.headcount!=null?b.headcount:'', '명');
@@ -660,6 +661,7 @@ function saveBizRecruit(cd){
     plan:          g('eb_plan_'+cd).value.trim(),
     'budget/items': g('eb_items_'+cd).value.trim(),
     'budget/cost':  Math.max(0, parseInt(g('eb_cost_'+cd).value)||0),
+    'budget/cookie': Math.max(0, parseInt(g('eb_cookie_'+cd).value)||0),
     duty:          g('er_duty_'+cd).value.trim(),
     headcount:     Math.max(0, parseInt(g('er_head_'+cd).value)||0),
     workDays:      g('er_days_'+cd).value.trim(),
@@ -684,7 +686,7 @@ function bizApprovalCard(){
   submitted.forEach(([cd,b])=>{
     h += '<div class="list-item">';
     h += `<div class="biz-head"><b>${esc(b.name||'(업체명 미정)')}</b><span class="muted">대표: ${esc(nmeOf(cd))}</span></div>`;
-    if(!(window._bizRecEdit||{})[cd]) h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')}</div>`;
+    if(!(window._bizRecEdit||{})[cd]) h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')} / ${esc((b.budget&&b.budget.cookie!=null)?b.budget.cookie+'쿠키':'-')}</div>`;
     h += recruitSection(cd, b);
     h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-grn btn-sm" onclick="approveBiz('${cd}')">✅ 승인</button><button class="btn-org btn-sm" onclick="toggleBizRecruit('${cd}')">${(window._bizRecEdit||{})[cd]?'✖ 수정 닫기':'✏️ 계획서 수정'}</button><button class="btn-gray btn-sm" onclick="rejectBiz('${cd}')">반려</button><button class="btn-red btn-sm" onclick="deleteBiz('${cd}')">삭제</button></div>`;
     h += '</div>';
@@ -695,7 +697,7 @@ function bizApprovalCard(){
     approvedB.forEach(([cd,b])=>{
       h += '<div class="list-item">';
       h += `<div class="biz-head"><b>${esc(b.name||'(업체명 미정)')}</b><span class="badge b-ok">사장 ${esc(nmeOf(cd))}</span></div>`;
-      if(!(window._bizRecEdit||{})[cd]) h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')}</div>`;
+      if(!(window._bizRecEdit||{})[cd]) h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')} / ${esc((b.budget&&b.budget.cookie!=null)?b.budget.cookie+'쿠키':'-')}</div>`;
       h += recruitSection(cd, b);
       h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-org btn-sm" onclick="toggleBizRecruit('${cd}')">${(window._bizRecEdit||{})[cd]?'✖ 수정 닫기':'✏️ 계획서 수정'}</button><button class="btn-gray btn-sm" onclick="revokeBiz('${cd}')">↩️ 승인취소</button><button class="btn-red btn-sm" onclick="deleteBiz('${cd}')">삭제</button></div>`;
       h += '</div>';
@@ -1141,7 +1143,7 @@ function getDraftLocal(kind){ try{ return JSON.parse(localStorage.getItem(_draft
 function setDraftLocal(kind, data){ try{ localStorage.setItem(_draftKey(kind), JSON.stringify(data)); }catch(_){} }
 function clearDraftLocal(kind){ try{ localStorage.removeItem(_draftKey(kind)); }catch(_){} }
 function _optSel(list, sel){ return list.map(o=>`<option ${o===sel?'selected':''}>${esc(o)}</option>`).join(''); }
-function autosavePlan(){ setDraftLocal('plan', { name:$('p_name').value, ceo:$('p_ceo').value, desc:$('p_desc').value, plan:$('p_plan').value, items:$('p_items').value, cost:$('p_cost').value, duty:$('p_duty').value, qual:$('p_qual').value, head:$('p_head').value, days:$('p_days').value, bonus:$('p_bonus').value, ins4:$('p_ins4').value, cond:$('p_cond').value, pay:$('p_pay').value, at:Date.now() }); }
+function autosavePlan(){ setDraftLocal('plan', { name:$('p_name').value, ceo:$('p_ceo').value, desc:$('p_desc').value, plan:$('p_plan').value, items:$('p_items').value, cost:$('p_cost').value, cookie:$('p_cookie').value, duty:$('p_duty').value, qual:$('p_qual').value, head:$('p_head').value, days:$('p_days').value, bonus:$('p_bonus').value, ins4:$('p_ins4').value, cond:$('p_cond').value, pay:$('p_pay').value, at:Date.now() }); }
 function autosaveCivil(){ setDraftLocal('civil', { motive:$('cs_motive').value, strength:$('cs_strength').value, weakness:$('cs_weakness').value, resolve:$('cs_resolve').value, at:Date.now() }); }
 
 function planEditorCard(b){
@@ -1158,7 +1160,8 @@ function planEditorCard(b){
   h += `<div class="field"><label>사업 설명</label><textarea id="p_desc" ${oi} ${dis}>${esc(pick('desc', b.desc||''))}</textarea></div>`;
   h += `<div class="field"><label>운영 계획</label><textarea id="p_plan" ${oi} ${dis}>${esc(pick('plan', b.plan||''))}</textarea></div>`;
   h += `<div class="field"><label>준비물</label><input id="p_items" ${oi} value="${esc(pick('items', bg.items||''))}" ${dis}></div>`;
-  h += `<div class="field"><label>예산 신청 (0~10,000원)</label><input id="p_cost" type="number" min="0" max="10000" step="100" ${oi} value="${esc(pick('cost', bg.cost!=null?bg.cost:''))}" ${dis} placeholder="0 ~ 10000"></div>`;
+  h += `<div class="field"><label>예산 신청 — 현금 (0~10,000원)</label><input id="p_cost" type="number" min="0" max="10000" step="100" ${oi} value="${esc(pick('cost', bg.cost!=null?bg.cost:''))}" ${dis} placeholder="0 ~ 10000"><div class="muted" style="font-size:12px;margin-top:4px">💡 현금은 <b>쿠팡·문구점·편의점</b>에서 직접 구입할 때 써요. <b>투자 설명회 점수</b>에 따라 차등 지급돼요!</div></div>`;
+  h += `<div class="field"><label>예산 신청 — 쿠키 (0~10,000쿠키)</label><input id="p_cookie" type="number" min="0" max="10000" step="10" ${oi} value="${esc(pick('cookie', bg.cookie!=null?bg.cookie:''))}" ${dis} placeholder="0 ~ 10000"><div class="muted" style="font-size:12px;margin-top:4px">🍪 신청한 쿠키에 따라 <b>투자 회수 %</b>가 달라져요!</div></div>`;
   h += '<div class="divider"></div><div style="font-weight:800;color:#5a5f66;margin-bottom:6px">📢 직원 모집 — 사장님이 된다면 직원을 어떻게 뽑을까요?</div>';
   h += `<div class="field"><label>담당 업무</label><textarea id="p_duty" ${oi} ${dis} placeholder="예: 홍보와 물품 판매하기">${esc(pick('duty', b.duty||''))}</textarea></div>`;
   h += _numField('모집 인원', 'p_head', pick('head', b.headcount!=null?b.headcount:''), '명', oi+' '+dis);
@@ -1183,7 +1186,7 @@ function savePlan(submit){
     ownerCd: ME.cd, ownerNm: ME.nm,
     name: $('p_name').value.trim(), ceo: $('p_ceo').value.trim(),
     desc: $('p_desc').value.trim(), plan: $('p_plan').value.trim(),
-    budget:{ items:$('p_items').value.trim(), cost:Math.max(0, Math.min(10000, parseInt($('p_cost').value)||0)) },
+    budget:{ items:$('p_items').value.trim(), cost:Math.max(0, Math.min(10000, parseInt($('p_cost').value)||0)), cookie:Math.max(0, Math.min(10000, parseInt($('p_cookie').value)||0)) },
     duty: $('p_duty').value.trim(), qualification: $('p_qual').value.trim(),
     headcount: Math.max(0, parseInt($('p_head').value)||0),
     workDays: $('p_days').value.trim(),
