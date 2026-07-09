@@ -2193,16 +2193,35 @@ function bossInvestmentCard(cd){
 function signInvestment(cd){ captureSign('대표자(을) 서명', url=>{ S.child('businesses/'+cd+'/investment/bossSignUrl').set(url).then(()=>toast('서명을 선생님께 보냈어요! 🤝')); }); }
 // 교사: 회사별 투자약정서 설정/보내기 (companyDashboardCard에서 호출)
 function investmentEditor(cd){
-  const inv = obj(obj(obj(DB.businesses)[cd]).investment);
-  let h = '<div class="row" style="margin-top:8px;flex-wrap:wrap;gap:6px;align-items:center">';
+  const b = obj(obj(DB.businesses)[cd]);
+  const inv = obj(b.investment);
+  const bg = obj(b.budget);
+  // 사업계획서 예산신청 자동 수신: 아직 전송 전(sentAt 없음)이면 신청 현금/쿠키를 기본값으로 채워 교사가 수정 가능
+  const reqWon = bg.cost, reqCk = bg.cookie;
+  const preWon = inv.won!=null ? inv.won : (!inv.sentAt && reqWon!=null ? reqWon : '');
+  const preCk  = inv.cookie!=null ? inv.cookie : (!inv.sentAt && reqCk!=null ? reqCk : '');
+  let h = '<div style="margin-top:8px">';
+  if(reqWon!=null || reqCk!=null){
+    h += `<div class="muted" style="font-size:12px;margin-bottom:4px">📋 사업계획서 신청 예산 → 현금 <b>${esc(reqWon!=null?reqWon:0)}원</b> · 쿠키 <b>${esc(reqCk!=null?reqCk:0)}쿠키</b>${!inv.sentAt?' <span style="color:var(--accent,#2a7)">(아래에 자동 반영됨 · 수정 가능)</span>':''}</div>`;
+  }
+  h += '<div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">';
   h += `<span class="muted">투자약정</span>`;
-  h += `<input id="inv_won_${cd}" type="number" min="0" placeholder="원" value="${inv.won!=null?esc(inv.won):''}" style="width:80px">원`;
-  h += `<input id="inv_ck_${cd}" type="number" min="0" placeholder="쿠키" value="${inv.cookie!=null?esc(inv.cookie):''}" style="width:80px">쿠키`;
+  h += `<input id="inv_won_${cd}" type="number" min="0" placeholder="현금(원)" value="${preWon!==''?esc(preWon):''}" style="width:90px">원`;
+  h += `<input id="inv_ck_${cd}" type="number" min="0" placeholder="쿠키" value="${preCk!==''?esc(preCk):''}" style="width:80px">쿠키`;
   h += `<input id="inv_pct_${cd}" type="number" min="0" max="100" placeholder="%" value="${inv.pct!=null?esc(inv.pct):''}" style="width:60px">%`;
+  if((reqWon!=null || reqCk!=null) && !inv.bossSignUrl) h += `<button class="btn-gray btn-sm" onclick="fillInvestFromBudget('${cd}')" title="신청 예산 그대로 채우기">↺ 신청값</button>`;
   h += `<button class="btn-grn btn-sm" onclick="sendInvestment('${cd}')">${inv.sentAt?'수정 저장':'📨 보내기'}</button>`;
   if(inv.sentAt){ h += '<span class="badge b-ok">전송됨</span>'; h += `<button class="btn-org btn-sm" onclick="printInvestment('${cd}')">🖨 투자약정서</button>`; h += `<button class="btn-red btn-sm" onclick="cancelInvestment('${cd}')">🗑 취소</button>`; if(inv.bossSignUrl) h += '<span class="badge b-ok">사장 서명✔</span>'; }
-  h += '</div>';
+  h += '</div></div>';
   return h;
+}
+// 신청 예산(현금/쿠키)을 투자약정 입력칸에 그대로 채워넣기
+function fillInvestFromBudget(cd){
+  const bg = obj(obj(obj(DB.businesses)[cd]).budget);
+  const w=$('inv_won_'+cd), c=$('inv_ck_'+cd);
+  if(w) w.value = bg.cost!=null?bg.cost:'';
+  if(c) c.value = bg.cookie!=null?bg.cookie:'';
+  toast('신청 예산을 채웠어요');
 }
 // 교사: 보낸 투자약정서 취소 — 지급했던 쿠키(paidCookie)를 회수하고 약정서 삭제
 async function cancelInvestment(cd){
