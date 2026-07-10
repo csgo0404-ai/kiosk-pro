@@ -388,6 +388,13 @@ async function _cookieUpdates(deltaByCode){
   });
   return { updates, missing };
 }
+/* 특정 코드의 상점 키를 '추가 읽기 없이' 해결(로그인 시 시드된 캐시 우선). 캐시에 없을 때만 1회 강제 조회.
+   학생이 본인 지급(서명) 시 EventShop/stu 전체(무거움) 재조회를 피하기 위함. */
+async function _resolveShopKey(cd){
+  let k = (window._shopKeyCache||{})[cd];
+  if(k==null){ const m = await _shopKeyMap(true); k = m[cd]; }
+  return k;
+}
 
 /* ============================================================
    로그인
@@ -609,6 +616,45 @@ function render(){
 /* ============================================================
    교사 뷰
 ============================================================ */
+/* 교사 조회: 이력서를 한 곳도 제출하지 않은 학생 집합 / 어느 회사에도 선정(합격·후보)되지 못한 학생 집합 */
+function _submittedResumeSet(){
+  const s = new Set();
+  entries(DB.resumes).forEach(([bc, apps])=> Object.keys(obj(apps)).forEach(acd=> s.add(acd)));
+  return s;
+}
+function _selectedSet(){
+  const s = new Set();
+  entries(DB.selections).forEach(([bc, sel])=>{ sel=obj(sel); Object.keys(obj(sel.hired)).forEach(a=>s.add(a)); Object.keys(obj(sel.reserve)).forEach(a=>s.add(a)); });
+  return s;
+}
+/* 사장·공무원을 제외한 학생 중 pred(cd)를 만족하는 학생 목록(번호순) */
+function _stuListExcludingRoles(pred){
+  return Object.keys(ROSTER).filter(cd=>{
+    if(obj(obj(DB.businesses)[cd]).status==='approved') return false;      // 사장 제외
+    if(obj(obj(DB.civilServants)[cd]).status==='approved') return false;   // 공무원 제외
+    return pred(cd);
+  }).sort((a,b)=>((ROSTER[a].no||0)-(ROSTER[b].no||0)));
+}
+// 1일차: 사장·공무원이 아니면서 이력서를 한 곳도 내지 않은 학생
+function noResumeCard(){
+  const submitted = _submittedResumeSet();
+  const list = _stuListExcludingRoles(cd=> !submitted.has(cd));
+  let h = '<div class="card"><h2>📭 이력서 미제출 <span class="badge '+(list.length?'b-no':'b-ok')+'">'+list.length+'</span></h2>';
+  h += '<p class="muted">사장·공무원이 아니면서 <b>이력서를 한 곳도 내지 않은</b> 학생이에요. 이름 옆 ↗로 학생 화면을 열 수 있어요.</p>';
+  if(!list.length) h += '<div class="empty">해당 학생이 없어요! 🎉</div>';
+  else { h += '<div class="role-col-body">'; list.forEach(cd=> h += _roleChip(cd)); h += '</div>'; }
+  return h + '</div>';
+}
+// 2일차: 사장·공무원이 아니면서 어느 회사에도 선정(합격·후보)되지 못한 학생
+function notSelectedCard(){
+  const picked = _selectedSet();
+  const list = _stuListExcludingRoles(cd=> !picked.has(cd));
+  let h = '<div class="card"><h2>🕵️ 미선정 학생 <span class="badge '+(list.length?'b-no':'b-ok')+'">'+list.length+'</span></h2>';
+  h += '<p class="muted">사장·공무원이 아니면서 <b>어느 회사에도 선정(합격·후보)되지 못한</b> 학생이에요.</p>';
+  if(!list.length) h += '<div class="empty">모두 어딘가에 선정됐어요! 🎉</div>';
+  else { h += '<div class="role-col-body">'; list.forEach(cd=> h += _roleChip(cd)); h += '</div>'; }
+  return h + '</div>';
+}
 function viewTeacher(){
   const p = phase();
   let h = '';
@@ -621,8 +667,8 @@ function viewTeacher(){
 
   // 일차별 관리 화면
   if(p===0){ h += bizApprovalCard(); h += civilApprovalCard(); }
-  else if(p===1){ h += interviewSetupCard(); h += interviewResultCard(); h += interviewQuestionsCard(true); h += companyDashboardCard(); }
-  else if(p===2){ h += companyDashboardCard(); h += teacherPayrollCard(); }
+  else if(p===1){ h += interviewSetupCard(); h += interviewResultCard(); h += interviewQuestionsCard(true); h += companyDashboardCard(); h += noResumeCard(); }
+  else if(p===2){ h += companyDashboardCard(); h += notSelectedCard(); h += teacherPayrollCard(); }
   else if(p===3){ h += teacherBoothsCard(); h += teacherPayrollCard(); }
 
   // 항상 하단: 학생 현황(드래그)
@@ -2419,7 +2465,7 @@ function printDoc(title, bodyHtml){
   const w = window.open('', '_blank', 'width=820,height=1100');
   if(!w){ toast('팝업이 차단되었어요. 허용해 주세요.'); return; }
   w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title>'
-    + '<style>@page{size:A4 portrait;margin:16mm} *{box-sizing:border-box} body{font-family:"Malgun Gothic",sans-serif;color:#1a1a1a;line-height:1.7} '
+    + '<style>@page{size:A4 portrait;margin:0} *{box-sizing:border-box} body{font-family:"Malgun Gothic",sans-serif;color:#1a1a1a;line-height:1.7;padding:16mm} '
     + '.doc{max-width:180mm;margin:0 auto} h1{text-align:center;font-size:24px;margin:0 0 4px} .sub{text-align:center;color:#666;margin-bottom:22px} '
     + '.art{margin:14px 0} .art b{display:block;margin-bottom:2px} .fill{border-bottom:1px solid #333;padding:0 6px;font-weight:700} '
     + '.sign-row{display:flex;justify-content:space-between;gap:24px;margin-top:34px} .sign-box{flex:1;text-align:center} '
@@ -2477,12 +2523,47 @@ function bossInvestmentCard(cd){
   h += `<div>투자자(갑): 선생님${sImg(tSign)}</div>`;
   h += `<div>대표자(을): ${esc(nmeOf(cd))}${sImg(bSign)}</div>`;
   h += '</div></div>';
+  // 지급된 투자금(쿠키)을 사장 화면에 명확히 표시 — 쿠키는 이벤트 상점 계좌로 지급됨
+  const paid = inv.paidCookie||0;
+  if(paid>0){
+    h += `<div style="margin-top:10px;background:linear-gradient(135deg,#fff4ec,#ffe7d6);border:1.5px solid #ffd0ae;border-radius:12px;padding:12px 14px;text-align:center">`
+      + `<div style="font-size:13px;color:#9a6a45;font-weight:800">💸 투자금 지급 완료</div>`
+      + `<div style="font-size:20px;font-weight:900;color:#c9520a;margin-top:2px">🍪 ${esc(paid)}쿠키</div>`
+      + `<div class="muted" style="font-size:12px;margin-top:2px">내 <b>이벤트 상점</b> 계좌로 들어왔어요! (상점에서 확인)</div></div>`;
+  }
   if(bSign) h += '<div class="badge b-ok" style="margin-top:8px">서명 완료 · 선생님께 보냄 🤝</div>';
   else h += `<div class="row" style="margin-top:8px"><button class="btn-grn btn-sm" onclick="signInvestment('${cd}')">✍ 서명해서 보내기</button></div>`;
   h += '</div>';
   return h;
 }
-function signInvestment(cd){ captureSign('대표자(을) 서명', url=>{ S.child('businesses/'+cd+'/investment/bossSignUrl').set(url).then(()=>toast('서명을 선생님께 보냈어요! 🤝')); }); }
+/* 사장이 서명하는 순간 = 투자금(쿠키) 지급 시점.
+   서명 저장 + 쿠키 지급(본인 이벤트 상점 shopUsed 음수 차감) + 선물 메시지를 원자적으로 처리. */
+function signInvestment(cd){ captureSign('대표자(을) 서명', async url=>{
+  if(window._invSending[cd]){ return; }
+  window._invSending[cd] = true;
+  try{
+    const inv = obj(obj(obj(DB.businesses)[cd]).investment);
+    const bn = obj(obj(DB.businesses)[cd]).name || nmeOf(cd);
+    const cookie = inv.cookie||0;
+    const already = inv.paidCookie||0;        // 재서명 시 이미 지급된 분은 제외하고 차액만 지급
+    const delta = cookie - already;
+    // 본인 상점 키를 캐시에서 해결(추가 읽기 0) — EventShop/stu 전체 재조회 방지
+    const k = await _resolveShopKey(cd);
+    if(k==null){ toast('내 상점 계정을 찾지 못했어요 — 선생님께 알려주세요'); return; }
+    // 서명 + 지급기록(paidCookie) + 쿠키 이동(shopUsed 음수 차감=잔액↑)을 하나의 원자적 ROOT.update로 → 이중지급 방지
+    const updates = {};
+    if(delta!==0){
+      updates['EventShop/stu/'+k+'/shopUsed']  = firebase.database.ServerValue.increment(-delta);
+      updates['EventShop/stu/'+k+'/updatedAt'] = Date.now();
+    }
+    const ip = 'Startup/businesses/'+cd+'/investment/';
+    updates[ip+'bossSignUrl']=url; updates[ip+'paidCookie']=cookie; updates[ip+'signedAt']=firebase.database.ServerValue.TIMESTAMP;
+    await ROOT.update(updates);
+    if(delta>0) await _shopGiftMsg(cd, `📈 투자약정 체결! 「${bn}」 투자금 🍪${delta}쿠키가 지급됐어요. 사업 번창을 응원할게요! 🎉`, [{name:'쿠키', emoji:'🍪'}]);
+    prettyConfirm('투자약정 체결 완료 🤝', `<b>${esc(bn)}</b> 투자약정서에 서명했어요!`+(cookie>0?`<br><b style="color:#c9520a;font-size:19px">🍪 ${esc(cookie)}쿠키</b>가 내 <b>이벤트 상점</b> 계좌로 지급됐어요.<br><span class="muted">이벤트 상점을 열어 확인해 보세요!</span>`:'<br><span class="muted">선생님께 서명을 보냈어요.</span>'), null, '🎉');
+  }catch(e){ console.error(e); toast('서명·지급 실패 — 다시 시도해 주세요'); }
+  finally{ window._invSending[cd] = false; }
+}); }
 // 교사: 회사별 투자약정서 설정/보내기 (companyDashboardCard에서 호출)
 function investmentEditor(cd){
   const b = obj(obj(DB.businesses)[cd]);
@@ -2537,24 +2618,41 @@ async function cancelInvestment(cd){
   }, '🗑️');
 }
 window._invSending = window._invSending || {};
-async function sendInvestment(cd){
-  if(window._invSending[cd]){ return; }          // 이중 클릭 방지(paidCookie 반영 전 재실행 → 이중지급 차단)
-  window._invSending[cd] = true;
-  const btn = (window.event && window.event.target) || null; if(btn){ btn.disabled=true; }
+/* 사장에게 이벤트 상점 '선생님 선물' 메시지 push → 학생 이벤트 상점에서 선물상자 팝업으로 표시.
+   (이벤트 상점 교사 지급의 tchrMsg 구조 {msg, items:[{name,emoji}], ts} 를 그대로 사용) */
+async function _shopGiftMsg(cd, msg, items){
   try{
-    const won=parseInt($('inv_won_'+cd).value)||0, cookie=parseInt($('inv_ck_'+cd).value)||0, pct=parseInt($('inv_pct_'+cd).value)||0;
-    const inv = obj(obj(obj(DB.businesses)[cd]).investment);
-    const already = inv.paidCookie||0;            // 이미 사장에게 지급한 투자 쿠키
-    const delta = cookie - already;               // 추가 지급분(수정 시 증감 반영)
-    const { updates, missing } = await _cookieUpdates(delta!==0 ? { [cd]: -delta } : {});   // 음수=지급(사장 잔액↑)
-    if(missing.length){ toast('사장의 상점 계정을 찾지 못했어요'); return; }
-    // 쿠키 이동 + paidCookie 기록을 하나의 원자적 ROOT.update로 → 부분 실패 시 이중지급 방지
-    const ip = 'Startup/businesses/'+cd+'/investment/';
-    updates[ip+'won']=won; updates[ip+'cookie']=cookie; updates[ip+'pct']=pct;
-    updates[ip+'paidCookie']=cookie; updates[ip+'sentAt']=firebase.database.ServerValue.TIMESTAMP;
-    await ROOT.update(updates);
-    toast(delta>0 ? ('투자금 '+delta+'쿠키를 사장에게 지급했어요! 💸') : (delta<0 ? ('투자금을 '+(-delta)+'쿠키 회수했어요') : '투자약정서를 저장했어요'));
-  }catch(e){ console.error(e); toast('전송 실패 — 다시 시도해 주세요'); if(btn){ btn.disabled=false; } }
+    const k = await _resolveShopKey(cd); if(k==null) return false;
+    const entry = { msg: msg, items: items||[], ts: Date.now() };
+    const base = ROOT.child('EventShop/stu/'+k);
+    await base.child('tchrMsg').transaction(cur=>{ const arr = Array.isArray(cur)?cur.slice():[]; arr.push(entry); return arr; });
+    // 메시지 기록/회수용 teacherMsgs 에도 남김(선물상자가 이미 뜨므로 read:true 로 중복 팝업 방지)
+    await base.child('teacherMsgs').transaction(cur=>{ const arr = Array.isArray(cur)?cur.slice():[]; arr.push({ text: msg, ts: entry.ts, read: true, items: items||[] }); return arr; });
+    return true;
+  }catch(e){ console.warn('shopGiftMsg', e); return false; }
+}
+/* 투자약정서 보내기(교사): 약정 내용만 기록·전송. 쿠키 지급은 사장이 서명할 때 이뤄짐(signInvestment). */
+function sendInvestment(cd){
+  if(window._invSending[cd]){ return; }
+  const won=parseInt($('inv_won_'+cd).value)||0, cookie=parseInt($('inv_ck_'+cd).value)||0, pct=parseInt($('inv_pct_'+cd).value)||0;
+  const inv = obj(obj(obj(DB.businesses)[cd]).investment);
+  const bn = obj(obj(DB.businesses)[cd]).name || nmeOf(cd);
+  const signed = !!inv.bossSignUrl;   // 이미 서명·지급된 약정을 수정하는 경우
+  const cookieChanged = signed && (cookie !== (inv.paidCookie||0));   // 쿠키 금액이 바뀔 때만 재서명·재정산 필요
+  let msgHtml = `<b>${esc(bn)}</b> 사장에게 투자약정서를 보낼까요?<br><b style="color:#c9520a;font-size:18px">🍪 ${cookie}쿠키</b> 는 <b>사장이 서명하면</b> 이벤트 상점으로 지급돼요.`;
+  if(cookieChanged) msgHtml += `<br><span class="muted" style="color:#c0392b">쿠키 금액이 바뀌어 <b>서명이 초기화</b>돼요. 사장이 다시 서명하면 차액이 정산됩니다.</span>`;
+  prettyConfirm(inv.sentAt?'투자약정서 수정':'투자약정서 보내기', msgHtml, ()=>_doSendInvestment(cd, won, cookie, pct, cookieChanged), '📨');
+}
+async function _doSendInvestment(cd, won, cookie, pct, resetSign){
+  if(window._invSending[cd]){ return; }
+  window._invSending[cd] = true;
+  try{
+    const ip = 'businesses/'+cd+'/investment/';
+    const upd = { [ip+'won']:won, [ip+'cookie']:cookie, [ip+'pct']:pct, [ip+'sentAt']:TS };
+    if(resetSign) upd[ip+'bossSignUrl']=null;   // 쿠키 금액 변경 시에만 재서명 요구 → 서명 시 차액(paidCookie 기준) 지급
+    await S.update(upd);
+    toast(resetSign ? '수정했어요 — 사장이 다시 서명하면 차액이 지급돼요' : '투자약정서를 보냈어요 📨 (서명 시 지급)');
+  }catch(e){ console.error(e); toast('전송 실패 — 다시 시도해 주세요'); }
   finally{ window._invSending[cd] = false; }
 }
 
