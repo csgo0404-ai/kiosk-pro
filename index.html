@@ -148,6 +148,11 @@
   .job-cell .v{font-size:14px;font-weight:800;color:#3a3f45;margin-top:2px;word-break:break-all}
   .job-cell.wide{grid-column:1 / -1}
   .job-cell.biz .v{font-weight:700;white-space:pre-wrap;line-height:1.45}
+  /* 교사: 회사(열) 순서 드래그 재정렬 — 태블릿 지원 위해 포인터 드래그 사용 */
+  .ord-wrap{border:1px dashed #ffd9bf;border-radius:10px;padding:8px;margin-bottom:10px;background:#fffaf6}
+  .ord-row{display:flex;align-items:center;gap:8px;padding:9px 10px;margin:5px 0;background:#fff;border:1px solid #ffe0c9;border-radius:8px;font-weight:800;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+  .ord-row.ord-dragging{opacity:.9;box-shadow:0 4px 12px rgba(245,124,43,.28);cursor:grabbing}
+  .ord-grip{color:#f5943b;font-size:18px;line-height:1}
   .job-pill{display:inline-block;font-size:12px;font-weight:800;color:#178254;background:#e7f6ef;border-radius:20px;padding:2px 9px;margin-right:5px}
   .job-pill.off{color:#9aa0a6;background:#f0f1f3}
 </style>
@@ -574,12 +579,12 @@ function isEditing(){
    교사 기기는 학생 30명의 모든 변경 델타를 받아 full 재렌더가 몰릴 수 있어 CPU/배터리 절감. 동작·정합성은 동일. */
 let _renderCoalesceTimer=null, _renderMore=false;
 function scheduleRender(){
-  if(isEditing() || window._starDragging){ _pendingRender = true; return; }
+  if(isEditing() || window._starDragging || window._ordDragging){ _pendingRender = true; return; }
   _pendingRender = false;
   if(_renderCoalesceTimer){ _renderMore = true; return; }   // 이미 방금 렌더함 → 뒤이은 버스트는 합침
   render();
   _renderCoalesceTimer = setTimeout(function _tick(){
-    if(_renderMore && !(isEditing() || window._starDragging)){ _renderMore=false; render(); _renderCoalesceTimer=setTimeout(_tick,120); }
+    if(_renderMore && !(isEditing() || window._starDragging || window._ordDragging)){ _renderMore=false; render(); _renderCoalesceTimer=setTimeout(_tick,120); }
     else if(_renderMore){ /* 편집 중이면 보류 후 focusout에서 처리 */ _pendingRender=true; _renderMore=false; _renderCoalesceTimer=null; }
     else { _renderCoalesceTimer=null; }
   }, 120);
@@ -592,9 +597,13 @@ function render(){
   // 3일차 자동 이동 없음 → 사장·알바는 부스 링크 버튼(boothLinkCard)을 눌러 새 창으로 입장
   $('phasePill').textContent = PHASE_LABEL[phase()] || ('phase '+phase());
   const el = $('mainArea');
+  // 가로 스크롤 위치 보존: 재렌더로 innerHTML을 갈아끼워도 채점표 등 스크롤 위치가 왼쪽으로 튀지 않게.
+  const _hs = {};
+  el.querySelectorAll('.hscroll[data-hskey]').forEach(d=>{ _hs[d.dataset.hskey]=d.scrollLeft; });
   if(IS_TEACHER) el.innerHTML = viewTeacher();
   else if(myBiz() && myBiz().status==='approved') el.innerHTML = viewBoss();  // 승인된 사장만 사장 화면
   else el.innerHTML = viewStudent();  // 미승인·미제출·공무원·일반은 학생 화면(두 트랙 모두 작성 가능)
+  el.querySelectorAll('.hscroll[data-hskey]').forEach(d=>{ const v=_hs[d.dataset.hskey]; if(v!=null) d.scrollLeft=v; });
 }
 
 /* ============================================================
@@ -678,7 +687,20 @@ function saveBizRecruit(cd){
     ins4:          g('er_ins4_'+cd).value,
     condition:     g('er_cond_'+cd).value.trim()
   };
-  S.child('businesses/'+cd).update(upd).then(()=>{
+  // 학생에게 보이는 채용공고는 스냅샷(jobPosts/cd)에서 읽으므로, 승인돼 공고가 게시된 회사는
+  // 모집 관련 필드를 jobPosts에도 함께 반영해야 학생 화면에 수정이 나타난다.
+  const all = {};
+  Object.entries(upd).forEach(([k,v])=> all['businesses/'+cd+'/'+k]=v);
+  const jp = obj(obj(DB.jobPosts)[cd]);
+  if(jp.postedAt){
+    all['jobPosts/'+cd+'/duty']=upd.duty;
+    all['jobPosts/'+cd+'/headcount']=upd.headcount;
+    all['jobPosts/'+cd+'/workDays']=upd.workDays;
+    all['jobPosts/'+cd+'/qualification']=upd.qualification;
+    all['jobPosts/'+cd+'/weeklyPay']=upd.weeklyPay;
+    all['jobPosts/'+cd+'/condition']=upd.condition;
+  }
+  S.update(all).then(()=>{
     window._bizRecEdit = window._bizRecEdit || {}; window._bizRecEdit[cd] = false;
     toast('사업계획서를 수정했어요 — 학생에게 반영됩니다'); scheduleRender();
   }).catch(()=>toast('저장 실패 — 다시 시도해 주세요'));
@@ -766,7 +788,9 @@ function civilApprovalCard(){
 /* 1~3일차: 회사별 현황 */
 function companyDashboardCard(){
   const biz = obj(DB.businesses);
-  const approved = entries(biz).filter(([cd,b])=>b.status==='approved');
+  // 면접 채점 총합 높은순 정렬(동점·미채점은 이름순)
+  const approved = entries(biz).filter(([cd,b])=>b.status==='approved')
+    .sort((a,b)=>{ const d=iTotalOf(b[0])-iTotalOf(a[0]); return d!==0 ? d : String(a[1].name||'').localeCompare(String(b[1].name||'')); });
   const _pub = cd => !!obj(obj(DB.selections)[cd]).published;
   const _hcnt = cd => Object.keys(obj(obj(obj(DB.selections)[cd]).hired)).length;
   const anyPub = approved.some(([cd])=>!_pub(cd) && _hcnt(cd)>0);
@@ -1236,7 +1260,9 @@ function savePlan(submit){
   const doSave = ()=>{
     const cur = myBiz();
     if(!cur || !cur.createdAt) data.createdAt = TS;
-    S.child('businesses/'+ME.cd).update(data).then(()=>{ clearDraftLocal('plan'); toast(submit?'제출 완료!':'저장했어요'); });
+    // 임시저장(submit=false)에서는 draft를 지우지 않는다: 느린 네트워크에서 저장 왕복 중 입력한
+    // 글자가 .then()의 draft 삭제로 유실되는 것을 방지. 제출(terminal, 폼 비활성화) 때만 정리.
+    S.child('businesses/'+ME.cd).update(data).then(()=>{ if(submit) clearDraftLocal('plan'); toast(submit?'제출 완료!':'저장했어요'); });
   };
   if(submit) prettyConfirm('📋 사업계획서 제출', '제출하면 <b style="color:#c0392b">수정·취소할 수 없어요.</b><br>내용을 다시 확인하고 제출할까요?', doSave);
   else doSave();
@@ -1349,6 +1375,7 @@ function saveRehirePost(){
 // 추가 채용: 새로 확정된 인원이 추가 모집 인원을 채우면 자동 마감(구독 시점 실행 → 새로고침 없이 사장 버튼도 즉시 갱신)
 function _maybeAutoCloseRehire(){
   if(IS_TEACHER || !ME) return;
+  if(phase()<2) return;   // 추가채용(rehire)은 2일차+ 기능 → 1일차 초기 모집은 어떤 경우에도 자동 마감하지 않음
   const cd = ME.cd;
   const post = obj(obj(DB.jobPosts)[cd]);
   if(!(post.rehire && post.open && post.rehireQuota)) return;
@@ -1552,6 +1579,9 @@ function _syncBizPub(){
     if(b.status==='approved'){
       slim.desc=b.desc||''; slim.plan=b.plan||''; slim.items=bg.items||'';
       slim.cost=(bg.cost!=null?bg.cost:''); slim.cookie=(bg.cookie!=null?bg.cookie:'');
+      // 모집 필드도 미러에 포함 → 채용공고를 단일 출처(businesses)에서 읽어 교사 수정이 항상 반영.
+      slim.duty=b.duty||''; slim.headcount=(b.headcount!=null?b.headcount:''); slim.workDays=(b.workDays!=null?b.workDays:'');
+      slim.qualification=b.qualification||''; slim.weeklyPay=(b.weeklyPay!=null?b.weeklyPay:'');
     }
     const h = JSON.stringify(slim);
     if(window._bizPubHash[cd] !== h){ upd['bizPub/'+cd] = slim; window._bizPubHash[cd] = h; }
@@ -1636,6 +1666,26 @@ const IPRESET = ['아이디어','합리적 예산','구체적인 계획','기타
 function iCfg(){ return obj(obj(DB.interview).config); }
 // 교사가 항목을 설정하지 않았으면 기본 4항목(IPRESET)이 항상 선택된 것으로 취급
 function iItems(){ const it=(iCfg().items||[]); return it.length ? it : IPRESET.slice(); }
+// 교사가 정한 회사 순서(interview/config/order = [cd,...]). 학생은 config를 이미 구독하므로 추가 트래픽 없음.
+function iOrder(){ const o=iCfg().order; return Array.isArray(o)?o:[]; }
+function iOrderedApproved(excludeCd){
+  const targets = entries(DB.businesses).filter(([cd,b])=> b.status==='approved' && cd!==excludeCd);
+  const ord = iOrder();
+  const pos = cd => { const i=ord.indexOf(cd); return i<0 ? 1e9 : i; };   // 순서 미지정 회사는 뒤로
+  return targets.sort((a,b)=>{ const d=pos(a[0])-pos(b[0]); return d!==0 ? d : String(a[1].name||'').localeCompare(String(b[1].name||'')); });
+}
+function saveIOrder(order){ S.child('interview/config/order').set(order); }
+// 회사의 면접 채점 총합(항목별 평균의 합) — 회사 현황 정렬에 사용
+function iTotalOf(cd){
+  const scores = obj(obj(DB.interview).scores);
+  let total=0;
+  iItems().forEach((_,idx)=>{
+    let sum=0,n=0;
+    Object.values(scores).forEach(byTarget=>{ const v=obj(obj(byTarget)[cd])['i'+idx]; if(typeof v==='number'){ sum+=v; n++; } });
+    if(n) total += sum/n;
+  });
+  return total;
+}
 
 /* ---- 교사: 설정 ---- */
 function interviewSetupCard(){
@@ -1653,7 +1703,7 @@ function interviewSetupCard(){
   h += `<label style="margin-left:8px;font-size:13px">항목별 만점 <input id="iMax" type="number" min="1" max="10" value="${max}" style="width:60px;display:inline-block" onchange="saveIMax()"></label></div>`;
   const isOpen = cfg.open!==false;   // 기본 표시, 명시적으로 마감(false)했을 때만 숨김
   h += '<div class="divider"></div><div class="row">';
-  h += `<button class="${isOpen?'btn-red':'btn-grn'}" onclick="toggleIOpen(${!isOpen})">${isOpen?'⏹ 채점 마감(숨기기)':'▶ 채점 표시하기'}</button>`;
+  h += `<button class="${isOpen?'btn-red':'btn-grn'}" onclick="toggleIOpen(${!isOpen})">${isOpen?'🔒 채점 마감(자동 제출)':'▶ 채점 다시 열기'}</button>`;
   h += `<span class="badge ${isOpen?'b-ok':'b-wait'}">${isOpen?'학생에게 표시중':'숨김'}</span>`;
   h += '<button class="btn-gray btn-sm" onclick="resetInterview()">채점 기록 초기화</button></div></div>';
   return h;
@@ -1662,20 +1712,31 @@ function toggleIItem(p){ let items=iItems().slice(); items = items.includes(p) ?
 function removeIItem(idx){ let items=iItems().slice(); items.splice(idx,1); S.child('interview/config/items').set(items); }
 function addIItem(){ const v=($('iCustom').value||'').trim(); if(!v)return; let items=iItems().slice(); if(!items.includes(v)) items.push(v); S.child('interview/config/items').set(items); $('iCustom').value=''; }
 function saveIMax(){ const m=parseInt($('iMax').value)||5; S.child('interview/config/max').set(Math.max(1,Math.min(10,m))); }
-function toggleIOpen(v){ S.child('interview/config/open').set(v); toast(v?'채점을 시작했어요':'채점을 마감했어요'); }
+function toggleIOpen(v){
+  if(!v){   // 마감 → 학생들의 미제출 점수가 자동 제출됨을 안내
+    prettyConfirm('채점 마감', '채점을 마감하면 학생들이 <b>지금까지 준 점수가 자동으로 제출</b>되고, 더 이상 수정할 수 없어요.<br>마감할까요?', ()=>{ S.child('interview/config/open').set(false); toast('채점을 마감했어요 — 학생 점수 자동 제출'); }, '🔒');
+    return;
+  }
+  S.child('interview/config/open').set(true); toast('채점을 시작했어요');
+}
 function resetInterview(){ if(!confirm('면접 채점 기록을 모두 삭제할까요?'))return; S.child('interview/scores').remove(); toast('채점 기록 초기화'); }
 
 /* ---- 교사: 결과 채점표 ---- */
 function interviewResultCard(){
   const cfg = iCfg(); const items = iItems();
-  const targets = entries(DB.businesses).filter(([cd,b])=>b.status==='approved');
+  const targets = iOrderedApproved();
   let h = '<div class="card"><h2>📊 면접 채점표 (평균)</h2>';
   if(!items.length){ h += '<div class="empty">평가항목을 먼저 설정하세요.</div></div>'; return h; }
   if(!targets.length){ h += '<div class="empty">승인된 사업가가 없습니다.</div></div>'; return h; }
+  // 회사(열) 순서 드래그 재정렬 — 학생 평가표에도 동일 순서로 반영
+  h += '<div class="muted" style="margin-bottom:4px">↕ 회사 이름을 <b>드래그</b>하면 채점표의 열 순서를 바꿀 수 있어요 (학생 평가표에도 반영).</div>';
+  h += '<div class="ord-wrap" id="ordWrap">';
+  targets.forEach(([cd,b])=>{ h += `<div class="ord-row" data-cd="${cd}" onpointerdown="ordDown(event,'${cd}')"><span class="ord-grip">☰</span><span>${esc(b.name||nmeOf(cd))} <span class="muted" style="font-weight:600">${esc(nmeOf(cd))}</span></span></div>`; });
+  h += '</div>';
   const scores = obj(obj(DB.interview).scores);
   const totals = {};
   const cell='border:1px solid #ddd;padding:6px;text-align:center';
-  h += '<div class="hscroll"><table style="border-collapse:collapse;width:100%;font-size:13px">';
+  h += '<div class="hscroll" data-hskey="result"><table style="border-collapse:collapse;width:100%;font-size:13px">';
   h += '<tr><th style="'+cell+';background:#f7f7f7;text-align:left">평가항목 ＼ 지원자</th>';
   targets.forEach(([cd,b])=> h += `<th style="${cell};background:#f7f7f7">${esc(b.name||nmeOf(cd))}<br><span class="muted">${esc(nmeOf(cd))}</span></th>`);
   h += '</tr>';
@@ -1694,8 +1755,47 @@ function interviewResultCard(){
   h += `<tr><td style="${cell};text-align:left;font-weight:800;background:#fff7ee">총 합</td>`;
   targets.forEach(([tcd])=>{ const t=totals[tcd]||0; h += `<td style="${cell};font-weight:800;background:#fff7ee">${t.toFixed(1)}${(tcd===bestCd&&best>0)?' 🏆':''}</td>`; });
   h += '</tr></table></div>';
-  h += `<p class="muted" style="margin-top:8px">채점 참여 ${Object.keys(scores).length}명 · 셀 값은 평균 점수입니다.</p></div>`;
+  h += `<p class="muted" style="margin-top:8px">채점 참여 ${Object.keys(scores).length}명 · 셀 값은 평균 점수입니다.</p>`;
+  // 아직 채점 안 한 학생 이름(사장 제외) — 참여 독려용
+  const notVoted = Object.keys(ROSTER)
+    .filter(cd => !obj(scores[cd]) || !Object.keys(obj(scores[cd])).length)   // 제출 기록 없음
+    .filter(cd => stuRole(cd)!=='boss')                                       // 사장(평가 대상)은 제외
+    .sort((a,b)=> ((ROSTER[a].no||9999)-(ROSTER[b].no||9999)) || String(ROSTER[a].nm||'').localeCompare(String(ROSTER[b].nm||'')));
+  if(notVoted.length) h += `<p class="muted" style="color:#c0392b">🙅 아직 채점 안 함 (${notVoted.length}명): ${notVoted.map(cd=>esc(nmeOf(cd))).join(', ')}</p>`;
+  h += '</div>';
   return h;
+}
+/* 교사: 회사 순서 포인터 드래그(터치/마우스 공용, 태블릿 동작)
+   포인터 캡처가 실패해도 끊기지 않도록 document 레벨에서 move/up을 듣는다. */
+function ordDown(e, cd){
+  e.preventDefault(); e.stopPropagation();
+  const row=e.currentTarget, list=row.parentNode;
+  window._ordDrag={ row, list };
+  window._ordDragging=true;
+  try{ row.setPointerCapture(e.pointerId); }catch(_){}
+  row.classList.add('ord-dragging');
+  document.addEventListener('pointermove', ordMove);
+  document.addEventListener('pointerup', ordUp);
+  document.addEventListener('pointercancel', ordUp);
+}
+function ordMove(e){
+  const d=window._ordDrag; if(!d) return;
+  e.preventDefault();
+  const y=e.clientY;
+  const others=Array.from(d.list.querySelectorAll('.ord-row')).filter(r=>r!==d.row);
+  let placed=false;
+  for(const r of others){ const rc=r.getBoundingClientRect(); if(y < rc.top+rc.height/2){ d.list.insertBefore(d.row, r); placed=true; break; } }
+  if(!placed) d.list.appendChild(d.row);
+}
+function ordUp(){
+  const d=window._ordDrag; if(!d) return;
+  document.removeEventListener('pointermove', ordMove);
+  document.removeEventListener('pointerup', ordUp);
+  document.removeEventListener('pointercancel', ordUp);
+  d.row.classList.remove('ord-dragging');
+  window._ordDrag=null; window._ordDragging=false;
+  const order=Array.from(d.list.querySelectorAll('.ord-row')).map(r=>r.dataset.cd);
+  saveIOrder(order);   // DB 저장 → 재렌더로 표·학생 평가표 순서 반영
 }
 
 /* ---- 학생: 면접 채점표 (표 + 별점, 로컬 보관 → 마지막에 제출) ---- */
@@ -1707,16 +1807,29 @@ function setLocalScore(tcd, idx, n){ const ls=getLocalScores(); ls[tcd]=ls[tcd]|
 function interviewScoreCard(voterCd){
   if(phase()!==1) return '';        // 면접 채점은 1일차
   const cfg = iCfg();
-  if(cfg.open===false) return '';   // 교사가 '마감'을 눌렀을 때만 숨김 (평가항목 있으면 기본 표시)
+  if(cfg.open===false){
+    // 교사가 '마감' → 아직 제출 안 한 로컬 점수를 자동 제출 처리
+    const submitted = Object.keys(obj(obj(obj(DB.interview).scores)[voterCd])).length>0;
+    const local = getLocalScores();
+    if(!submitted && Object.keys(local).length && !window._iAutoSubmitBusy){
+      window._iAutoSubmitBusy = true;
+      S.child('interview/scores/'+ME.cd).set(local)
+        .then(()=>{ window._iAutoSubmitBusy=false; toast('채점이 마감되어 자동 제출됐어요 📨'); scheduleRender(); })
+        .catch(()=>{ window._iAutoSubmitBusy=false; });
+      return '<div class="card"><h2>🎤 사업가 평가표</h2><div class="empty">🔒 채점이 마감되어 <b>지금까지 준 점수가 자동 제출</b>됐어요.</div></div>';
+    }
+    if(submitted) return '<div class="card"><h2>🎤 사업가 평가표</h2><div class="empty">✅ 제출 완료 · 채점이 마감되었어요.</div></div>';
+    return '';   // 점수도 없고 제출도 안 함 → 숨김(미참여)
+  }
   const items = iItems(); const max = cfg.max || 5;
-  const targets = entries(DB.businesses).filter(([cd,b])=>b.status==='approved' && cd!==voterCd);
+  const targets = iOrderedApproved(voterCd);
   // 로컬이 비어있고 서버에 제출본이 있으면 1회 시드(새로고침/다른 기기 복원)
   if(Object.keys(getLocalScores()).length===0){ const srv=obj(obj(obj(DB.interview).scores)[voterCd]); if(Object.keys(srv).length){ window._localScores=JSON.parse(JSON.stringify(srv)); _saveLocalScores(); } }
   const locked = Object.keys(obj(obj(obj(DB.interview).scores)[voterCd])).length>0;   // 제출하면 잠김(수정 불가)
   let h = '<div class="card"><h2>🎤 사업가 평가표</h2>';
   if(locked) h += '<p class="muted">✅ 이미 제출했어요. <b>점수는 수정할 수 없어요.</b></p>';
   if(!targets.length){ h += '<div class="empty">채점할 사업가가 없어요.</div></div>'; return h; }
-  h += '<div class="hscroll"><table class="score-table"><tr><th class="corner">평가항목 ＼ 지원자</th>';
+  h += '<div class="hscroll" data-hskey="score"><table class="score-table"><tr><th class="corner">평가항목 ＼ 지원자</th>';
   targets.forEach(([tcd,b])=>{ h += `<th>${esc(b.name||nmeOf(tcd))}</th>`; });
   h += '</tr>';
   items.forEach((it,idx)=>{
@@ -2068,7 +2181,7 @@ function studentJobsCard(){
     h += '<div class="job-top"><div class="job-logo">🏪</div><div class="job-id">'
        + `<div class="job-name">${esc(bname)}</div>`
        + `<div class="job-boss">👤 사장 ${esc(nmeOf(bc))}</div></div>`
-       + (pt.open?'<span class="badge b-ok">모집중</span>':'<span class="badge b-no">마감</span>')
+       + (pt.open!==false?'<span class="badge b-ok">모집중</span>':'<span class="badge b-no">마감</span>')
        + '</div>';
     // 모집 정보
     h += '<div class="job-body"><div class="job-grid">';
@@ -2081,12 +2194,18 @@ function studentJobsCard(){
     if(bz.plan) h += `<div class="job-cell wide biz"><div class="l">📈 운영 계획</div><div class="v">${esc(bz.plan)}</div></div>`;
     if(bItems) h += `<div class="job-cell wide biz"><div class="l">📦 준비물</div><div class="v">${esc(bItems)}</div></div>`;
     if((bCost!=null&&bCost!=='')||(bCookie!=null&&bCookie!=='')) h += `<div class="job-cell wide biz"><div class="l">💰 예산 신청</div><div class="v">현금 ${esc(bCost||0)}원 · 쿠키 ${esc(bCookie||0)}🍪</div></div>`;
-    h += `<div class="job-cell wide"><div class="l">담당 업무</div><div class="v">${esc(pt.duty||'-')}</div></div>`;
-    h += `<div class="job-cell"><div class="l">모집 인원</div><div class="v">${esc(pt.headcount||1)}명</div></div>`;
-    h += `<div class="job-cell"><div class="l">근무 시간</div><div class="v">${_numShow(pt.workDays, '시간')}</div></div>`;
-    h += `<div class="job-cell"><div class="l">시급</div><div class="v">${esc(pt.weeklyPay||0)} 🍪</div></div>`;
+    // 모집 필드는 단일 출처(bz=businesses 미러)를 우선 사용하고, 없으면 스냅샷(pt=jobPosts)로 폴백 → 교사 수정이 항상 반영.
+    const rDuty=(bz.duty!=null&&bz.duty!==''?bz.duty:pt.duty);
+    const rHead=(bz.headcount!=null&&bz.headcount!==''?bz.headcount:pt.headcount);
+    const rDays=(bz.workDays!=null&&bz.workDays!==''?bz.workDays:pt.workDays);
+    const rPay=(bz.weeklyPay!=null&&bz.weeklyPay!==''?bz.weeklyPay:pt.weeklyPay);
+    const rQual=(bz.qualification!=null&&bz.qualification!==''?bz.qualification:pt.qualification);
+    h += `<div class="job-cell wide"><div class="l">담당 업무</div><div class="v">${esc(rDuty||'-')}</div></div>`;
+    h += `<div class="job-cell"><div class="l">모집 인원</div><div class="v">${esc(rHead||1)}명</div></div>`;
+    h += `<div class="job-cell"><div class="l">근무 시간</div><div class="v">${_numShow(rDays, '시간')}</div></div>`;
+    h += `<div class="job-cell"><div class="l">시급</div><div class="v">${esc(rPay||0)} 🍪</div></div>`;
     h += `<div class="job-cell"><div class="l">복지</div><div class="v"><span class="job-pill${bz.bonus==='있음'?'':' off'}">성과급 ${bz.bonus==='있음'?'○':'×'}</span><span class="job-pill${bz.ins4==='있음'?'':' off'}">4대보험 ${bz.ins4==='있음'?'○':'×'}</span></div></div>`;
-    h += `<div class="job-cell wide"><div class="l">자격·우대</div><div class="v">${esc(pt.qualification||'-')}</div></div>`;
+    h += `<div class="job-cell wide"><div class="l">자격·우대</div><div class="v">${esc(rQual||'-')}</div></div>`;
     if(bz.condition) h += `<div class="job-cell wide"><div class="l">기타</div><div class="v">${esc(bz.condition)}</div></div>`;
     h += '</div>';
     if(bc===ME.cd){ h+='<div class="muted">내 회사예요.</div>'; }
@@ -2095,12 +2214,13 @@ function studentJobsCard(){
     else if(applied){
       // 제출 후엔 수정·취소 불가(선생님만 가능). 학생은 읽기 전용 보기만.
       h += `<div class="row"><span class="badge b-info">지원 완료</span><button class="btn-gray btn-sm" onclick="toggleResume('${bc}')">이력서 보기</button></div>`;
-      h += resumeForm(bc, myResume, true, true);   // 읽기 전용 보기
+      h += resumeForm(bc, myResume, !isResumeOpen(bc), true);   // 읽기 전용 보기
     }
-    else if(pt.open){
+    else if(pt.open!==false){   // 명시적으로 '모집 마감'(open===false) 했을 때만 지원 불가. 지원자 수와 무관하게 계속 접수.
       if(rehirePhase && locked) h += '<div class="muted" style="margin-bottom:4px">💼 이미 근무 중이지만 <b>겸직</b>으로 지원할 수 있어요.</div>';
       h += `<button class="btn-org btn-sm" onclick="toggleResume('${bc}')">📝 이력서 쓰고 지원하기</button>`;
-      h += resumeForm(bc, myResume, true);
+      // 작성 중 내용은 로컬 임시저장(draft) 우선 → 재렌더로 폼이 닫혀도 내용·열림상태 유지
+      h += resumeForm(bc, Object.assign({}, myResume, getResumeDraft(bc)||{}), !isResumeOpen(bc));
     } else {
       h += '<div class="muted">모집이 마감되었어요.</div>';
     }
@@ -2112,18 +2232,31 @@ function studentJobsCard(){
 function resumeForm(bc, r, hidden, readonly){
   r = obj(r);
   const ro = readonly ? ' disabled' : '';
+  const au = readonly ? '' : ` oninput="autosaveResume('${bc}')"`;   // 작성 중 자동 임시저장(재렌더로 내용 유실 방지)
   let h = `<div id="resume_${bc}" class="${hidden?'hidden':''}" style="margin-top:8px;border-top:1px dashed var(--line);padding-top:10px">`;
-  h += `<div class="field"><label>이 회사에 지원한 동기는 무엇인가요?</label><textarea id="r_motive_${bc}"${ro}>${esc(r.motive||'')}</textarea></div>`;
-  h += `<div class="field"><label>내 성격의 장점은 무엇인가요?</label><textarea id="r_pros_${bc}"${ro}>${esc(r.pros||'')}</textarea></div>`;
-  h += `<div class="field"><label>내 성격의 단점은 무엇이며 어떻게 극복할 것인가요?</label><textarea id="r_cons_${bc}"${ro}>${esc(r.cons||'')}</textarea></div>`;
-  h += `<div class="field"><label>우리 회사의 업무에 도움이 될 관련 경험은 무엇인가요?</label><textarea id="r_career_${bc}"${ro}>${esc(r.career||'')}</textarea></div>`;
-  h += `<div class="field"><label>입사 후 나의 다짐과 포부는 무엇인가요?</label><textarea id="r_resolve_${bc}"${ro}>${esc(r.resolve||'')}</textarea></div>`;
-  h += `<div class="field"><label>희망하는 시급(쿠키)은 얼마인가요?</label><input id="r_pay_${bc}" type="number" min="0" value="${esc(r.wantPay||'')}"${ro}></div>`;
-  if(!readonly) h += `<button class="btn-org btn-sm" onclick="submitResume('${bc}')">제출/저장</button>`;
+  h += `<div class="field"><label>이 회사에 지원한 동기는 무엇인가요?</label><textarea id="r_motive_${bc}"${ro}${au}>${esc(r.motive||'')}</textarea></div>`;
+  h += `<div class="field"><label>내 성격의 장점은 무엇인가요?</label><textarea id="r_pros_${bc}"${ro}${au}>${esc(r.pros||'')}</textarea></div>`;
+  h += `<div class="field"><label>내 성격의 단점은 무엇이며 어떻게 극복할 것인가요?</label><textarea id="r_cons_${bc}"${ro}${au}>${esc(r.cons||'')}</textarea></div>`;
+  h += `<div class="field"><label>우리 회사의 업무에 도움이 될 관련 경험은 무엇인가요?</label><textarea id="r_career_${bc}"${ro}${au}>${esc(r.career||'')}</textarea></div>`;
+  h += `<div class="field"><label>입사 후 나의 다짐과 포부는 무엇인가요?</label><textarea id="r_resolve_${bc}"${ro}${au}>${esc(r.resolve||'')}</textarea></div>`;
+  h += `<div class="field"><label>희망하는 시급(쿠키)은 얼마인가요?</label><input id="r_pay_${bc}" type="number" min="0" value="${esc(r.wantPay||'')}"${ro}${au}></div>`;
+  // 임시저장(제출 아님)과 제출을 분리 → 실수로 자동/조기 제출되는 것 방지
+  if(!readonly) h += `<div class="row"><button class="btn-gray btn-sm" onclick="autosaveResume('${bc}');toast('임시 저장했어요 — 아직 제출 전이에요')">💾 임시 저장</button><button class="btn-org btn-sm" onclick="submitResume('${bc}')">📨 제출하기</button></div>`;
   h += '</div>';
   return h;
 }
-function toggleResume(bc){ const el=$('resume_'+bc); if(el) el.classList.toggle('hidden'); }
+function isResumeOpen(bc){ window._resumeOpen=window._resumeOpen||{}; return !!window._resumeOpen[bc]; }
+function toggleResume(bc){ window._resumeOpen=window._resumeOpen||{}; window._resumeOpen[bc]=!window._resumeOpen[bc]; render(); }
+function _resumeDraftKey(bc){ return 'startup_resumedraft_'+(ME&&ME.cd)+'_'+bc; }
+function getResumeDraft(bc){ try{ return JSON.parse(localStorage.getItem(_resumeDraftKey(bc))||'null'); }catch(_){ return null; } }
+function clearResumeDraft(bc){ try{ localStorage.removeItem(_resumeDraftKey(bc)); }catch(_){} }
+function autosaveResume(bc){
+  if(!$('r_motive_'+bc)) return;
+  try{ localStorage.setItem(_resumeDraftKey(bc), JSON.stringify({
+    motive:$('r_motive_'+bc).value, pros:$('r_pros_'+bc).value, cons:$('r_cons_'+bc).value,
+    career:$('r_career_'+bc).value, resolve:$('r_resolve_'+bc).value, wantPay:$('r_pay_'+bc).value
+  })); }catch(_){}
+}
 
 /* ===== 교사: 지원자 이력서 수정·취소 ===== */
 function teacherResumeForm(cd, acd, r){
@@ -2175,11 +2308,16 @@ function submitResume(bc){
     prettyConfirm('이름은 쓸 수 없어요', '이력서는 <b>익명</b>이에요. 내용에 이름(<b>'+esc(nm)+'</b> 또는 <b>'+esc(given)+'</b>)이 들어가면 제출할 수 없어요.<br>이름을 지우고 다시 제출해 주세요.', null, '🙈');
     return;
   }
-  // 이력서엔 이름 저장 안 함(익명). 본인 조회용 역인덱스만 별도.
-  S.child('resumes/'+bc+'/'+ME.cd).update(data);
-  S.child('applicantIndex/'+ME.cd+'/'+bc).set(true);
-  try{ localStorage.setItem(_resumeKey(bc), JSON.stringify(data)); }catch(_){}   // 로컬 프리필용 보관
-  toast('지원 완료! 📨');
+  const bn = obj(obj(DB.businesses)[bc]).name || nmeOf(bc);
+  prettyConfirm('이력서 제출', '<b>'+esc(bn)+'</b>에 지원할까요?<br><b style="color:#c0392b">제출하면 학생은 수정·취소할 수 없어요.</b>', ()=>{
+    // 이력서엔 이름 저장 안 함(익명). 본인 조회용 역인덱스만 별도.
+    S.child('resumes/'+bc+'/'+ME.cd).update(data);
+    S.child('applicantIndex/'+ME.cd+'/'+bc).set(true);
+    try{ localStorage.setItem(_resumeKey(bc), JSON.stringify(data)); }catch(_){}   // 로컬 프리필용 보관
+    clearResumeDraft(bc);
+    window._resumeOpen=window._resumeOpen||{}; window._resumeOpen[bc]=false;
+    toast('지원 완료! 📨');
+  }, '📨');
 }
 /* 학생: 제출한 이력서(지원) 취소 — 합격 통지/입사 확정 전에만 가능 */
 function cancelResume(bc){
