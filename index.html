@@ -72,6 +72,17 @@
   .kv{font-size:13.5px;line-height:1.7}
   .kv b{color:#555}
   .divider{height:1px;background:var(--line);margin:12px 0}
+  .sumtbl{border-collapse:collapse;width:100%;font-size:13px;min-width:680px}
+  .sumtbl th,.sumtbl td{border:1px solid var(--line);padding:7px 9px;text-align:center;vertical-align:middle;white-space:nowrap}
+  .sumtbl th{background:#f6f8fb;font-weight:800;color:#5a5f66}
+  .sumtbl td:first-child{text-align:left}
+  .sumtbl td:first-child .muted{display:block}
+  .sumtbl tr.sumtot td{background:#fff7ee;font-weight:900;color:#c9520a}
+  .sumtbl .sm-name{width:100%;min-width:120px;box-sizing:border-box;padding:5px 6px;font-size:13px;font-weight:800}
+  .sumtbl td:first-child .muted{margin-top:2px;font-size:12px}
+  .sumtbl .sm-in{width:100%;min-width:96px;box-sizing:border-box;padding:5px 6px;font-size:13px}
+  .sumtbl .sm-num{width:62px;box-sizing:border-box;padding:5px 4px;font-size:13px;text-align:right}
+  .sumtbl .u{font-size:11px;color:#9aa0a6;margin-left:2px}
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:11px 18px;border-radius:24px;font-size:14px;z-index:9999;opacity:0;transition:.25s;pointer-events:none}
   .toast.show{opacity:1}
   .empty{text-align:center;color:#9aa0a8;padding:22px;font-size:14px}
@@ -667,8 +678,8 @@ function viewTeacher(){
 
   // 일차별 관리 화면
   if(p===0){ h += bizApprovalCard(); h += civilApprovalCard(); }
-  else if(p===1){ h += interviewSetupCard(); h += interviewResultCard(); h += interviewQuestionsCard(true); h += companyDashboardCard(); h += noResumeCard(); }
-  else if(p===2){ h += companyDashboardCard(); h += notSelectedCard(); h += teacherPayrollCard(); }
+  else if(p===1){ h += interviewSetupCard(); h += interviewResultCard(); h += interviewQuestionsCard(true); h += investmentSummaryCard(); h += companyDashboardCard(); h += noResumeCard(); }
+  else if(p===2){ h += investmentSummaryCard(); h += companyDashboardCard(); h += notSelectedCard(); h += teacherPayrollCard(); }
   else if(p===3){ h += teacherBoothsCard(); h += teacherPayrollCard(); }
 
   // 항상 하단: 학생 현황(드래그)
@@ -697,7 +708,8 @@ function recruitEditor(cd, b){
   h += `<div class="field"><label>업체명</label><input id="eb_name_${cd}" value="${esc(b.name||'')}"></div>`;
   h += `<div class="field"><label>사업설명</label><textarea id="eb_desc_${cd}">${esc(b.desc||'')}</textarea></div>`;
   h += `<div class="field"><label>운영계획</label><textarea id="eb_plan_${cd}">${esc(b.plan||'')}</textarea></div>`;
-  h += `<div class="field"><label>준비물</label><textarea id="eb_items_${cd}">${esc(bg.items||'')}</textarea></div>`;
+  h += `<div class="field"><label>준비물 (개인)</label><textarea id="eb_items_${cd}">${esc(bg.items||'')}</textarea></div>`;
+  h += `<div class="field"><label>준비물 (선생님)</label><textarea id="eb_itemsTchr_${cd}">${esc(bg.itemsTchr||'')}</textarea></div>`;
   h += _numField('예산신청 — 현금 (쿠팡·문구점·편의점에서 직접 구입, 투자 설명회 점수로 차등 지급)', 'eb_cost_'+cd, bg.cost!=null?bg.cost:'', '원');
   h += _numField('예산신청 — 쿠키 (쿠키에 따라 투자 회수 % 결정)', 'eb_cookie_'+cd, bg.cookie!=null?bg.cookie:'', '쿠키');
   h += '<div class="divider"></div><div style="font-weight:800;margin-bottom:6px">📢 직원 모집 수정</div>';
@@ -722,6 +734,7 @@ function saveBizRecruit(cd){
     desc:          g('eb_desc_'+cd).value.trim(),
     plan:          g('eb_plan_'+cd).value.trim(),
     'budget/items': g('eb_items_'+cd).value.trim(),
+    'budget/itemsTchr': g('eb_itemsTchr_'+cd).value.trim(),
     'budget/cost':  Math.max(0, parseInt(g('eb_cost_'+cd).value)||0),
     'budget/cookie': Math.max(0, parseInt(g('eb_cookie_'+cd).value)||0),
     duty:          g('er_duty_'+cd).value.trim(),
@@ -761,7 +774,7 @@ function bizApprovalCard(){
   submitted.forEach(([cd,b])=>{
     h += '<div class="list-item">';
     h += `<div class="biz-head"><b>${esc(b.name||'(업체명 미정)')}</b><span class="muted">대표: ${esc(nmeOf(cd))}</span></div>`;
-    if(!(window._bizRecEdit||{})[cd]) h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')} / ${esc((b.budget&&b.budget.cookie!=null)?b.budget.cookie+'쿠키':'-')}</div>`;
+    if(!(window._bizRecEdit||{})[cd]) h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물(개인)</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>준비물(선생님)</b> ${esc((b.budget&&b.budget.itemsTchr)||'-')}<br><b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')} / ${esc((b.budget&&b.budget.cookie!=null)?b.budget.cookie+'쿠키':'-')}</div>`;
     h += recruitSection(cd, b);
     h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-grn btn-sm" onclick="approveBiz('${cd}')">✅ 승인</button><button class="btn-org btn-sm" onclick="toggleBizRecruit('${cd}')">${(window._bizRecEdit||{})[cd]?'✖ 수정 닫기':'✏️ 계획서 수정'}</button><button class="btn-gray btn-sm" onclick="rejectBiz('${cd}')">반려</button><button class="btn-red btn-sm" onclick="deleteBiz('${cd}')">삭제</button></div>`;
     h += '</div>';
@@ -772,7 +785,7 @@ function bizApprovalCard(){
     approvedB.forEach(([cd,b])=>{
       h += '<div class="list-item">';
       h += `<div class="biz-head"><b>${esc(b.name||'(업체명 미정)')}</b><span class="badge b-ok">사장 ${esc(nmeOf(cd))}</span></div>`;
-      if(!(window._bizRecEdit||{})[cd]) h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')} / ${esc((b.budget&&b.budget.cookie!=null)?b.budget.cookie+'쿠키':'-')}</div>`;
+      if(!(window._bizRecEdit||{})[cd]) h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물(개인)</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>준비물(선생님)</b> ${esc((b.budget&&b.budget.itemsTchr)||'-')}<br><b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')} / ${esc((b.budget&&b.budget.cookie!=null)?b.budget.cookie+'쿠키':'-')}</div>`;
       h += recruitSection(cd, b);
       h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-org btn-sm" onclick="toggleBizRecruit('${cd}')">${(window._bizRecEdit||{})[cd]?'✖ 수정 닫기':'✏️ 계획서 수정'}</button><button class="btn-gray btn-sm" onclick="revokeBiz('${cd}')">↩️ 승인취소</button><button class="btn-red btn-sm" onclick="deleteBiz('${cd}')">삭제</button></div>`;
       h += '</div>';
@@ -831,6 +844,69 @@ function civilApprovalCard(){
   h += '</div>';
   return h;
 }
+/* 1일차+: 투자약정 일괄 정리표 — 회사별 현금·쿠키·준비물·투자조건을 한눈에 */
+function investmentSummaryCard(){
+  const biz = obj(DB.businesses);
+  // 회사현황과 동일하게 면접 채점 총점 높은순(동점·미채점은 업체명순)으로 정렬
+  const approved = entries(biz).filter(([cd,b])=>b.status==='approved')
+    .sort((a,b)=>{ const d=iTotalOf(b[0])-iTotalOf(a[0]); return d!==0 ? d : String(a[1].name||'').localeCompare(String(b[1].name||'')); });
+  let h = '<div class="card"><h2>📊 투자약정 일괄표 <span class="badge b-info">'+approved.length+'</span></h2>';
+  if(!approved.length){ h += '<div class="empty">승인된 회사가 없습니다.</div></div>'; return h; }
+  h += '<p class="muted" style="font-size:12px;margin:2px 0 8px">표에서 바로 입력하고 <b>💾</b>를 누르면 저장돼요. 현금·쿠키 칸의 <b>회색 숫자(placeholder)</b>는 사업계획서 신청값이에요. 서명완료 약정을 고치면 알림 없이 쿠키 차액이 정산됩니다.</p>';
+  h += '<div style="overflow-x:auto"><table class="sumtbl"><thead><tr>'
+     + '<th>업체 (대표)</th><th>준비물(개인)</th><th>준비물(선생님)</th><th>현금</th><th>쿠키</th><th>투자조건</th><th>상태</th>'
+     + '</tr></thead><tbody>';
+  let totWon=0, totCk=0;
+  approved.forEach(([cd,b])=>{
+    const bg = obj(b.budget), inv = obj(b.investment);
+    const sent = !!inv.sentAt;
+    // 합계는 표시값 기준(전송본=약정값, 미전송=신청값)
+    totWon += (+(sent?(inv.won||0):(bg.cost!=null?bg.cost:0))||0);
+    totCk  += (+(sent?(inv.cookie||0):(bg.cookie!=null?bg.cookie:0))||0);
+    const status = !sent ? '<span class="badge b-wait">전송 전</span>'
+      : inv.bossSignUrl ? '<span class="badge b-ok">서명완료</span>'
+      : '<span class="badge b-info">전송됨</span>';
+    // 입력값: 인메모리 초안(_smDraft) 우선 → 재렌더로 유실 방지
+    const dr = (window._smDraft||{})[cd]||{};
+    const vName   = dr.name!=null     ? dr.name     : (b.name||'');
+    const vItems  = dr.items!=null    ? dr.items    : (bg.items||'');
+    const vItemsT = dr.itemsTchr!=null ? dr.itemsTchr : (bg.itemsTchr||'');
+    const vWon = dr.won!=null ? dr.won : (sent?(inv.won||0):'');
+    const vCk  = dr.ck!=null  ? dr.ck  : (sent?(inv.cookie||0):'');
+    const vPct = dr.pct!=null ? dr.pct : (sent?(inv.pct||0):'');
+    const phWon = bg.cost!=null?bg.cost:'', phCk = bg.cookie!=null?bg.cookie:'';
+    h += '<tr>'
+      + `<td><input class="sm-name" id="sm_name_${cd}" oninput="_smDraftSet('${cd}','name',this.value)" value="${esc(vName)}" placeholder="업체명"><span class="muted">${esc(nmeOf(cd))}</span></td>`
+      + `<td><input class="sm-in" id="sm_items_${cd}" oninput="_smDraftSet('${cd}','items',this.value)" value="${esc(vItems)}" placeholder="개인"></td>`
+      + `<td><input class="sm-in" id="sm_itemsT_${cd}" oninput="_smDraftSet('${cd}','itemsTchr',this.value)" value="${esc(vItemsT)}" placeholder="선생님"></td>`
+      + `<td><input class="sm-num" type="number" min="0" id="sm_won_${cd}" oninput="_smDraftSet('${cd}','won',this.value)" value="${esc(vWon)}" placeholder="${esc(phWon)}"><span class="u">원</span></td>`
+      + `<td><input class="sm-num" type="number" min="0" id="sm_ck_${cd}" oninput="_smDraftSet('${cd}','ck',this.value)" value="${esc(vCk)}" placeholder="${esc(phCk)}"><span class="u">🍪</span></td>`
+      + `<td><input class="sm-num" type="number" min="0" max="100" id="sm_pct_${cd}" oninput="_smDraftSet('${cd}','pct',this.value)" value="${esc(vPct)}" placeholder="0"><span class="u">%</span></td>`
+      + `<td>${status}<br><button class="btn-grn btn-sm" style="margin-top:4px" onclick="saveSummaryRow('${cd}')">💾</button></td></tr>`;
+  });
+  h += `<tr class="sumtot"><td colspan="3">합계</td><td>${esc(totWon)}원</td><td>${esc(totCk)}🍪</td><td>-</td><td>-</td></tr>`;
+  h += '</tbody></table></div></div>';
+  return h;
+}
+// 일괄표 인라인 편집 초안(재렌더로 입력 유실 방지) + 행 저장
+window._smDraft = window._smDraft || {};
+function _smDraftSet(cd, field, val){ (window._smDraft[cd] = window._smDraft[cd]||{})[field] = val; }
+function saveSummaryRow(cd){
+  const nm=$('sm_name_'+cd), it=$('sm_items_'+cd), itt=$('sm_itemsT_'+cd);
+  const won=parseInt(($('sm_won_'+cd)||{}).value)||0, ck=parseInt(($('sm_ck_'+cd)||{}).value)||0, pct=parseInt(($('sm_pct_'+cd)||{}).value)||0;
+  const inv = obj(obj(obj(DB.businesses)[cd]).investment);
+  const bupd = {};
+  if(nm) bupd.name = nm.value.trim();
+  if(it) bupd['budget/items'] = it.value.trim();
+  if(itt) bupd['budget/itemsTchr'] = itt.value.trim();
+  if(Object.keys(bupd).length) S.child('businesses/'+cd).update(bupd).catch(()=>{});
+  delete window._smDraft[cd];
+  // 이미 전송된 약정이거나 투자값을 입력한 경우에만 투자약정 저장/전송(준비물만 고쳤을 땐 약정을 건드리지 않음)
+  if(inv.sentAt || won>0 || ck>0 || pct>0){ sendInvestmentVals(cd, won, ck, pct); }
+  else { toast('저장했어요 — 학생에게 반영됩니다'); }
+  scheduleRender();
+}
+
 /* 1~3일차: 회사별 현황 */
 function companyDashboardCard(){
   const biz = obj(DB.businesses);
@@ -843,7 +919,12 @@ function companyDashboardCard(){
   const anyPub = approved.some(([cd])=>!_pub(cd) && (_hcnt(cd)>0 || _rcnt(cd)>0));
   let h = '<div class="card"><div class="biz-head" style="margin-bottom:8px"><h2 style="margin:0">🏢 회사 현황 <span class="badge b-info">'+approved.length+'</span></h2>';
   if(phase()===1){ const _sub=approved.filter(([cd])=>obj(obj(DB.selections)[cd]).submitted).length; h += `<span class="badge ${_sub===approved.length&&approved.length?'b-ok':'b-wait'}">📨 제출 ${_sub}/${approved.length}</span>`; }
-  if(phase()>=2) h += `<button class="btn-org btn-sm" onclick="publishAll()" ${anyPub?'':'disabled'}>📣 일괄 합격 발표</button>`;
+  if(phase()>=1){
+    h += '<span style="margin-left:auto;display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap">';
+    if(_anyDoc()) h += `<button class="btn-grn btn-sm" onclick="printAllDocs()">🖨 일괄 다운로드</button>`;
+    if(phase()>=2) h += `<button class="btn-org btn-sm" onclick="publishAll()" ${anyPub?'':'disabled'}>📣 일괄 합격 발표</button>`;
+    h += '</span>';
+  }
   h += '</div>';
   if(phase()>=1){ const _ts=obj(DB.meta).teacherSignUrl; h += `<div class="row" style="margin-bottom:6px"><button class="btn-gray btn-sm" onclick="uploadTeacherSign()">🖋 교사 서명 ${_ts?'변경':'등록'}</button>${_ts?'<span class="badge b-ok">등록됨</span>':'<span class="muted">투자약정서 갑 서명에 자동 사용</span>'}</div>`; }
   if(!approved.length) h += '<div class="empty">승인된 회사가 없습니다.</div>';
@@ -901,6 +982,18 @@ function companyDashboardCard(){
       h += `<div class="kv" style="margin-top:2px"><b>후보</b> ${rnames}</div>`;
     }
     // 투자약정서 설정/보내기 (1일차부터)
+    // 준비물(개인/선생님) 빠른 수정 — 저장 시 businesses/budget에 write → 슬림미러로 학생에게 반영.
+    // 학생 활동으로 인한 재렌더가 입력 중인 값을 DB(이전값)로 덮지 않도록 인메모리 초안(_itemsDraftMap) 우선 표시.
+    if(phase()>=1){
+      const bg0 = obj(b.budget);
+      const _dr = (window._itemsDraftMap||{})[cd]||{};
+      const _iv = _dr.items!=null ? _dr.items : (bg0.items||'');
+      const _tv = _dr.itemsTchr!=null ? _dr.itemsTchr : (bg0.itemsTchr||'');
+      h += `<div class="row" style="margin-top:6px;flex-wrap:wrap;gap:6px;align-items:center"><span class="muted">준비물</span>`
+        + `<input id="ci_items_${cd}" oninput="_itemsDraft('${cd}','items',this.value)" value="${esc(_iv)}" placeholder="개인" style="flex:1;min-width:110px">`
+        + `<input id="ci_itemsT_${cd}" oninput="_itemsDraft('${cd}','itemsTchr',this.value)" value="${esc(_tv)}" placeholder="선생님" style="flex:1;min-width:110px">`
+        + `<button class="btn-grn btn-sm" onclick="saveBudgetItems('${cd}')">💾 저장</button></div>`;
+    }
     if(phase()>=1) h += investmentEditor(cd);
     // 근로계약서 인쇄 (2일차부터, 계약서가 작성된 아르바이트별)
     if(phase()>=2){
@@ -1185,18 +1278,18 @@ function bossPayrollCard(cd){
   const reqs = obj(obj(DB.payroll)[cd]);
   const pending = entries(reqs).filter(([id,r])=>r && (r.status==='pending'||r.status==='paying'));
   const locked = pending.length>0;
-  let h = '<div class="card"><h2>💰 월급 지급</h2>';
-  h += '<p class="muted">직원에게 줄 월급을 확인하고 <b>정산 요청</b>을 보내세요. 선생님이 승인하면 직원 통장에 쿠키가 들어가고, 회사(사장) 쿠키에서 그만큼 빠져나가요.</p>';
+  let h = '<div class="card"><h2>💰 시급 지급</h2>';
+  h += '<p class="muted">직원에게 줄 <b>시급(시간당 쿠키)</b>을 확인하고 <b>정산 요청</b>을 보내세요. 선생님이 승인하면 직원 통장에 쿠키가 들어가고, 회사(사장) 쿠키에서 그만큼 빠져나가요.</p>';
   let total = 0;
   emps.forEach(acd=>{
     const pay = (obj(myHires[acd]).weeklyPay)||0; total += pay;
-    h += `<div class="list-item"><b>🙋 ${esc(nmeOf(acd))}</b> <span style="margin-left:auto"><input id="pay_${esc(cd)}_${esc(acd)}" type="number" min="0" value="${esc(pay)}" style="width:90px" ${locked?'disabled':''}> 쿠키</span></div>`;
+    h += `<div class="list-item"><b>🙋 ${esc(nmeOf(acd))}</b> <span style="margin-left:auto"><input id="pay_${esc(cd)}_${esc(acd)}" type="number" min="0" value="${esc(pay)}" style="width:90px" ${locked?'disabled':''}> 쿠키 지급</span></div>`;
   });
   if(locked){
     const r = pending[0][1];
     h += `<div class="empty">⏳ 정산 요청을 보냈어요 (총 ${esc(r.total||0)}쿠키). 선생님 승인을 기다리는 중…</div>`;
   } else {
-    h += `<div class="row" style="justify-content:space-between;align-items:center;margin-top:8px"><span class="muted">기본 합계 ${esc(total)}쿠키</span><button class="btn-grn" onclick="requestPayroll('${esc(cd)}')">📨 월급 지급 요청</button></div>`;
+    h += `<div class="row" style="justify-content:space-between;align-items:center;margin-top:8px"><span class="muted">기본 합계 ${esc(total)}쿠키</span><button class="btn-grn" onclick="requestPayroll('${esc(cd)}')">📨 시급 지급 요청</button></div>`;
   }
   const paid = entries(reqs).filter(([id,r])=>r && r.status==='paid').sort((a,b)=>(b[1].paidAt||0)-(a[1].paidAt||0)).slice(0,3);
   if(paid.length){
@@ -1218,7 +1311,7 @@ function requestPayroll(cd){
     if(pay>0){ items.push({cd:acd, pay}); total += pay; }
   });
   if(!items.length){ toast('지급할 금액을 입력하세요'); return; }
-  prettyConfirm('월급 지급 요청', '직원 <b>'+items.length+'명</b>에게 <b>총 '+total+'쿠키</b>를 지급하도록 선생님께 정산을 요청할까요?<br><span class="muted">승인되면 회사(사장) 쿠키에서 '+total+'쿠키가 빠져나가요.</span>', ()=>{
+  prettyConfirm('시급 지급 요청', '직원 <b>'+items.length+'명</b>에게 <b>총 '+total+'쿠키</b>(시간당)를 지급하도록 선생님께 정산을 요청할까요?<br><span class="muted">승인되면 회사(사장) 쿠키에서 '+total+'쿠키가 빠져나가요.</span>', ()=>{
     const ref = S.child('payroll/'+cd).push();
     ref.set({ bossCd:cd, items, total, status:'pending', requestedAt:TS }).then(()=>toast('정산 요청을 보냈어요! 📨')).catch(()=>toast('요청 실패'));
   }, '💰');
@@ -1245,7 +1338,7 @@ function getDraftLocal(kind){ try{ return JSON.parse(localStorage.getItem(_draft
 function setDraftLocal(kind, data){ try{ localStorage.setItem(_draftKey(kind), JSON.stringify(data)); }catch(_){} }
 function clearDraftLocal(kind){ try{ localStorage.removeItem(_draftKey(kind)); }catch(_){} }
 function _optSel(list, sel){ return list.map(o=>`<option ${o===sel?'selected':''}>${esc(o)}</option>`).join(''); }
-function autosavePlan(){ setDraftLocal('plan', { name:$('p_name').value, ceo:$('p_ceo').value, desc:$('p_desc').value, plan:$('p_plan').value, items:$('p_items').value, cost:$('p_cost').value, cookie:$('p_cookie').value, duty:$('p_duty').value, qual:$('p_qual').value, head:$('p_head').value, days:$('p_days').value, bonus:$('p_bonus').value, ins4:$('p_ins4').value, cond:$('p_cond').value, pay:$('p_pay').value, at:Date.now() }); }
+function autosavePlan(){ setDraftLocal('plan', { name:$('p_name').value, ceo:$('p_ceo').value, desc:$('p_desc').value, plan:$('p_plan').value, items:$('p_items').value, itemsTchr:$('p_itemsTchr').value, cost:$('p_cost').value, cookie:$('p_cookie').value, duty:$('p_duty').value, qual:$('p_qual').value, head:$('p_head').value, days:$('p_days').value, bonus:$('p_bonus').value, ins4:$('p_ins4').value, cond:$('p_cond').value, pay:$('p_pay').value, at:Date.now() }); }
 function autosaveCivil(){ setDraftLocal('civil', { motive:$('cs_motive').value, strength:$('cs_strength').value, weakness:$('cs_weakness').value, resolve:$('cs_resolve').value, at:Date.now() }); }
 
 function planEditorCard(b){
@@ -1261,7 +1354,8 @@ function planEditorCard(b){
   h += `<div class="field"><label>대표자 이름</label><input id="p_ceo" ${oi} value="${esc(pick('ceo', b.ceo||ME.nm))}" ${dis}></div>`;
   h += `<div class="field"><label>사업 설명</label><textarea id="p_desc" ${oi} ${dis}>${esc(pick('desc', b.desc||''))}</textarea></div>`;
   h += `<div class="field"><label>운영 계획</label><textarea id="p_plan" ${oi} ${dis}>${esc(pick('plan', b.plan||''))}</textarea></div>`;
-  h += `<div class="field"><label>준비물</label><input id="p_items" ${oi} value="${esc(pick('items', bg.items||''))}" ${dis}></div>`;
+  h += `<div class="field"><label>준비물 (개인) — 학생이 각자 준비할 것</label><input id="p_items" ${oi} value="${esc(pick('items', bg.items||''))}" ${dis} placeholder="예: 가위, 색연필"></div>`;
+  h += `<div class="field"><label>준비물 (선생님) — 선생님께 부탁할 것</label><input id="p_itemsTchr" ${oi} value="${esc(pick('itemsTchr', bg.itemsTchr||''))}" ${dis} placeholder="예: 도화지, 물감"></div>`;
   h += `<div class="field"><label>예산 신청 — 현금 (0~10,000원)</label><input id="p_cost" type="number" min="0" max="10000" step="100" ${oi} value="${esc(pick('cost', bg.cost!=null?bg.cost:''))}" ${dis} placeholder="0 ~ 10000"><div class="muted" style="font-size:12px;margin-top:4px">💡 현금은 <b>쿠팡·문구점·편의점</b>에서 직접 구입할 때 써요. <b>투자 설명회 점수</b>에 따라 차등 지급돼요!</div></div>`;
   h += `<div class="field"><label>예산 신청 — 쿠키 (0~10,000쿠키)</label><input id="p_cookie" type="number" min="0" max="10000" step="10" ${oi} value="${esc(pick('cookie', bg.cookie!=null?bg.cookie:''))}" ${dis} placeholder="0 ~ 10000"><div class="muted" style="font-size:12px;margin-top:4px">🍪 신청한 쿠키에 따라 <b>투자 회수 %</b>가 달라져요!</div></div>`;
   h += '<div class="divider"></div><div style="font-weight:800;color:#5a5f66;margin-bottom:6px">📢 직원 모집 — 사장님이 된다면 직원을 어떻게 뽑을까요?</div>';
@@ -1288,7 +1382,7 @@ function savePlan(submit){
     ownerCd: ME.cd, ownerNm: ME.nm,
     name: $('p_name').value.trim(), ceo: $('p_ceo').value.trim(),
     desc: $('p_desc').value.trim(), plan: $('p_plan').value.trim(),
-    budget:{ items:$('p_items').value.trim(), cost:Math.max(0, Math.min(10000, parseInt($('p_cost').value)||0)), cookie:Math.max(0, Math.min(10000, parseInt($('p_cookie').value)||0)) },
+    budget:{ items:$('p_items').value.trim(), itemsTchr:$('p_itemsTchr').value.trim(), cost:Math.max(0, Math.min(10000, parseInt($('p_cost').value)||0)), cookie:Math.max(0, Math.min(10000, parseInt($('p_cookie').value)||0)) },
     duty: $('p_duty').value.trim(), qualification: $('p_qual').value.trim(),
     headcount: Math.max(0, parseInt($('p_head').value)||0),
     workDays: $('p_days').value.trim(),
@@ -1655,7 +1749,7 @@ function _syncBizPub(){
     // 사업계획서 본문(desc·plan·budget)은 채용공고가 뜨는 '승인' 회사만 미러에 포함
     //  → 0일차 초안 저장 churn으로 인한 bizPub 전체노드 재다운로드(egress 폭증) 방지.
     if(b.status==='approved'){
-      slim.desc=b.desc||''; slim.plan=b.plan||''; slim.items=bg.items||'';
+      slim.desc=b.desc||''; slim.plan=b.plan||''; slim.items=bg.items||''; slim.itemsTchr=bg.itemsTchr||'';
       slim.cost=(bg.cost!=null?bg.cost:''); slim.cookie=(bg.cookie!=null?bg.cookie:'');
       // 모집 필드도 미러에 포함 → 채용공고를 단일 출처(businesses)에서 읽어 교사 수정이 항상 반영.
       slim.duty=b.duty||''; slim.headcount=(b.headcount!=null?b.headcount:''); slim.workDays=(b.workDays!=null?b.workDays:'');
@@ -2272,11 +2366,13 @@ function studentJobsCard(){
     // 사업계획서 내용(사업 설명·운영 계획·준비물·예산 신청)도 함께 보여주기 — 어떤 회사인지 알고 지원하도록
     const _bud = obj(bz.budget);
     const bItems = (bz.items!=null?bz.items:_bud.items);
+    const bItemsTchr = (bz.itemsTchr!=null?bz.itemsTchr:_bud.itemsTchr);
     const bCost  = (bz.cost!=null&&bz.cost!==''?bz.cost:_bud.cost);
     const bCookie= (bz.cookie!=null&&bz.cookie!==''?bz.cookie:_bud.cookie);
     if(bz.desc) h += `<div class="job-cell wide biz"><div class="l">🏢 사업 설명</div><div class="v">${esc(bz.desc)}</div></div>`;
     if(bz.plan) h += `<div class="job-cell wide biz"><div class="l">📈 운영 계획</div><div class="v">${esc(bz.plan)}</div></div>`;
-    if(bItems) h += `<div class="job-cell wide biz"><div class="l">📦 준비물</div><div class="v">${esc(bItems)}</div></div>`;
+    if(bItems) h += `<div class="job-cell wide biz"><div class="l">📦 준비물(개인)</div><div class="v">${esc(bItems)}</div></div>`;
+    if(bItemsTchr) h += `<div class="job-cell wide biz"><div class="l">🧑‍🏫 준비물(선생님)</div><div class="v">${esc(bItemsTchr)}</div></div>`;
     if((bCost!=null&&bCost!=='')||(bCookie!=null&&bCookie!=='')) h += `<div class="job-cell wide biz"><div class="l">💰 예산 신청</div><div class="v">현금 ${esc(bCost||0)}원 · 쿠키 ${esc(bCookie||0)}🍪</div></div>`;
     // 모집 필드는 단일 출처(bz=businesses 미러)를 우선 사용하고, 없으면 스냅샷(pt=jobPosts)로 폴백 → 교사 수정이 항상 반영.
     const rDuty=(bz.duty!=null&&bz.duty!==''?bz.duty:pt.duty);
@@ -2461,19 +2557,24 @@ function openSignPad(title, onDone){
 // 서명 그리기 → Cloudinary 업로드 → cb(secureUrl)
 function captureSign(title, cb){ openSignPad(title, async(dataUrl)=>{ toast('서명 업로드 중…'); try{ const url=await _cldUpload(dataUrl); if(!url) throw 0; cb(url); }catch(_){ toast('업로드 실패 · 다시 시도해 주세요'); } }); }
 // A4 세로 인쇄: 새 창에 문서 HTML을 쓰고 인쇄
-function printDoc(title, bodyHtml){
+function printDoc(title, bodyHtml){ _openPrintDoc(title, [bodyHtml], true); }
+// 여러 문서를 한 창에 페이지 단위로 담아 일괄 인쇄/PDF 저장. autoPrint=false면 미리보기만(인쇄창은 버튼으로).
+function _openPrintDoc(title, bodies, autoPrint){
   const w = window.open('', '_blank', 'width=820,height=1100');
   if(!w){ toast('팝업이 차단되었어요. 허용해 주세요.'); return; }
+  const pages = (bodies||[]).map(b=>'<div class="page"><div class="doc">'+b+'</div></div>').join('');
   w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title>'
-    + '<style>@page{size:A4 portrait;margin:0} *{box-sizing:border-box} body{font-family:"Malgun Gothic",sans-serif;color:#1a1a1a;line-height:1.7;padding:16mm} '
+    + '<style>@page{size:A4 portrait;margin:0} *{box-sizing:border-box} body{font-family:"Malgun Gothic",sans-serif;color:#1a1a1a;line-height:1.7;margin:0} '
+    + '.page{padding:16mm} .page + .page{page-break-before:always} '
     + '.doc{max-width:180mm;margin:0 auto} h1{text-align:center;font-size:24px;margin:0 0 4px} .sub{text-align:center;color:#666;margin-bottom:22px} '
     + '.art{margin:14px 0} .art b{display:block;margin-bottom:2px} .fill{border-bottom:1px solid #333;padding:0 6px;font-weight:700} '
     + '.sign-row{display:flex;justify-content:space-between;gap:24px;margin-top:34px} .sign-box{flex:1;text-align:center} '
     + '.sign-img{height:60px;object-fit:contain;display:block;margin:6px auto} .sign-line{border-top:1px solid #333;margin-top:4px;padding-top:4px} '
     + 'table{width:100%;border-collapse:collapse;margin:10px 0} td,th{border:1px solid #999;padding:7px 9px;font-size:14px;text-align:left} '
-    + '@media print{.noprint{display:none}}</style></head><body><div class="doc">'+bodyHtml+'</div>'
-    + '<div class="noprint" style="text-align:center;margin:22px"><button onclick="window.print()" style="padding:10px 22px;font-size:15px;border-radius:8px;border:0;background:#2e7d32;color:#fff;cursor:pointer">🖨 인쇄</button></div>'
-    + '<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print()},350)}</scr'+'ipt></body></html>');
+    + '@media print{.noprint{display:none}}</style></head><body>'+pages
+    + '<div class="noprint" style="position:sticky;bottom:0;text-align:center;padding:14px;background:rgba(255,255,255,.95);border-top:1px solid #ddd"><button onclick="window.print()" style="padding:10px 22px;font-size:15px;border-radius:8px;border:0;background:#2e7d32;color:#fff;cursor:pointer">🖨 인쇄 / PDF 저장</button></div>'
+    + (autoPrint ? '<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print()},350)}</scr'+'ipt>' : '')
+    + '</body></html>');
   w.document.close();
 }
 
@@ -2481,7 +2582,7 @@ function printDoc(title, bodyHtml){
    투자약정서 (교사 → 사장, 1일차)
 ============================================================ */
 function investmentDocHtml(cd){
-  const b = obj(obj(DB.businesses)[cd]); const inv = obj(b.investment);
+  const b = obj(obj(DB.businesses)[cd]); const inv = obj(b.investment); const bg = obj(b.budget);
   const bn = b.name || nmeOf(cd);
   const tSign = obj(DB.meta).teacherSignUrl, bSign = inv.bossSignUrl;
   const img = u=> u? '<img class="sign-img" src="'+esc(u)+'">' : '<div class="sign-img"></div>';
@@ -2490,7 +2591,8 @@ function investmentDocHtml(cd){
     + '<div class="art"><b>제1조 (계약의 목적)</b>본 계약은 \'을\'의 기업 <span class="fill">'+esc(bn)+'</span>에 관하여 투자함에 따라 그 구체적인 내용과 필요한 제반 사항을 결정하고 \'갑\'과 \'을\' 사이의 권리·의무관계를 명확히 규정함을 그 목적으로 한다.</div>'
     + '<div class="art"><b>제2조 (투자의 전제조건)</b>\'갑\'은 본 계약에 따른 투자를 위해 \'을\'이 다음의 조건을 충족할 것을 요구할 수 있다. 총 매출의 <span class="fill">'+esc(inv.pct||0)+'</span> %를 지급한다.</div>'
     + '<div class="art"><b>제3조 (투자금의 지급)</b>\'갑\'은 아래 내용으로 \'을\'에게 투자금을 지급하기로 한다.<br>1. 투자금액: 일금 <span class="fill">'+esc(inv.won||0)+'</span>원과 <span class="fill">'+esc(inv.cookie||0)+'</span> 쿠키<br>2. 지급시기: 활동 시작 시</div>'
-    + '<div class="art"><b>제4조 (전용 금지)</b>\'을\'은 투자금에 대하여 경영상의 목적으로만 사용이 가능하며 기타의 부동산 구입이나 개인적 용도 등의 경영 이외의 목적으로 사용할 수 없다.</div>'
+    + '<div class="art"><b>제4조 (준비물)</b>본 사업의 준비물은 아래와 같이 준비한다.<br>1. 준비물(개인): <span class="fill">'+esc(bg.items||'없음')+'</span><br>2. 준비물(선생님): <span class="fill">'+esc(bg.itemsTchr||'없음')+'</span></div>'
+    + '<div class="art"><b>제5조 (전용 금지)</b>\'을\'은 투자금에 대하여 경영상의 목적으로만 사용이 가능하며 기타의 부동산 구입이나 개인적 용도 등의 경영 이외의 목적으로 사용할 수 없다.</div>'
     + '<div class="sign-row"><div class="sign-box"><div>투자자(갑): 선생님</div>'+img(tSign)+'<div class="sign-line">(서명)</div></div>'
     + '<div class="sign-box"><div>대표자(을): '+esc(nmeOf(cd))+'</div>'+img(bSign)+'<div class="sign-line">(서명)</div></div></div>';
 }
@@ -2508,7 +2610,8 @@ function bossInvestmentCard(cd){
   if(phase()<1) return '';
   const inv = obj(obj(obj(DB.businesses)[cd]).investment);
   if(!inv.sentAt) return '<div class="card"><h2>📜 투자약정서</h2><div class="empty">선생님이 투자약정서를 보내면 여기에 표시돼요.</div></div>';
-  const bn = obj(obj(DB.businesses)[cd]).name || nmeOf(cd);
+  const _b0 = obj(obj(DB.businesses)[cd]); const bg = obj(_b0.budget);
+  const bn = _b0.name || nmeOf(cd);
   const tSign = obj(DB.meta).teacherSignUrl, bSign = inv.bossSignUrl;
   const sImg = u=> u? '<img src="'+esc(u)+'" style="height:44px;display:block;margin:4px auto">' : '<span class="muted" style="font-size:12px">(서명 대기)</span>';
   let h = '<div class="card"><h2>📜 투자약정서 <span class="badge b-ok">도착</span></h2>';
@@ -2518,7 +2621,8 @@ function bossInvestmentCard(cd){
   h += `<div style="margin-top:8px"><b>제1조 (목적)</b> 을의 기업 <b>${esc(bn)}</b>에 투자한다.</div>`;
   h += `<div style="margin-top:6px"><b>제2조 (전제조건)</b> 총 매출의 <b>${esc(inv.pct||0)}%</b>를 지급한다.</div>`;
   h += `<div style="margin-top:6px"><b>제3조 (투자금)</b> 일금 <b>${esc(inv.won||0)}원과 ${esc(inv.cookie||0)}쿠키</b>.</div>`;
-  h += `<div style="margin-top:6px"><b>제4조 (전용 금지)</b> 투자금은 경영상의 목적으로만 사용한다.</div>`;
+  h += `<div style="margin-top:6px"><b>제4조 (준비물)</b> 개인 <b>${esc(bg.items||'없음')}</b> · 선생님 <b>${esc(bg.itemsTchr||'없음')}</b>.</div>`;
+  h += `<div style="margin-top:6px"><b>제5조 (전용 금지)</b> 투자금은 경영상의 목적으로만 사용한다.</div>`;
   h += '<div style="display:flex;justify-content:space-around;margin-top:14px;text-align:center">';
   h += `<div>투자자(갑): 선생님${sImg(tSign)}</div>`;
   h += `<div>대표자(을): ${esc(nmeOf(cd))}${sImg(bSign)}</div>`;
@@ -2588,6 +2692,17 @@ function investmentEditor(cd){
   h += '</div></div>';
   return h;
 }
+// 회사현황: 준비물(개인/선생님) 빠른 저장 → 슬림미러(_syncBizPub)로 학생 채용공고·요약표에 반영.
+// 입력 중 값은 인메모리 초안에 담아 재렌더로 유실되지 않게 하고, 저장 성공 시 초안 정리.
+window._itemsDraftMap = window._itemsDraftMap || {};
+function _itemsDraft(cd, field, val){ (window._itemsDraftMap[cd] = window._itemsDraftMap[cd]||{})[field] = val; }
+function saveBudgetItems(cd){
+  const it=$('ci_items_'+cd), itt=$('ci_itemsT_'+cd);
+  if(!it||!itt) return;
+  S.child('businesses/'+cd+'/budget').update({ items: it.value.trim(), itemsTchr: itt.value.trim() })
+    .then(()=>{ delete window._itemsDraftMap[cd]; toast('준비물을 저장했어요 — 학생에게 반영됩니다'); scheduleRender(); })
+    .catch(()=>toast('저장 실패 — 다시 시도해 주세요'));
+}
 // 신청 예산(현금/쿠키)을 투자약정 입력칸에 그대로 채워넣기
 function fillInvestFromBudget(cd){
   const bg = obj(obj(obj(DB.businesses)[cd]).budget);
@@ -2635,23 +2750,39 @@ async function _shopGiftMsg(cd, msg, items){
 function sendInvestment(cd){
   if(window._invSending[cd]){ return; }
   const won=parseInt($('inv_won_'+cd).value)||0, cookie=parseInt($('inv_ck_'+cd).value)||0, pct=parseInt($('inv_pct_'+cd).value)||0;
+  sendInvestmentVals(cd, won, cookie, pct);
+}
+// 값을 직접 받아 전송/수정(회사현황 에디터·일괄표 인라인 편집 공용). 미전송은 확인창, 서명완료는 '알림 없이' 즉시 정산.
+function sendInvestmentVals(cd, won, cookie, pct){
+  if(window._invSending[cd]){ return; }
   const inv = obj(obj(obj(DB.businesses)[cd]).investment);
   const bn = obj(obj(DB.businesses)[cd]).name || nmeOf(cd);
-  const signed = !!inv.bossSignUrl;   // 이미 서명·지급된 약정을 수정하는 경우
-  const cookieChanged = signed && (cookie !== (inv.paidCookie||0));   // 쿠키 금액이 바뀔 때만 재서명·재정산 필요
-  let msgHtml = `<b>${esc(bn)}</b> 사장에게 투자약정서를 보낼까요?<br><b style="color:#c9520a;font-size:18px">🍪 ${cookie}쿠키</b> 는 <b>사장이 서명하면</b> 이벤트 상점으로 지급돼요.`;
-  if(cookieChanged) msgHtml += `<br><span class="muted" style="color:#c0392b">쿠키 금액이 바뀌어 <b>서명이 초기화</b>돼요. 사장이 다시 서명하면 차액이 정산됩니다.</span>`;
-  prettyConfirm(inv.sentAt?'투자약정서 수정':'투자약정서 보내기', msgHtml, ()=>_doSendInvestment(cd, won, cookie, pct, cookieChanged), '📨');
+  if(inv.bossSignUrl){ _doSendInvestment(cd, won, cookie, pct); return; }
+  const msgHtml = `<b>${esc(bn)}</b> 사장에게 투자약정서를 보낼까요?<br><b style="color:#c9520a;font-size:18px">🍪 ${cookie}쿠키</b> 는 <b>사장이 서명하면</b> 이벤트 상점으로 지급돼요.`;
+  prettyConfirm(inv.sentAt?'투자약정서 수정':'투자약정서 보내기', msgHtml, ()=>_doSendInvestment(cd, won, cookie, pct), '📨');
 }
-async function _doSendInvestment(cd, won, cookie, pct, resetSign){
+async function _doSendInvestment(cd, won, cookie, pct){
   if(window._invSending[cd]){ return; }
   window._invSending[cd] = true;
   try{
+    const inv = obj(obj(obj(DB.businesses)[cd]).investment);
     const ip = 'businesses/'+cd+'/investment/';
-    const upd = { [ip+'won']:won, [ip+'cookie']:cookie, [ip+'pct']:pct, [ip+'sentAt']:TS };
-    if(resetSign) upd[ip+'bossSignUrl']=null;   // 쿠키 금액 변경 시에만 재서명 요구 → 서명 시 차액(paidCookie 기준) 지급
-    await S.update(upd);
-    toast(resetSign ? '수정했어요 — 사장이 다시 서명하면 차액이 지급돼요' : '투자약정서를 보냈어요 📨 (서명 시 지급)');
+    if(inv.bossSignUrl){
+      // 이미 서명된 약정 수정: 서명 유지 + 쿠키 차액을 교사가 즉시 정산(추가지급/회수)하고 paidCookie 갱신
+      const paid = inv.paidCookie||0;
+      const shopDelta = paid - cookie;   // 음수=추가지급(잔액↑), 양수=회수(잔액↓)
+      const { updates, missing } = await _cookieUpdates(shopDelta!==0 ? { [cd]: shopDelta } : {});
+      if(missing.length){ toast('사장의 상점 계정을 찾지 못했어요'); return; }
+      updates['Startup/'+ip+'won']=won; updates['Startup/'+ip+'cookie']=cookie;
+      updates['Startup/'+ip+'pct']=pct; updates['Startup/'+ip+'sentAt']=TS;
+      updates['Startup/'+ip+'paidCookie']=cookie;
+      await ROOT.update(updates);
+      toast(shopDelta!==0 ? '수정했어요 — 쿠키 차액을 정산했어요' : '수정했어요 (서명 유지)');
+    } else {
+      const upd = { [ip+'won']:won, [ip+'cookie']:cookie, [ip+'pct']:pct, [ip+'sentAt']:TS };
+      await S.update(upd);
+      toast('투자약정서를 보냈어요 📨 (서명 시 지급)');
+    }
   }catch(e){ console.error(e); toast('전송 실패 — 다시 시도해 주세요'); }
   finally{ window._invSending[cd] = false; }
 }
@@ -2664,8 +2795,8 @@ function teacherPayrollCard(){
   const pend = [];
   entries(pr).forEach(([bcd, reqs])=> entries(reqs).forEach(([id,r])=>{ if(r && r.status==='pending') pend.push({bcd,id,r}); }));
   pend.sort((a,b)=>(a.r.requestedAt||0)-(b.r.requestedAt||0));
-  let h = '<div class="card"><h2>💰 월급 정산 요청 <span class="badge b-wait">'+pend.length+'</span></h2>';
-  if(!pend.length){ h += '<div class="empty">대기 중인 월급 정산 요청이 없습니다.</div>'; }
+  let h = '<div class="card"><h2>💰 시급 정산 요청 <span class="badge b-wait">'+pend.length+'</span></h2>';
+  if(!pend.length){ h += '<div class="empty">대기 중인 시급 정산 요청이 없습니다.</div>'; }
   pend.forEach(({bcd,id,r})=>{
     const bn = obj(obj(DB.businesses)[bcd]).name || nmeOf(bcd);
     h += '<div class="list-item">';
@@ -2682,7 +2813,7 @@ function approvePayroll(bcd, id){
   if(!r || r.status!=='pending'){ toast('이미 처리된 요청이에요'); return; }
   const total = r.total||0;
   const bn = obj(obj(DB.businesses)[bcd]).name || nmeOf(bcd);
-  prettyConfirm('월급 지급 승인', '<b>'+esc(bn)+'</b>의 월급 <b>총 '+total+'쿠키</b>를 지급할까요?<br><span class="muted">직원 통장에 쿠키가 들어가고, 사장 쿠키에서 '+total+'쿠키가 빠져나가요.</span>', async ()=>{
+  prettyConfirm('시급 지급 승인', '<b>'+esc(bn)+'</b>의 시급 <b>총 '+total+'쿠키</b>를 지급할까요?<br><span class="muted">직원 통장에 쿠키가 들어가고, 사장 쿠키에서 '+total+'쿠키가 빠져나가요.</span>', async ()=>{
     // 멱등 선점: pending → paying (이중 승인/이중 지급 방지)
     let res;
     try{ res = await S.child('payroll/'+bcd+'/'+id+'/status').transaction(cur=> cur==='pending' ? 'paying' : undefined); }
@@ -2697,7 +2828,7 @@ function approvePayroll(bcd, id){
       updates['Startup/payroll/'+bcd+'/'+id+'/status'] = 'paid';
       updates['Startup/payroll/'+bcd+'/'+id+'/paidAt']  = firebase.database.ServerValue.TIMESTAMP;
       await ROOT.update(updates);
-      toast(missing.length ? ('지급 완료(계정 못 찾음 '+missing.length+'명)') : ('월급 '+total+'쿠키 지급 완료! 💸'));
+      toast(missing.length ? ('지급 완료(계정 못 찾음 '+missing.length+'명)') : ('시급 '+total+'쿠키 지급 완료! 💸'));
     }catch(e){
       console.error(e);
       S.child('payroll/'+bcd+'/'+id+'/status').set('pending');   // 원자 실패=아무것도 안 바뀜 → 안전하게 pending 복구
@@ -2706,7 +2837,7 @@ function approvePayroll(bcd, id){
   }, '💰');
 }
 function rejectPayroll(bcd, id){
-  prettyConfirm('요청 거절', '이 월급 정산 요청을 거절할까요?', ()=>{
+  prettyConfirm('요청 거절', '이 시급 정산 요청을 거절할까요?', ()=>{
     S.child('payroll/'+bcd+'/'+id).update({ status:'rejected', rejectedAt:TS }).then(()=>toast('거절했어요'));
   }, '🚫');
 }
@@ -2738,6 +2869,26 @@ function contractDocHtml(bc, acd){
     + '<div class="sign-box"><div>근로자: '+esc(nmeOf(acd))+'</div>'+img(c.workerSignUrl)+'<div class="sign-line">(서명)</div></div></div>';
 }
 function printContract(bc, acd){ printDoc('근로계약서', contractDocHtml(bc, acd)); }
+// 교사: 전체 회사의 투자약정서 + 근로계약서를 회사(면접점수순)별로 모아 한 창에서 미리보기/일괄 PDF 저장
+function printAllDocs(){
+  const biz = obj(DB.businesses);
+  const approved = entries(biz).filter(([cd,b])=>b.status==='approved')
+    .sort((a,b)=>{ const d=iTotalOf(b[0])-iTotalOf(a[0]); return d!==0 ? d : String(a[1].name||'').localeCompare(String(b[1].name||'')); });
+  const docs = [];
+  approved.forEach(([cd,b])=>{
+    if(obj(b.investment).sentAt) docs.push(investmentDocHtml(cd));   // 회사별 투자약정서(전송된 것)
+    Object.keys(obj(obj(DB.hires)[cd])).forEach(acd=>{               // 이어서 그 회사의 근로계약서들
+      if(obj(DB.contracts)[_ck(cd,acd)]) docs.push(contractDocHtml(cd, acd));
+    });
+  });
+  if(!docs.length){ toast('다운로드할 문서가 없어요'); return; }
+  _openPrintDoc('투자약정서·근로계약서 일괄('+docs.length+'건)', docs, false);
+}
+// 투자약정서(전송)나 근로계약서가 하나라도 있는지(일괄 버튼 노출 판단)
+function _anyDoc(){
+  return entries(obj(DB.businesses)).filter(([cd,b])=>b.status==='approved')
+    .some(([cd,b])=> obj(b.investment).sentAt || Object.keys(obj(obj(DB.hires)[cd])).some(acd=> obj(DB.contracts)[_ck(cd,acd)]));
+}
 // 사장: 아르바이트별 근로계약서 작성/서명 (2일차)
 function bossContractCard(cd){
   if(phase()<2) return '';
