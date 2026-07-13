@@ -72,7 +72,7 @@
   .kv{font-size:13.5px;line-height:1.7}
   .kv b{color:#555}
   .divider{height:1px;background:var(--line);margin:12px 0}
-  .sumtbl{border-collapse:collapse;width:100%;font-size:13px;min-width:680px}
+  .sumtbl{border-collapse:collapse;width:100%;font-size:13px;min-width:760px}
   .sumtbl th,.sumtbl td{border:1px solid var(--line);padding:7px 9px;text-align:center;vertical-align:middle;white-space:nowrap}
   .sumtbl th{background:#f6f8fb;font-weight:800;color:#5a5f66}
   .sumtbl td:first-child{text-align:left}
@@ -709,7 +709,7 @@ function recruitEditor(cd, b){
   h += `<div class="field"><label>사업설명</label><textarea id="eb_desc_${cd}">${esc(b.desc||'')}</textarea></div>`;
   h += `<div class="field"><label>운영계획</label><textarea id="eb_plan_${cd}">${esc(b.plan||'')}</textarea></div>`;
   h += `<div class="field"><label>준비물 (개인)</label><textarea id="eb_items_${cd}">${esc(bg.items||'')}</textarea></div>`;
-  h += `<div class="field"><label>준비물 (선생님)</label><textarea id="eb_itemsTchr_${cd}">${esc(bg.itemsTchr||'')}</textarea></div>`;
+  h += `<div class="field"><label>대여물품 (교사가 대여)</label><textarea id="eb_itemsTchr_${cd}">${esc(bg.itemsTchr||'')}</textarea></div>`;
   h += _numField('예산신청 — 현금 (쿠팡·문구점·편의점에서 직접 구입, 투자 설명회 점수로 차등 지급)', 'eb_cost_'+cd, bg.cost!=null?bg.cost:'', '원');
   h += _numField('예산신청 — 쿠키 (쿠키에 따라 투자 회수 % 결정)', 'eb_cookie_'+cd, bg.cookie!=null?bg.cookie:'', '쿠키');
   h += '<div class="divider"></div><div style="font-weight:800;margin-bottom:6px">📢 직원 모집 수정</div>';
@@ -774,7 +774,7 @@ function bizApprovalCard(){
   submitted.forEach(([cd,b])=>{
     h += '<div class="list-item">';
     h += `<div class="biz-head"><b>${esc(b.name||'(업체명 미정)')}</b><span class="muted">대표: ${esc(nmeOf(cd))}</span></div>`;
-    if(!(window._bizRecEdit||{})[cd]) h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물(개인)</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>준비물(선생님)</b> ${esc((b.budget&&b.budget.itemsTchr)||'-')}<br><b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')} / ${esc((b.budget&&b.budget.cookie!=null)?b.budget.cookie+'쿠키':'-')}</div>`;
+    if(!(window._bizRecEdit||{})[cd]) h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물(개인)</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>대여물품</b> ${esc((b.budget&&b.budget.itemsTchr)||'-')}${esc((b.investment&&b.investment.rentFee!=null)?' (대여료 '+b.investment.rentFee+'쿠키)':'')}<br><b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')} / ${esc((b.budget&&b.budget.cookie!=null)?b.budget.cookie+'쿠키':'-')}</div>`;
     h += recruitSection(cd, b);
     h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-grn btn-sm" onclick="approveBiz('${cd}')">✅ 승인</button><button class="btn-org btn-sm" onclick="toggleBizRecruit('${cd}')">${(window._bizRecEdit||{})[cd]?'✖ 수정 닫기':'✏️ 계획서 수정'}</button><button class="btn-gray btn-sm" onclick="rejectBiz('${cd}')">반려</button><button class="btn-red btn-sm" onclick="deleteBiz('${cd}')">삭제</button></div>`;
     h += '</div>';
@@ -785,7 +785,7 @@ function bizApprovalCard(){
     approvedB.forEach(([cd,b])=>{
       h += '<div class="list-item">';
       h += `<div class="biz-head"><b>${esc(b.name||'(업체명 미정)')}</b><span class="badge b-ok">사장 ${esc(nmeOf(cd))}</span></div>`;
-      if(!(window._bizRecEdit||{})[cd]) h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물(개인)</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>준비물(선생님)</b> ${esc((b.budget&&b.budget.itemsTchr)||'-')}<br><b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')} / ${esc((b.budget&&b.budget.cookie!=null)?b.budget.cookie+'쿠키':'-')}</div>`;
+      if(!(window._bizRecEdit||{})[cd]) h += `<div class="kv"><b>사업설명</b> ${esc(b.desc||'-')}<br><b>운영계획</b> ${esc(b.plan||'-')}<br><b>준비물(개인)</b> ${esc((b.budget&&b.budget.items)||'-')} · <b>대여물품</b> ${esc((b.budget&&b.budget.itemsTchr)||'-')}${esc((b.investment&&b.investment.rentFee!=null)?' (대여료 '+b.investment.rentFee+'쿠키)':'')}<br><b>예산신청</b> ${esc((b.budget&&b.budget.cost!=null)?b.budget.cost+'원':'-')} / ${esc((b.budget&&b.budget.cookie!=null)?b.budget.cookie+'쿠키':'-')}</div>`;
       h += recruitSection(cd, b);
       h += `<div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn-org btn-sm" onclick="toggleBizRecruit('${cd}')">${(window._bizRecEdit||{})[cd]?'✖ 수정 닫기':'✏️ 계획서 수정'}</button><button class="btn-gray btn-sm" onclick="revokeBiz('${cd}')">↩️ 승인취소</button><button class="btn-red btn-sm" onclick="deleteBiz('${cd}')">삭제</button></div>`;
       h += '</div>';
@@ -852,9 +852,9 @@ function investmentSummaryCard(){
     .sort((a,b)=>{ const d=iTotalOf(b[0])-iTotalOf(a[0]); return d!==0 ? d : String(a[1].name||'').localeCompare(String(b[1].name||'')); });
   let h = '<div class="card"><h2>📊 투자약정 일괄표 <span class="badge b-info">'+approved.length+'</span></h2>';
   if(!approved.length){ h += '<div class="empty">승인된 회사가 없습니다.</div></div>'; return h; }
-  h += '<p class="muted" style="font-size:12px;margin:2px 0 8px">표에서 바로 입력하고 <b>💾</b>를 누르면 저장돼요. 현금·쿠키 칸의 <b>회색 숫자(placeholder)</b>는 사업계획서 신청값이에요. 서명완료 약정을 고치면 알림 없이 쿠키 차액이 정산됩니다.</p>';
+  h += '<p class="muted" style="font-size:12px;margin:2px 0 8px">표에서 바로 입력하고 <b>💾</b>를 누르면 저장돼요. 현금·쿠키 칸의 <b>회색 숫자</b>는 사업계획서 신청값이에요. <b>대여료</b>는 서명 시 투자쿠키에서 차감 지급되며, 서명완료 약정을 고쳐도 알림 없이 차액이 정산됩니다.</p>';
   h += '<div style="overflow-x:auto"><table class="sumtbl"><thead><tr>'
-     + '<th>업체 (대표)</th><th>준비물(개인)</th><th>준비물(선생님)</th><th>현금</th><th>쿠키</th><th>투자조건</th><th>상태</th>'
+     + '<th>업체 (대표)</th><th>준비물(개인)</th><th>대여물품</th><th>대여료</th><th>현금</th><th>쿠키</th><th>투자조건</th><th>상태</th>'
      + '</tr></thead><tbody>';
   let totWon=0, totCk=0;
   approved.forEach(([cd,b])=>{
@@ -874,17 +874,19 @@ function investmentSummaryCard(){
     const vWon = dr.won!=null ? dr.won : (sent?(inv.won||0):'');
     const vCk  = dr.ck!=null  ? dr.ck  : (sent?(inv.cookie||0):'');
     const vPct = dr.pct!=null ? dr.pct : (sent?(inv.pct||0):'');
+    const vRent = dr.rent!=null ? dr.rent : (inv.rentFee!=null?inv.rentFee:'');
     const phWon = bg.cost!=null?bg.cost:'', phCk = bg.cookie!=null?bg.cookie:'';
     h += '<tr>'
       + `<td><input class="sm-name" id="sm_name_${cd}" oninput="_smDraftSet('${cd}','name',this.value)" value="${esc(vName)}" placeholder="업체명"><span class="muted">${esc(nmeOf(cd))}</span></td>`
-      + `<td><input class="sm-in" id="sm_items_${cd}" oninput="_smDraftSet('${cd}','items',this.value)" value="${esc(vItems)}" placeholder="개인"></td>`
-      + `<td><input class="sm-in" id="sm_itemsT_${cd}" oninput="_smDraftSet('${cd}','itemsTchr',this.value)" value="${esc(vItemsT)}" placeholder="선생님"></td>`
+      + `<td><input class="sm-in" id="sm_items_${cd}" oninput="_smDraftSet('${cd}','items',this.value)" value="${esc(vItems)}" placeholder="준비물(개인)"></td>`
+      + `<td><input class="sm-in" id="sm_itemsT_${cd}" oninput="_smDraftSet('${cd}','itemsTchr',this.value)" value="${esc(vItemsT)}" placeholder="대여물품"></td>`
+      + `<td><input class="sm-num" type="number" min="0" id="sm_rent_${cd}" oninput="_smDraftSet('${cd}','rent',this.value)" value="${esc(vRent)}" placeholder="0"><span class="u">🍪</span></td>`
       + `<td><input class="sm-num" type="number" min="0" id="sm_won_${cd}" oninput="_smDraftSet('${cd}','won',this.value)" value="${esc(vWon)}" placeholder="${esc(phWon)}"><span class="u">원</span></td>`
       + `<td><input class="sm-num" type="number" min="0" id="sm_ck_${cd}" oninput="_smDraftSet('${cd}','ck',this.value)" value="${esc(vCk)}" placeholder="${esc(phCk)}"><span class="u">🍪</span></td>`
       + `<td><input class="sm-num" type="number" min="0" max="100" id="sm_pct_${cd}" oninput="_smDraftSet('${cd}','pct',this.value)" value="${esc(vPct)}" placeholder="0"><span class="u">%</span></td>`
       + `<td>${status}<br><button class="btn-grn btn-sm" style="margin-top:4px" onclick="saveSummaryRow('${cd}')">💾</button></td></tr>`;
   });
-  h += `<tr class="sumtot"><td colspan="3">합계</td><td>${esc(totWon)}원</td><td>${esc(totCk)}🍪</td><td>-</td><td>-</td></tr>`;
+  h += `<tr class="sumtot"><td colspan="4">합계</td><td>${esc(totWon)}원</td><td>${esc(totCk)}🍪</td><td>-</td><td>-</td></tr>`;
   h += '</tbody></table></div></div>';
   return h;
 }
@@ -893,7 +895,7 @@ window._smDraft = window._smDraft || {};
 function _smDraftSet(cd, field, val){ (window._smDraft[cd] = window._smDraft[cd]||{})[field] = val; }
 function saveSummaryRow(cd){
   const nm=$('sm_name_'+cd), it=$('sm_items_'+cd), itt=$('sm_itemsT_'+cd);
-  const won=parseInt(($('sm_won_'+cd)||{}).value)||0, ck=parseInt(($('sm_ck_'+cd)||{}).value)||0, pct=parseInt(($('sm_pct_'+cd)||{}).value)||0;
+  const won=parseInt(($('sm_won_'+cd)||{}).value)||0, ck=parseInt(($('sm_ck_'+cd)||{}).value)||0, pct=parseInt(($('sm_pct_'+cd)||{}).value)||0, rent=parseInt(($('sm_rent_'+cd)||{}).value)||0;
   const inv = obj(obj(obj(DB.businesses)[cd]).investment);
   const bupd = {};
   if(nm) bupd.name = nm.value.trim();
@@ -901,8 +903,8 @@ function saveSummaryRow(cd){
   if(itt) bupd['budget/itemsTchr'] = itt.value.trim();
   if(Object.keys(bupd).length) S.child('businesses/'+cd).update(bupd).catch(()=>{});
   delete window._smDraft[cd];
-  // 이미 전송된 약정이거나 투자값을 입력한 경우에만 투자약정 저장/전송(준비물만 고쳤을 땐 약정을 건드리지 않음)
-  if(inv.sentAt || won>0 || ck>0 || pct>0){ sendInvestmentVals(cd, won, ck, pct); }
+  // 이미 전송된 약정이거나 투자값/대여료를 입력한 경우에만 투자약정 저장/전송(준비물만 고쳤을 땐 약정을 건드리지 않음)
+  if(inv.sentAt || won>0 || ck>0 || pct>0 || rent>0){ sendInvestmentVals(cd, won, ck, pct, rent); }
   else { toast('저장했어요 — 학생에게 반영됩니다'); }
   scheduleRender();
 }
@@ -989,9 +991,9 @@ function companyDashboardCard(){
       const _dr = (window._itemsDraftMap||{})[cd]||{};
       const _iv = _dr.items!=null ? _dr.items : (bg0.items||'');
       const _tv = _dr.itemsTchr!=null ? _dr.itemsTchr : (bg0.itemsTchr||'');
-      h += `<div class="row" style="margin-top:6px;flex-wrap:wrap;gap:6px;align-items:center"><span class="muted">준비물</span>`
-        + `<input id="ci_items_${cd}" oninput="_itemsDraft('${cd}','items',this.value)" value="${esc(_iv)}" placeholder="개인" style="flex:1;min-width:110px">`
-        + `<input id="ci_itemsT_${cd}" oninput="_itemsDraft('${cd}','itemsTchr',this.value)" value="${esc(_tv)}" placeholder="선생님" style="flex:1;min-width:110px">`
+      h += `<div class="row" style="margin-top:6px;flex-wrap:wrap;gap:6px;align-items:center"><span class="muted">준비물·대여물품</span>`
+        + `<input id="ci_items_${cd}" oninput="_itemsDraft('${cd}','items',this.value)" value="${esc(_iv)}" placeholder="준비물(개인)" style="flex:1;min-width:110px">`
+        + `<input id="ci_itemsT_${cd}" oninput="_itemsDraft('${cd}','itemsTchr',this.value)" value="${esc(_tv)}" placeholder="대여물품" style="flex:1;min-width:110px">`
         + `<button class="btn-grn btn-sm" onclick="saveBudgetItems('${cd}')">💾 저장</button></div>`;
     }
     if(phase()>=1) h += investmentEditor(cd);
@@ -1355,9 +1357,9 @@ function planEditorCard(b){
   h += `<div class="field"><label>사업 설명</label><textarea id="p_desc" ${oi} ${dis}>${esc(pick('desc', b.desc||''))}</textarea></div>`;
   h += `<div class="field"><label>운영 계획</label><textarea id="p_plan" ${oi} ${dis}>${esc(pick('plan', b.plan||''))}</textarea></div>`;
   h += `<div class="field"><label>준비물 (개인) — 학생이 각자 준비할 것</label><input id="p_items" ${oi} value="${esc(pick('items', bg.items||''))}" ${dis} placeholder="예: 가위, 색연필"></div>`;
-  h += `<div class="field"><label>준비물 (선생님) — 선생님께 부탁할 것</label><input id="p_itemsTchr" ${oi} value="${esc(pick('itemsTchr', bg.itemsTchr||''))}" ${dis} placeholder="예: 도화지, 물감"></div>`;
+  h += `<div class="field"><label>대여물품 — 선생님께 빌릴 물품 신청 (대여료는 선생님이 정해요)</label><input id="p_itemsTchr" ${oi} value="${esc(pick('itemsTchr', bg.itemsTchr||''))}" ${dis} placeholder="예: 텐트, 야구 글러브">${(obj(b.investment).rentFee!=null)?`<div class="muted" style="font-size:12px;margin-top:4px">🎒 선생님이 정한 대여료: <b>${esc(obj(b.investment).rentFee)}쿠키</b> (투자쿠키에서 차감돼요)</div>`:''}</div>`;
   h += `<div class="field"><label>예산 신청 — 현금 (0~10,000원)</label><input id="p_cost" type="number" min="0" max="10000" step="100" ${oi} value="${esc(pick('cost', bg.cost!=null?bg.cost:''))}" ${dis} placeholder="0 ~ 10000"><div class="muted" style="font-size:12px;margin-top:4px">💡 현금은 <b>쿠팡·문구점·편의점</b>에서 직접 구입할 때 써요. <b>투자 설명회 점수</b>에 따라 차등 지급돼요!</div></div>`;
-  h += `<div class="field"><label>예산 신청 — 쿠키 (0~10,000쿠키)</label><input id="p_cookie" type="number" min="0" max="10000" step="10" ${oi} value="${esc(pick('cookie', bg.cookie!=null?bg.cookie:''))}" ${dis} placeholder="0 ~ 10000"><div class="muted" style="font-size:12px;margin-top:4px">🍪 신청한 쿠키에 따라 <b>투자 회수 %</b>가 달라져요!</div></div>`;
+  h += `<div class="field"><label>예산 신청 — 쿠키 (0~100쿠키)</label><input id="p_cookie" type="number" min="0" max="100" step="1" ${oi} value="${esc(pick('cookie', bg.cookie!=null?bg.cookie:''))}" ${dis} placeholder="0 ~ 100"><div class="muted" style="font-size:12px;margin-top:4px">🍪 쿠키는 <b>직원 월급 지급</b>, <b>교실 물품 대여</b>할 때 써요. 신청한 쿠키에 따라 <b>투자 회수 %</b>가 달라져요!</div></div>`;
   h += '<div class="divider"></div><div style="font-weight:800;color:#5a5f66;margin-bottom:6px">📢 직원 모집 — 사장님이 된다면 직원을 어떻게 뽑을까요?</div>';
   h += `<div class="field"><label>담당 업무</label><textarea id="p_duty" ${oi} ${dis} placeholder="예: 홍보와 물품 판매하기">${esc(pick('duty', b.duty||''))}</textarea></div>`;
   h += _numField('모집 인원', 'p_head', pick('head', b.headcount!=null?b.headcount:''), '명', oi+' '+dis);
@@ -1382,7 +1384,7 @@ function savePlan(submit){
     ownerCd: ME.cd, ownerNm: ME.nm,
     name: $('p_name').value.trim(), ceo: $('p_ceo').value.trim(),
     desc: $('p_desc').value.trim(), plan: $('p_plan').value.trim(),
-    budget:{ items:$('p_items').value.trim(), itemsTchr:$('p_itemsTchr').value.trim(), cost:Math.max(0, Math.min(10000, parseInt($('p_cost').value)||0)), cookie:Math.max(0, Math.min(10000, parseInt($('p_cookie').value)||0)) },
+    budget:{ items:$('p_items').value.trim(), itemsTchr:$('p_itemsTchr').value.trim(), cost:Math.max(0, Math.min(10000, parseInt($('p_cost').value)||0)), cookie:Math.max(0, Math.min(100, parseInt($('p_cookie').value)||0)) },
     duty: $('p_duty').value.trim(), qualification: $('p_qual').value.trim(),
     headcount: Math.max(0, parseInt($('p_head').value)||0),
     workDays: $('p_days').value.trim(),
@@ -2372,7 +2374,7 @@ function studentJobsCard(){
     if(bz.desc) h += `<div class="job-cell wide biz"><div class="l">🏢 사업 설명</div><div class="v">${esc(bz.desc)}</div></div>`;
     if(bz.plan) h += `<div class="job-cell wide biz"><div class="l">📈 운영 계획</div><div class="v">${esc(bz.plan)}</div></div>`;
     if(bItems) h += `<div class="job-cell wide biz"><div class="l">📦 준비물(개인)</div><div class="v">${esc(bItems)}</div></div>`;
-    if(bItemsTchr) h += `<div class="job-cell wide biz"><div class="l">🧑‍🏫 준비물(선생님)</div><div class="v">${esc(bItemsTchr)}</div></div>`;
+    if(bItemsTchr) h += `<div class="job-cell wide biz"><div class="l">🎒 대여물품(교사 대여)</div><div class="v">${esc(bItemsTchr)}</div></div>`;
     if((bCost!=null&&bCost!=='')||(bCookie!=null&&bCookie!=='')) h += `<div class="job-cell wide biz"><div class="l">💰 예산 신청</div><div class="v">현금 ${esc(bCost||0)}원 · 쿠키 ${esc(bCookie||0)}🍪</div></div>`;
     // 모집 필드는 단일 출처(bz=businesses 미러)를 우선 사용하고, 없으면 스냅샷(pt=jobPosts)로 폴백 → 교사 수정이 항상 반영.
     const rDuty=(bz.duty!=null&&bz.duty!==''?bz.duty:pt.duty);
@@ -2590,8 +2592,8 @@ function investmentDocHtml(cd){
     + '<p>투자자 <span class="fill">선생님</span>(이하 \'갑\'이라 한다)와(과) 대표자 <span class="fill">'+esc(nmeOf(cd))+'</span>(이하 \'을\'이라 한다)는 다음과 같은 조건으로 투자 계약을 체결한다.</p>'
     + '<div class="art"><b>제1조 (계약의 목적)</b>본 계약은 \'을\'의 기업 <span class="fill">'+esc(bn)+'</span>에 관하여 투자함에 따라 그 구체적인 내용과 필요한 제반 사항을 결정하고 \'갑\'과 \'을\' 사이의 권리·의무관계를 명확히 규정함을 그 목적으로 한다.</div>'
     + '<div class="art"><b>제2조 (투자의 전제조건)</b>\'갑\'은 본 계약에 따른 투자를 위해 \'을\'이 다음의 조건을 충족할 것을 요구할 수 있다. 총 매출의 <span class="fill">'+esc(inv.pct||0)+'</span> %를 지급한다.</div>'
-    + '<div class="art"><b>제3조 (투자금의 지급)</b>\'갑\'은 아래 내용으로 \'을\'에게 투자금을 지급하기로 한다.<br>1. 투자금액: 일금 <span class="fill">'+esc(inv.won||0)+'</span>원과 <span class="fill">'+esc(inv.cookie||0)+'</span> 쿠키<br>2. 지급시기: 활동 시작 시</div>'
-    + '<div class="art"><b>제4조 (준비물)</b>본 사업의 준비물은 아래와 같이 준비한다.<br>1. 준비물(개인): <span class="fill">'+esc(bg.items||'없음')+'</span><br>2. 준비물(선생님): <span class="fill">'+esc(bg.itemsTchr||'없음')+'</span></div>'
+    + '<div class="art"><b>제3조 (투자금의 지급)</b>\'갑\'은 아래 내용으로 \'을\'에게 투자금을 지급하기로 한다.<br>1. 투자금액: 일금 <span class="fill">'+esc(inv.won||0)+'</span>원과 <span class="fill">'+esc(inv.cookie||0)+'</span> 쿠키<br>2. 지급시기: 활동 시작 시<br>3. 대여료 정산: 제4조의 대여료 <span class="fill">'+esc(inv.rentFee||0)+'</span> 쿠키를 투자쿠키에서 차감하여 실지급한다. (실지급 <span class="fill">'+esc(Math.max(0,(inv.cookie||0)-(inv.rentFee||0)))+'</span> 쿠키)</div>'
+    + '<div class="art"><b>제4조 (준비물 및 대여물품)</b>1. 준비물(개인): <span class="fill">'+esc(bg.items||'없음')+'</span><br>2. 대여물품(\'갑\'이 대여): <span class="fill">'+esc(bg.itemsTchr||'없음')+'</span><br>3. 대여료: <span class="fill">'+esc(inv.rentFee||0)+'</span> 쿠키 (제3조에 따라 투자쿠키에서 차감)</div>'
     + '<div class="art"><b>제5조 (전용 금지)</b>\'을\'은 투자금에 대하여 경영상의 목적으로만 사용이 가능하며 기타의 부동산 구입이나 개인적 용도 등의 경영 이외의 목적으로 사용할 수 없다.</div>'
     + '<div class="sign-row"><div class="sign-box"><div>투자자(갑): 선생님</div>'+img(tSign)+'<div class="sign-line">(서명)</div></div>'
     + '<div class="sign-box"><div>대표자(을): '+esc(nmeOf(cd))+'</div>'+img(bSign)+'<div class="sign-line">(서명)</div></div></div>';
@@ -2620,8 +2622,9 @@ function bossInvestmentCard(cd){
   h += `투자자 <b>선생님</b>(갑)와 대표자 <b>${esc(nmeOf(cd))}</b>(을)는 다음과 같은 조건으로 투자 계약을 체결한다.`;
   h += `<div style="margin-top:8px"><b>제1조 (목적)</b> 을의 기업 <b>${esc(bn)}</b>에 투자한다.</div>`;
   h += `<div style="margin-top:6px"><b>제2조 (전제조건)</b> 총 매출의 <b>${esc(inv.pct||0)}%</b>를 지급한다.</div>`;
-  h += `<div style="margin-top:6px"><b>제3조 (투자금)</b> 일금 <b>${esc(inv.won||0)}원과 ${esc(inv.cookie||0)}쿠키</b>.</div>`;
-  h += `<div style="margin-top:6px"><b>제4조 (준비물)</b> 개인 <b>${esc(bg.items||'없음')}</b> · 선생님 <b>${esc(bg.itemsTchr||'없음')}</b>.</div>`;
+  const _net = Math.max(0, (inv.cookie||0)-(inv.rentFee||0));
+  h += `<div style="margin-top:6px"><b>제3조 (투자금)</b> 일금 <b>${esc(inv.won||0)}원과 ${esc(inv.cookie||0)}쿠키</b>${(inv.rentFee||0)>0?` <span class="muted">(대여료 ${esc(inv.rentFee)}쿠키 차감 → 실지급 ${esc(_net)}쿠키)</span>`:''}.</div>`;
+  h += `<div style="margin-top:6px"><b>제4조 (준비물·대여물품)</b> 준비물(개인) <b>${esc(bg.items||'없음')}</b> · 대여물품 <b>${esc(bg.itemsTchr||'없음')}</b>${(inv.rentFee||0)>0?` (대여료 ${esc(inv.rentFee)}쿠키)`:''}.</div>`;
   h += `<div style="margin-top:6px"><b>제5조 (전용 금지)</b> 투자금은 경영상의 목적으로만 사용한다.</div>`;
   h += '<div style="display:flex;justify-content:space-around;margin-top:14px;text-align:center">';
   h += `<div>투자자(갑): 선생님${sImg(tSign)}</div>`;
@@ -2633,6 +2636,7 @@ function bossInvestmentCard(cd){
     h += `<div style="margin-top:10px;background:linear-gradient(135deg,#fff4ec,#ffe7d6);border:1.5px solid #ffd0ae;border-radius:12px;padding:12px 14px;text-align:center">`
       + `<div style="font-size:13px;color:#9a6a45;font-weight:800">💸 투자금 지급 완료</div>`
       + `<div style="font-size:20px;font-weight:900;color:#c9520a;margin-top:2px">🍪 ${esc(paid)}쿠키</div>`
+      + ((inv.rentFee||0)>0?`<div class="muted" style="font-size:12px;margin-top:1px">투자쿠키 ${esc(inv.cookie||0)} − 대여료 ${esc(inv.rentFee)} = 실지급 ${esc(paid)}</div>`:'')
       + `<div class="muted" style="font-size:12px;margin-top:2px">내 <b>이벤트 상점</b> 계좌로 들어왔어요! (상점에서 확인)</div></div>`;
   }
   if(bSign) h += '<div class="badge b-ok" style="margin-top:8px">서명 완료 · 선생님께 보냄 🤝</div>';
@@ -2648,7 +2652,8 @@ function signInvestment(cd){ captureSign('대표자(을) 서명', async url=>{
   try{
     const inv = obj(obj(obj(DB.businesses)[cd]).investment);
     const bn = obj(obj(DB.businesses)[cd]).name || nmeOf(cd);
-    const cookie = inv.cookie||0;
+    const gross = inv.cookie||0, rentFee = inv.rentFee||0;
+    const cookie = Math.max(0, gross - rentFee);   // 실지급 = 투자쿠키 − 대여료
     const already = inv.paidCookie||0;        // 재서명 시 이미 지급된 분은 제외하고 차액만 지급
     const delta = cookie - already;
     // 본인 상점 키를 캐시에서 해결(추가 읽기 0) — EventShop/stu 전체 재조회 방지
@@ -2664,7 +2669,8 @@ function signInvestment(cd){ captureSign('대표자(을) 서명', async url=>{
     updates[ip+'bossSignUrl']=url; updates[ip+'paidCookie']=cookie; updates[ip+'signedAt']=firebase.database.ServerValue.TIMESTAMP;
     await ROOT.update(updates);
     if(delta>0) await _shopGiftMsg(cd, `📈 투자약정 체결! 「${bn}」 투자금 🍪${delta}쿠키가 지급됐어요. 사업 번창을 응원할게요! 🎉`, [{name:'쿠키', emoji:'🍪'}]);
-    prettyConfirm('투자약정 체결 완료 🤝', `<b>${esc(bn)}</b> 투자약정서에 서명했어요!`+(cookie>0?`<br><b style="color:#c9520a;font-size:19px">🍪 ${esc(cookie)}쿠키</b>가 내 <b>이벤트 상점</b> 계좌로 지급됐어요.<br><span class="muted">이벤트 상점을 열어 확인해 보세요!</span>`:'<br><span class="muted">선생님께 서명을 보냈어요.</span>'), null, '🎉');
+    const rentNote = rentFee>0 ? `<br><span class="muted">투자쿠키 ${esc(gross)}에서 대여료 ${esc(rentFee)}쿠키를 뺀 금액이에요.</span>` : '';
+    prettyConfirm('투자약정 체결 완료 🤝', `<b>${esc(bn)}</b> 투자약정서에 서명했어요!`+(cookie>0?`<br><b style="color:#c9520a;font-size:19px">🍪 ${esc(cookie)}쿠키</b>가 내 <b>이벤트 상점</b> 계좌로 지급됐어요.${rentNote}<br><span class="muted">이벤트 상점을 열어 확인해 보세요!</span>`:(rentFee>0?`<br><span class="muted">대여료 ${esc(rentFee)}쿠키 차감으로 실지급이 0이에요.</span>`:'<br><span class="muted">선생님께 서명을 보냈어요.</span>')), null, '🎉');
   }catch(e){ console.error(e); toast('서명·지급 실패 — 다시 시도해 주세요'); }
   finally{ window._invSending[cd] = false; }
 }); }
@@ -2686,6 +2692,7 @@ function investmentEditor(cd){
   h += `<input id="inv_won_${cd}" type="number" min="0" placeholder="현금(원)" value="${preWon!==''?esc(preWon):''}" style="width:90px">원`;
   h += `<input id="inv_ck_${cd}" type="number" min="0" placeholder="쿠키" value="${preCk!==''?esc(preCk):''}" style="width:80px">쿠키`;
   h += `<input id="inv_pct_${cd}" type="number" min="0" max="100" placeholder="%" value="${inv.pct!=null?esc(inv.pct):''}" style="width:60px">%`;
+  h += `<span class="muted">🎒대여료</span><input id="inv_rent_${cd}" type="number" min="0" placeholder="쿠키" value="${inv.rentFee!=null?esc(inv.rentFee):''}" style="width:70px" title="대여물품 대여료 — 투자쿠키에서 차감 지급">쿠키`;
   if((reqWon!=null || reqCk!=null) && !inv.bossSignUrl) h += `<button class="btn-gray btn-sm" onclick="fillInvestFromBudget('${cd}')" title="신청 예산 그대로 채우기">↺</button>`;
   h += `<button class="btn-grn btn-sm" onclick="sendInvestment('${cd}')">${inv.sentAt?'수정 저장':'📨 보내기'}</button>`;
   if(inv.sentAt){ h += '<span class="badge b-ok">전송됨</span>'; h += `<button class="btn-org btn-sm" onclick="printInvestment('${cd}')">🖨 투자약정서</button>`; h += `<button class="btn-red btn-sm" onclick="cancelInvestment('${cd}')">🗑 취소</button>`; if(inv.bossSignUrl) h += '<span class="badge b-ok">사장 서명✔</span>'; }
@@ -2750,36 +2757,43 @@ async function _shopGiftMsg(cd, msg, items){
 function sendInvestment(cd){
   if(window._invSending[cd]){ return; }
   const won=parseInt($('inv_won_'+cd).value)||0, cookie=parseInt($('inv_ck_'+cd).value)||0, pct=parseInt($('inv_pct_'+cd).value)||0;
-  sendInvestmentVals(cd, won, cookie, pct);
+  const rentFee=parseInt(($('inv_rent_'+cd)||{}).value)||0;
+  sendInvestmentVals(cd, won, cookie, pct, rentFee);
 }
 // 값을 직접 받아 전송/수정(회사현황 에디터·일괄표 인라인 편집 공용). 미전송은 확인창, 서명완료는 '알림 없이' 즉시 정산.
-function sendInvestmentVals(cd, won, cookie, pct){
+function sendInvestmentVals(cd, won, cookie, pct, rentFee){
   if(window._invSending[cd]){ return; }
+  rentFee = Math.max(0, rentFee||0);
   const inv = obj(obj(obj(DB.businesses)[cd]).investment);
   const bn = obj(obj(DB.businesses)[cd]).name || nmeOf(cd);
-  if(inv.bossSignUrl){ _doSendInvestment(cd, won, cookie, pct); return; }
-  const msgHtml = `<b>${esc(bn)}</b> 사장에게 투자약정서를 보낼까요?<br><b style="color:#c9520a;font-size:18px">🍪 ${cookie}쿠키</b> 는 <b>사장이 서명하면</b> 이벤트 상점으로 지급돼요.`;
-  prettyConfirm(inv.sentAt?'투자약정서 수정':'투자약정서 보내기', msgHtml, ()=>_doSendInvestment(cd, won, cookie, pct), '📨');
+  if(inv.bossSignUrl){ _doSendInvestment(cd, won, cookie, pct, rentFee); return; }
+  const net = Math.max(0, cookie - rentFee);
+  const rentLine = rentFee>0 ? `<br><span class="muted">대여료 ${rentFee}쿠키 차감 → 실지급 <b>${net}쿠키</b></span>` : '';
+  const msgHtml = `<b>${esc(bn)}</b> 사장에게 투자약정서를 보낼까요?<br><b style="color:#c9520a;font-size:18px">🍪 ${cookie}쿠키</b> 는 <b>사장이 서명하면</b> 이벤트 상점으로 지급돼요.${rentLine}`;
+  prettyConfirm(inv.sentAt?'투자약정서 수정':'투자약정서 보내기', msgHtml, ()=>_doSendInvestment(cd, won, cookie, pct, rentFee), '📨');
 }
-async function _doSendInvestment(cd, won, cookie, pct){
+async function _doSendInvestment(cd, won, cookie, pct, rentFee){
   if(window._invSending[cd]){ return; }
   window._invSending[cd] = true;
+  rentFee = Math.max(0, rentFee||0);
   try{
     const inv = obj(obj(obj(DB.businesses)[cd]).investment);
     const ip = 'businesses/'+cd+'/investment/';
     if(inv.bossSignUrl){
-      // 이미 서명된 약정 수정: 서명 유지 + 쿠키 차액을 교사가 즉시 정산(추가지급/회수)하고 paidCookie 갱신
+      // 이미 서명된 약정 수정: 서명 유지 + 쿠키 차액을 교사가 즉시 정산(추가지급/회수)하고 paidCookie 갱신.
+      // 실지급(net) = 투자쿠키 − 대여료 기준으로 정산 → 대여료를 바꿔도 자동 재정산.
       const paid = inv.paidCookie||0;
-      const shopDelta = paid - cookie;   // 음수=추가지급(잔액↑), 양수=회수(잔액↓)
+      const net = Math.max(0, cookie - rentFee);
+      const shopDelta = paid - net;   // 음수=추가지급(잔액↑), 양수=회수(잔액↓)
       const { updates, missing } = await _cookieUpdates(shopDelta!==0 ? { [cd]: shopDelta } : {});
       if(missing.length){ toast('사장의 상점 계정을 찾지 못했어요'); return; }
       updates['Startup/'+ip+'won']=won; updates['Startup/'+ip+'cookie']=cookie;
-      updates['Startup/'+ip+'pct']=pct; updates['Startup/'+ip+'sentAt']=TS;
-      updates['Startup/'+ip+'paidCookie']=cookie;
+      updates['Startup/'+ip+'pct']=pct; updates['Startup/'+ip+'rentFee']=rentFee; updates['Startup/'+ip+'sentAt']=TS;
+      updates['Startup/'+ip+'paidCookie']=net;
       await ROOT.update(updates);
       toast(shopDelta!==0 ? '수정했어요 — 쿠키 차액을 정산했어요' : '수정했어요 (서명 유지)');
     } else {
-      const upd = { [ip+'won']:won, [ip+'cookie']:cookie, [ip+'pct']:pct, [ip+'sentAt']:TS };
+      const upd = { [ip+'won']:won, [ip+'cookie']:cookie, [ip+'pct']:pct, [ip+'rentFee']:rentFee, [ip+'sentAt']:TS };
       await S.update(upd);
       toast('투자약정서를 보냈어요 📨 (서명 시 지급)');
     }
