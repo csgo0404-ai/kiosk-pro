@@ -230,7 +230,7 @@
     <h3 id="pcTitle"></h3>
     <div id="pcMsg" class="pc-msg"></div>
     <div class="pc-btns">
-      <button class="btn-gray" onclick="pcClose()">취소</button>
+      <button class="btn-gray" id="pcCancel" onclick="pcClose()">취소</button>
       <button class="btn-org" onclick="pcConfirm()">확인</button>
     </div>
   </div>
@@ -305,7 +305,9 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200); }
 let _pcYes=null;
-function prettyConfirm(title, html, onYes, icon){ $('pcTitle').textContent=title; $('pcMsg').innerHTML=html; $('pcIcon').textContent=icon||'⚠️'; _pcYes=onYes||null; $('pcOverlay').classList.add('show'); }
+function prettyConfirm(title, html, onYes, icon){ const c=$('pcCancel'); if(c) c.style.display=''; $('pcTitle').textContent=title; $('pcMsg').innerHTML=html; $('pcIcon').textContent=icon||'⚠️'; _pcYes=onYes||null; $('pcOverlay').classList.add('show'); }
+/* 단일 버튼 안내창(취소 버튼 숨김). 예쁜 창으로 알림만 띄울 때 사용. */
+function prettyAlert(title, html, icon){ const c=$('pcCancel'); if(c) c.style.display='none'; $('pcTitle').textContent=title; $('pcMsg').innerHTML=html; $('pcIcon').textContent=icon||'ℹ️'; _pcYes=null; $('pcOverlay').classList.add('show'); }
 function pcClose(){ $('pcOverlay').classList.remove('show'); _pcYes=null; }
 function pcConfirm(){ const f=_pcYes; pcClose(); if(f) f(); }
 
@@ -405,6 +407,21 @@ async function _resolveShopKey(cd){
   let k = (window._shopKeyCache||{})[cd];
   if(k==null){ const m = await _shopKeyMap(true); k = m[cd]; }
   return k;
+}
+/* 상점이용권(쿠키 1:1 대체) — inv에서 활성 '상점이용권' 슬롯 인덱스 목록 */
+function _activeVoucherIdx(inv){
+  const out=[];
+  Object.keys(inv||{}).forEach(idx=>{ const it=inv[idx]; if(!it||it.st!=='active')return; if(String(it.n||'').replace(/\s/g,'').includes('상점이용권')) out.push(idx); });
+  return out;
+}
+/* 사장 계정의 가용 쿠키 + 활성 상점이용권 조회(EventShop/stu/<key> 1건 읽기). 없으면 null */
+async function _bossShopInfo(cd){
+  const k = await _resolveShopKey(cd);
+  if(k==null) return null;
+  let s; try{ s = (await ROOT.child('EventShop/stu/'+k).once('value')).val()||{}; }catch(_){ return null; }
+  const avail = Math.max(0, (s.cookie||0)-(s.usedCookie||0)-(s.shopUsed||0));
+  const vIdx = _activeVoucherIdx(s.inv);
+  return { key:k, avail, voucherIdx:vIdx, voucherCount:vIdx.length };
 }
 
 /* ============================================================
@@ -515,7 +532,8 @@ function enterApp(){
     // 교사(1명)는 전체 구독 — 대시보드/승인/집계에 필요
     S.on('value', snap=>{ DB = snap.val() || {}; _autoFillDeclines(); _autoPublishAll(); _ensureBooths(); _syncBizPub(); scheduleRender(); });
     // 키오스크 부스 자동 생성용: 기존 부스 목록 파악
-    DBROOT.child('kiosk_booths').on('value', s=>{ window._kioskBooths=s.val()||{}; window._kioskBoothsLoaded=true; _ensureBooths(); });
+    DBROOT.child('kiosk_booths').on('value', s=>{ window._kioskBooths=s.val()||{}; window._kioskBoothsLoaded=true; _ensureBooths(); const _sig=Object.keys(window._kioskBooths).sort().join('|'); if(_sig!==window._kioskBoothsSig){ window._kioskBoothsSig=_sig; scheduleRender(); } });   // 부스 목록이 실제로 바뀔 때만 재렌더(불필요한 깜빡임 방지)
+    setTimeout(()=>{ if(!window._firstRenderDone){ window._firstRenderDone=true; scheduleRender(); } }, 2000);   // 안전장치: 부스 로드가 지연돼도 교사 화면이 무한정 비지 않게 첫 렌더 강제(_kioskBoothsLoaded는 건드리지 않아 _ensureBooths는 실제 로드까지 대기)
   } else {
     subscribeStudent();   // 학생은 필요한 노드만 구독(트래픽·프라이버시 절감)
   }
@@ -597,7 +615,10 @@ function isEditing(){
    교사 기기는 학생 30명의 모든 변경 델타를 받아 full 재렌더가 몰릴 수 있어 CPU/배터리 절감. 동작·정합성은 동일. */
 let _renderCoalesceTimer=null, _renderMore=false;
 function scheduleRender(){
+  // 교사 첫 렌더는 부스 로드까지 한 번만 대기 → 부스 로드 후 추가 재렌더(깜빡임) 방지
+  if(IS_TEACHER && !window._firstRenderDone && phase()>=2 && !window._kioskBoothsLoaded){ _pendingRender = true; return; }
   if(isEditing() || window._starDragging || window._ordDragging){ _pendingRender = true; return; }
+  window._firstRenderDone = true;
   _pendingRender = false;
   if(_renderCoalesceTimer){ _renderMore = true; return; }   // 이미 방금 렌더함 → 뒤이은 버스트는 합침
   render();
@@ -1029,13 +1050,23 @@ function companyDashboardCard(){
 // 교사 3일차: 부스 운영 안내 + 각 회사 부스로 바로 이동하는 링크 버튼
 function teacherBoothsCard(){
   const approved = entries(obj(DB.businesses)).filter(([cd,b])=>b.status==='approved');
+  const govBooths = entries(obj(window._kioskBooths)).filter(([id,b])=> b && b.isGov);   // 공무원 부스도 표시
   let h = '<div class="card"><h2>🖥️ 부스 운영</h2>';
   h += '<p class="muted">사장·알바생은 창업앱에서 <b>부스 이동 버튼</b>을 눌러 키오스크 부스로 들어갑니다. 아래에서 각 부스로 바로 이동할 수 있어요.</p>';
-  if(!approved.length){ h += '<div class="empty">승인된 회사(부스)가 없습니다.</div></div>'; return h; }
+  if(!approved.length && !govBooths.length){ h += '<div class="empty">승인된 회사(부스)나 공무원 부스가 없습니다.</div></div>'; return h; }
   h += '<div class="row" style="flex-wrap:wrap;gap:8px;margin-bottom:8px"><button class="btn-org btn-sm" onclick="openKioskMain()">🖥️ 키오스크 메인화면(교사)</button></div>';
-  h += '<div class="row" style="flex-wrap:wrap;gap:8px">';
-  approved.forEach(([cd,b])=>{ h += `<button class="btn-grn btn-sm" onclick="openBoothAsOwner('${cd}')">🖥️ ${esc(b.name||nmeOf(cd))} 부스</button>`; });
-  h += '</div></div>';
+  if(approved.length){
+    h += '<div class="row" style="flex-wrap:wrap;gap:8px">';
+    approved.forEach(([cd,b])=>{ h += `<button class="btn-grn btn-sm" onclick="openBoothAsOwner('${cd}')">🖥️ ${esc(b.name||nmeOf(cd))} 부스</button>`; });
+    h += '</div>';
+  }
+  if(govBooths.length){
+    h += '<div class="divider"></div><div class="muted" style="margin:6px 0">🏛️ 공무원 부스</div>';
+    h += '<div class="row" style="flex-wrap:wrap;gap:8px">';
+    govBooths.forEach(([id,b])=>{ h += `<button class="btn-grn btn-sm" onclick="openGovBooth('${id}')">🏛️ ${esc(b.name||'공무원 부스')} 이동</button>`; });
+    h += '</div>';
+  }
+  h += '</div>';
   return h;
 }
 function openKioskMain(){ window.open('kiosk.html', '_blank'); }
@@ -1281,7 +1312,7 @@ function bossPayrollCard(cd){
   const pending = entries(reqs).filter(([id,r])=>r && (r.status==='pending'||r.status==='paying'));
   const locked = pending.length>0;
   let h = '<div class="card"><h2>💰 시급 지급</h2>';
-  h += '<p class="muted">직원에게 줄 <b>시급(시간당 쿠키)</b>을 확인하고 <b>정산 요청</b>을 보내세요. 선생님이 승인하면 직원 통장에 쿠키가 들어가고, 회사(사장) 쿠키에서 그만큼 빠져나가요.</p>';
+  h += '<p class="muted">직원에게 줄 <b>시급(시간당 쿠키)</b>을 확인하고 <b>정산 요청</b>을 보내세요. 사장 부담분은 <b>상점이용권부터</b> 쓰고(쿠키와 1:1), 모자라면 쿠키에서 빠져나가요. 쿠키+이용권이 부족하면 요청할 수 없어요.</p>';
   let total = 0;
   emps.forEach(acd=>{
     const pay = (obj(myHires[acd]).weeklyPay)||0; total += pay;
@@ -1304,7 +1335,7 @@ function bossPayrollCard(cd){
   h += '</div>';
   return h;
 }
-function requestPayroll(cd){
+async function requestPayroll(cd){
   const myHires = obj(obj(DB.hires)[cd]);
   const items = []; let total = 0;
   Object.keys(myHires).forEach(acd=>{
@@ -1313,7 +1344,17 @@ function requestPayroll(cd){
     if(pay>0){ items.push({cd:acd, pay}); total += pay; }
   });
   if(!items.length){ toast('지급할 금액을 입력하세요'); return; }
-  prettyConfirm('시급 지급 요청', '직원 <b>'+items.length+'명</b>에게 <b>총 '+total+'쿠키</b>(시간당)를 지급하도록 선생님께 정산을 요청할까요?<br><span class="muted">승인되면 회사(사장) 쿠키에서 '+total+'쿠키가 빠져나가요.</span>', ()=>{
+  // 🎟️ 사장 쿠키 + 상점이용권(1:1)이 시급 총액에 모자라면 요청 자체를 막고 예쁜 창으로 안내
+  const info = await _bossShopInfo(cd);
+  if(!info){ prettyAlert('요청할 수 없어요', '이벤트 상점에서 <b>사장님 계정</b>을 찾지 못했어요.<br>선생님께 문의해 주세요.', '⚠️'); return; }
+  if(info.avail + info.voucherCount < total){
+    prettyAlert('쿠키가 부족해요',
+      '시급 총액 <b>'+total+'개</b>를 지급하려면 사장님의 <b>쿠키 + 상점이용권</b>이 <b>'+total+'개</b> 이상 있어야 해요.<br><br>지금은 쿠키 <b>'+info.avail+'🍪</b> + 상점이용권 <b>'+info.voucherCount+'장</b> = <b>'+(info.avail+info.voucherCount)+'개</b>뿐이라 <b style="color:#c0392b">지급 요청을 보낼 수 없어요.</b><br><span class="muted">상점이용권은 쿠키와 1:1이고, 지급할 때 이용권부터 사용해요.</span>', '🍪');
+    return;
+  }
+  const vUse = Math.min(info.voucherCount, total), cUse = total - vUse;
+  prettyConfirm('시급 지급 요청',
+    '직원 <b>'+items.length+'명</b>에게 <b>총 '+total+'개</b>(시간당)를 지급하도록 선생님께 요청할까요?<br><span class="muted">승인되면 사장 부담 '+total+'개 중 <b>상점이용권 '+vUse+'장</b> + <b>쿠키 '+cUse+'🍪</b>가 빠져나가요. (이용권 우선 사용)</span>', ()=>{
     const ref = S.child('payroll/'+cd).push();
     ref.set({ bossCd:cd, items, total, status:'pending', requestedAt:TS }).then(()=>toast('정산 요청을 보냈어요! 📨')).catch(()=>toast('요청 실패'));
   }, '💰');
@@ -1511,7 +1552,15 @@ function saveRehirePost(){
     rehireQuota:head, workDays:$('rh_days').value.trim(), condition:$('rh_cond').value.trim(),
     weeklyPay:parseInt($('rh_pay').value)||0
   });
-  S.child('businesses/'+ME.cd).update({ bonus:$('rh_bonus').value, ins4:$('rh_ins4').value });   // 성과급·4대보험은 회사(계약서·공고 공통)에 저장
+  // 성과급·4대보험 + 모집필드(직무·자격·근무일·시급·조건)를 회사(businesses)에도 반영.
+  //  → 채용공고는 businesses 단일출처(_syncBizPub→bizPub)에서 읽히므로, 안 쓰면 학생 카드에 옛 값이 계속 노출됨(추가채용 수정 미반영).
+  //    단 headcount는 원래 모집인원이므로 건드리지 않음(추가 모집은 별도 rehireQuota).
+  S.child('businesses/'+ME.cd).update({
+    bonus:$('rh_bonus').value, ins4:$('rh_ins4').value,
+    duty:$('rh_duty').value.trim(), qualification:$('rh_qual').value.trim(),
+    workDays:$('rh_days').value.trim(), condition:$('rh_cond').value.trim(),
+    weeklyPay:parseInt($('rh_pay').value)||0
+  });
   clearRehireDraft();   // 서버 전송 완료 → 로컬 초안 정리
   toast('추가 채용 공고를 저장했어요!');
 }
@@ -2470,6 +2519,9 @@ function teacherCancelResume(cd, acd){
     upd['applicantIndex/'+acd+'/'+cd] = null;
     upd['selections/'+cd+'/hired/'+acd] = null;
     upd['selections/'+cd+'/reserve/'+acd] = null;
+    upd['offers/'+acd+'/'+cd] = null;                          // 통지 정리(고착 방지)
+    upd['hires/'+cd+'/'+acd] = null;                           // 고용 흔적 정리
+    if(obj(DB.acceptedLock)[acd]===cd) upd['acceptedLock/'+acd] = null;   // 이 회사로 확정돼 있었으면 잠금 해제
     S.update(upd).then(()=>toast('지원을 취소했어요')).catch(()=>toast('취소 실패'));
   }, '🗑️');
 }
@@ -2512,6 +2564,9 @@ function cancelResume(bc){
     upd['resumes/'+bc+'/'+ME.cd] = null;
     upd['applicantIndex/'+ME.cd+'/'+bc] = null;
     upd['selections/'+bc+'/hired/'+ME.cd] = null;   // 발표 전 선발됐던 경우 정리(댕글링 방지)
+    upd['selections/'+bc+'/reserve/'+ME.cd] = null; // 예비 후보였던 경우도 정리
+    upd['offers/'+ME.cd+'/'+bc] = null;             // 거절 상태로 남은 통지 정리(고착 방지)
+    upd['hires/'+bc+'/'+ME.cd] = null;              // 남아있을 수 있는 고용 흔적 정리
     S.update(upd).then(()=>toast('지원을 취소했어요')).catch(()=>toast('취소 실패'));
   }, '🗑️');
 }
@@ -2650,24 +2705,45 @@ function signInvestment(cd){ captureSign('대표자(을) 서명', async url=>{
   if(window._invSending[cd]){ return; }
   window._invSending[cd] = true;
   try{
-    const inv = obj(obj(obj(DB.businesses)[cd]).investment);
+    // 🛡️ 지급액(paidCookie/cookie/rentFee)은 서버 최신값으로 재읽기 후 delta 계산.
+    //    (다른 탭/기기에서 방금 재서명·금액변경됐을 때 로컬 스냅샷 기준이면 이중지급/과소지급 가능)
+    let inv;
+    try { const snap = await S.child('businesses/'+cd+'/investment').once('value'); inv = obj(snap.val()); }
+    catch(_){ inv = obj(obj(obj(DB.businesses)[cd]).investment); }   // 재읽기 실패 시 로컬 폴백
     const bn = obj(obj(DB.businesses)[cd]).name || nmeOf(cd);
     const gross = inv.cookie||0, rentFee = inv.rentFee||0;
     const cookie = Math.max(0, gross - rentFee);   // 실지급 = 투자쿠키 − 대여료
-    const already = inv.paidCookie||0;        // 재서명 시 이미 지급된 분은 제외하고 차액만 지급
-    const delta = cookie - already;
     // 본인 상점 키를 캐시에서 해결(추가 읽기 0) — EventShop/stu 전체 재조회 방지
     const k = await _resolveShopKey(cd);
     if(k==null){ toast('내 상점 계정을 찾지 못했어요 — 선생님께 알려주세요'); return; }
-    // 서명 + 지급기록(paidCookie) + 쿠키 이동(shopUsed 음수 차감=잔액↑)을 하나의 원자적 ROOT.update로 → 이중지급 방지
+    // 🛡️ 이중지급 방지(CAS): paidCookie를 트랜잭션으로 원자적으로 cookie에 확정하고,
+    //    확정 '직전'의 실제 값(prevPaid)에서 delta를 계산 → 두 탭/기기가 같은 순간 서명해도 지급은 딱 1번.
+    //    (기존엔 once()로 읽은 already 기준이라, 두 서명자가 동일 already(예:0)를 읽어 각자 increment → 이중지급 가능)
+    let prevPaid = 0, casOk = false;
+    try {
+      const tx = await S.child('businesses/'+cd+'/investment/paidCookie').transaction(cur => {
+        prevPaid = (typeof cur === 'number') ? cur : 0;
+        return cookie;   // 항상 목표값으로 확정(멱등) — 두 번째 동시 서명은 prev=cookie가 되어 delta=0
+      });
+      casOk = tx.committed;
+    } catch(_){ casOk = false; }
+    if(!casOk){ toast('서명 처리 중이에요 — 잠시 후 다시 시도해 주세요'); return; }
+    const delta = cookie - prevPaid;   // 재서명 시 이미 지급된 분(prevPaid)은 제외하고 차액만 이동
+    // 서명 URL/시각 기록 + 쿠키 이동(shopUsed 음수 차감=잔액↑). paidCookie는 위 트랜잭션에서 이미 원자 확정됨.
     const updates = {};
     if(delta!==0){
       updates['EventShop/stu/'+k+'/shopUsed']  = firebase.database.ServerValue.increment(-delta);
       updates['EventShop/stu/'+k+'/updatedAt'] = Date.now();
     }
     const ip = 'Startup/businesses/'+cd+'/investment/';
-    updates[ip+'bossSignUrl']=url; updates[ip+'paidCookie']=cookie; updates[ip+'signedAt']=firebase.database.ServerValue.TIMESTAMP;
-    await ROOT.update(updates);
+    updates[ip+'bossSignUrl']=url; updates[ip+'signedAt']=firebase.database.ServerValue.TIMESTAMP;
+    try {
+      await ROOT.update(updates);
+    } catch(e){
+      // 쓰기 실패 시 paidCookie를 원복 → '미지급인데 지급표시로 남는' 과소지급 상태 방지(커밋-후-보상)
+      try { await S.child('businesses/'+cd+'/investment/paidCookie').set(prevPaid); } catch(_){}
+      throw e;
+    }
     if(delta>0) await _shopGiftMsg(cd, `📈 투자약정 체결! 「${bn}」 투자금 🍪${delta}쿠키가 지급됐어요. 사업 번창을 응원할게요! 🎉`, [{name:'쿠키', emoji:'🍪'}]);
     const rentNote = rentFee>0 ? `<br><span class="muted">투자쿠키 ${esc(gross)}에서 대여료 ${esc(rentFee)}쿠키를 뺀 금액이에요.</span>` : '';
     prettyConfirm('투자약정 체결 완료 🤝', `<b>${esc(bn)}</b> 투자약정서에 서명했어요!`+(cookie>0?`<br><b style="color:#c9520a;font-size:19px">🍪 ${esc(cookie)}쿠키</b>가 내 <b>이벤트 상점</b> 계좌로 지급됐어요.${rentNote}<br><span class="muted">이벤트 상점을 열어 확인해 보세요!</span>`:(rentFee>0?`<br><span class="muted">대여료 ${esc(rentFee)}쿠키 차감으로 실지급이 0이에요.</span>`:'<br><span class="muted">선생님께 서명을 보냈어요.</span>')), null, '🎉');
@@ -2833,16 +2909,41 @@ function approvePayroll(bcd, id){
     try{ res = await S.child('payroll/'+bcd+'/'+id+'/status').transaction(cur=> cur==='pending' ? 'paying' : undefined); }
     catch(e){ toast('처리 실패'); return; }
     if(!res.committed){ toast('이미 처리 중이거나 완료된 요청이에요'); return; }
-    const delta = {};
-    (r.items||[]).forEach(it=>{ delta[it.cd] = (delta[it.cd]||0) - (it.pay||0); });   // 직원 지급(잔액↑)
-    delta[bcd] = (delta[bcd]||0) + total;                                             // 사장 차감(잔액↓)
+    // 🎟️ 사장 부담분은 상점이용권부터 소모(쿠키 1:1), 나머지는 쿠키. 승인 시점 잔액으로 재검증.
+    const info = await _bossShopInfo(bcd);
+    if(!info){
+      await S.child('payroll/'+bcd+'/'+id+'/status').set('pending');
+      prettyAlert('지급할 수 없어요', '이벤트 상점에서 <b>사장님 계정</b>을 찾지 못했어요.', '⚠️');
+      return;
+    }
+    // 직원 지급분(잔액↑) 먼저 구성 → 상점 미등록(계정 없는) 직원을 파악
+    const empDelta = {};
+    (r.items||[]).forEach(it=>{ empDelta[it.cd] = (empDelta[it.cd]||0) - (it.pay||0); });
+    const empRes = await _cookieUpdates(empDelta);   // 지급 가능한 직원분 updates + 미등록 목록(missing)
+    const missSet = new Set(empRes.missing);
+    const missingPay = (r.items||[]).reduce((s,it)=> s + (missSet.has(String(it.cd).trim()) ? (it.pay||0) : 0), 0);
+    const effTotal = Math.max(0, total - missingPay);   // 실제 지급된 직원분만 사장이 부담(미등록분 과다차감 방지)
+    if(info.avail + info.voucherCount < effTotal){
+      await S.child('payroll/'+bcd+'/'+id+'/status').set('pending');   // 선점 해제 → 나중에 다시 승인 가능
+      prettyAlert('지급할 수 없어요', '사장님의 <b>쿠키+상점이용권</b>이 부족해요.<br>필요 <b>'+effTotal+'개</b> · 보유 쿠키 <b>'+info.avail+'🍪</b> + 이용권 <b>'+info.voucherCount+'장</b>.<br>사장님이 쿠키를 마련한 뒤 다시 승인해 주세요.', '🍪');
+      return;
+    }
+    const voucherUse = Math.min(info.voucherCount, effTotal);
+    const cookieDeduct = effTotal - voucherUse;
     try{
-      // 쿠키 이동 + 상태(paid)를 하나의 원자적 ROOT.update로 → 부분 실패 시 이중지급 방지
-      const { updates, missing } = await _cookieUpdates(delta);
+      // 쿠키 이동 + 이용권 소모 + 상태(paid)를 하나의 원자적 ROOT.update로 → 부분 실패 시 이중지급 방지
+      const updates = Object.assign({}, empRes.updates);   // 지급 가능한 직원분만 반영(미등록 직원 제외)
+      if(cookieDeduct>0) updates['EventShop/stu/'+info.key+'/shopUsed'] = firebase.database.ServerValue.increment(cookieDeduct);   // 사장 쿠키 차감(이용권 제외분)
+      for(let i=0;i<voucherUse;i++){ updates['EventShop/stu/'+info.key+'/inv/'+info.voucherIdx[i]+'/st'] = 'used'; }   // 이용권부터 소모
+      if(cookieDeduct>0 || voucherUse>0) updates['EventShop/stu/'+info.key+'/updatedAt'] = Date.now();
       updates['Startup/payroll/'+bcd+'/'+id+'/status'] = 'paid';
       updates['Startup/payroll/'+bcd+'/'+id+'/paidAt']  = firebase.database.ServerValue.TIMESTAMP;
+      updates['Startup/payroll/'+bcd+'/'+id+'/voucherUsed'] = voucherUse;
+      updates['Startup/payroll/'+bcd+'/'+id+'/cookiePaid']  = cookieDeduct;
+      updates['Startup/payroll/'+bcd+'/'+id+'/paidTotal']   = effTotal;
       await ROOT.update(updates);
-      toast(missing.length ? ('지급 완료(계정 못 찾음 '+missing.length+'명)') : ('시급 '+total+'쿠키 지급 완료! 💸'));
+      const missN = empRes.missing.length;
+      toast(missN ? ('지급 완료 · 미등록 '+missN+'명 제외(사장 '+effTotal+' 차감)') : ('시급 '+effTotal+' 지급 완료! 💸'+(voucherUse?(' · 이용권 '+voucherUse+'장 사용'):'')));
     }catch(e){
       console.error(e);
       S.child('payroll/'+bcd+'/'+id+'/status').set('pending');   // 원자 실패=아무것도 안 바뀜 → 안전하게 pending 복구

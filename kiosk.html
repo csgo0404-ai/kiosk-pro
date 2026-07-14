@@ -289,12 +289,13 @@
         }
         .booth-status-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #EEE; padding-bottom: 14px; margin-bottom: 16px; }
         .booth-status-header h3 { margin: 0; font-size: 24px; font-family: 'Jua', sans-serif; }
-        .booth-status-list { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 8px; }
-        .booth-stat-card { flex: 0 0 auto; position: relative; width: 180px; height: 180px; border-radius: 18px; padding: 18px; box-shadow: 0 3px 8px rgba(0,0,0,0.06); cursor: pointer; transition: transform .1s, box-shadow .1s; display: flex; flex-direction: column; }
+        .booth-status-list { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+        /* 8개가 한 줄에 들어오도록 카드 폭을 (전체-간격)/8로. 8개 미만이면 늘어나 채우고, 8개 초과면 가로 스크롤 */
+        .booth-stat-card { flex: 1 0 calc((100% - 84px) / 8); min-width: 0; position: relative; height: 150px; border-radius: 16px; padding: 12px 12px; box-shadow: 0 3px 8px rgba(0,0,0,0.06); cursor: pointer; transition: transform .1s, box-shadow .1s; display: flex; flex-direction: column; }
         .booth-stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 18px rgba(0,0,0,0.12); }
-        .booth-stat-name { font-weight: 900; font-size: 18px; color: #3E2723; display:flex; align-items:center; gap:4px; padding-right: 56px; margin-top: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .booth-stat-amt { font-size: 38px; font-weight: 900; color: #E65100; text-align: center; margin: auto 0; }
-        .booth-stat-sub { font-size: 14px; color: #777; font-weight: 700; text-align: center; }
+        .booth-stat-name { font-weight: 900; font-size: 15px; color: #3E2723; display:flex; align-items:center; gap:4px; padding-right: 42px; margin-top: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .booth-stat-amt { font-size: 30px; font-weight: 900; color: #E65100; text-align: center; margin: auto 0; }
+        .booth-stat-sub { font-size: 12px; color: #777; font-weight: 700; text-align: center; }
         .booth-stat-open { position: absolute; top: 12px; right: 14px; font-size: 12px; font-weight: 800; color: #2E7D32; }
         .booth-stat-off { position: absolute; top: 12px; right: 14px; font-size: 12px; font-weight: 800; color: #B71C1C; }
         .booth-status-empty { color: #bbb; padding: 14px; }
@@ -457,7 +458,11 @@
         .op-header { display:flex; align-items:center; gap:14px; margin-bottom:18px; flex-wrap:wrap; }
         .op-title { font-size:26px; font-weight:900; color:#3E2723; }
         .bm-item-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,180px)); gap:18px; }
-        .bm-item-card { position:relative; background:#fff; border:2px solid #EEE; border-radius:18px; padding:16px 12px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.04); display:flex; flex-direction:column; }
+        .bm-item-card { position:relative; background:#fff; border:2px solid #EEE; border-radius:18px; padding:16px 12px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.04); display:flex; flex-direction:column; user-select:none; -webkit-user-select:none; }
+        /* 드래그 시 라벨/여백 글자 선택 방지 — 단, 입력칸 안 글자는 선택·편집 가능 유지 */
+        .bm-item-card input, .bm-item-card textarea { user-select:text; -webkit-user-select:text; }
+        /* 순서 드래그 자리표시(드롭 위치) — 점선 박스로 어디에 놓일지 보이게 */
+        .bm-item-ph { border:2px dashed #FB8C00 !important; background:#FFF6E6 !important; box-shadow:none !important; }
         .bm-item-card.soldout { opacity:0.5; }
         .bm-item-del { position:absolute; top:6px; right:10px; color:#ccc; cursor:pointer; font-weight:900; font-size:18px; }
         .bm-item-del:hover { color:#E53935; }
@@ -601,18 +606,6 @@
             </h3>
         </div>
         <div class="history-list" id="orderList" style="flex:1;"></div>
-
-        <!-- 🎁 가방·복권 사용 요청 (즉시 처리분) -->
-        <div id="bagUseSection" style="border-top:2px dashed #DDD; padding-top:12px; margin-top:8px; display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <h3 style="margin:0; font-size:16px; font-family:'Jua',sans-serif; display:flex; align-items:center; gap:6px;">
-                    <span style="cursor:pointer;" onclick="window.toggleAllHistory()" title="전체 선택/해제">🎁</span>
-                    <span>가방·복권 사용</span>
-                </h3>
-                <button class="btn-refund-all" onclick="refundSelected(false)" oncontextmenu="refundSelected(true); return false;">선택 완료</button>
-            </div>
-            <div class="history-list" id="historyList" style="max-height:200px;"></div>
-        </div>
     </div>
     <div class="modal-overlay" id="purchaseModal">
         <div class="purchase-modal-content" style="width:1140px;">
@@ -705,23 +698,6 @@
         </div>
     </div>
 
-<div class="modal-overlay" id="qtyModal" style="z-index: 9999;">
-        <div style="background: #FFFDF9; border: 5px solid #FFE0B2; border-radius: 30px; width: 360px; max-width: 90%; padding: 30px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.2); animation: popUpAnim 0.3s ease-out;">
-            <div id="qtyItemIcon" style="font-size: 70px; margin-bottom: 10px;">🎟️</div>
-            <h2 id="qtyItemName" style="font-family: 'Jua', sans-serif; font-size: 26px; color: #5D4037; margin: 0 0 8px 0;">아이템</h2>
-            <div style="font-family: 'Jua', sans-serif; font-size: 17px; color: #8D6E63; margin-bottom: 22px;">몇 개 사용할까요?</div>
-            <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px;">
-                <button onmousedown="startQtyHold(-1)" onmouseup="stopQtyHold()" onmouseleave="stopQtyHold()" ontouchstart="startQtyHold(-1)" ontouchend="stopQtyHold()" style="width:50px; height:50px; border-radius:50%; border:none; background:#FFE0B2; font-size:28px; font-weight:bold; cursor:pointer; user-select:none;">−</button>
-                <input type="number" id="qtyValue" min="1" value="1" onfocus="this.select()" oninput="this.value=Math.min(Math.max(parseInt(this.value)||1,1),_qtyMax)" style="font-family:'Jua',sans-serif; font-size:40px; color:#E65100; width:90px; text-align:center; border:2px solid #FFE0B2; border-radius:12px; padding:5px 0; -moz-appearance:textfield;">
-                <button onmousedown="startQtyHold(1)" onmouseup="stopQtyHold()" onmouseleave="stopQtyHold()" ontouchstart="startQtyHold(1)" ontouchend="stopQtyHold()" style="width:50px; height:50px; border-radius:50%; border:none; background:#FFE0B2; font-size:28px; font-weight:bold; cursor:pointer; user-select:none;">+</button>
-            </div>
-            <div id="qtyMaxInfo" style="font-size:13px; color:#BCAAA4; margin-bottom:18px;"></div>
-            <div style="display: flex; gap: 15px;">
-                <button class="btn-confirm-no" onclick="closeQtyModal()">취소</button>
-                <button class="btn-confirm-yes" onclick="confirmQtyUse()">사용하기</button>
-            </div>
-        </div>
-    </div>
 <!-- 💳 결제 모달 (쿠키 + 상점 이용권) -->
     <div class="modal-overlay" id="payModal" style="z-index: 9999;">
         <div style="background:#FFFDF9; border:5px solid #FFE0B2; border-radius:30px; width:380px; max-width:92%; padding:28px; text-align:center; box-shadow:0 15px 35px rgba(0,0,0,0.2); animation:popUpAnim 0.3s ease-out;">
@@ -896,7 +872,6 @@
         
         let usersData = {};
         let itemsData = {};
-        let historyData = {};
         let shopStudents = {}; 
         let currentBuyerCode = null;
 
@@ -976,7 +951,38 @@
 
             // 💡 [트래픽 절감] 다했니 쿠키 동기화는 교사 기기에서만 1분 주기로 실행
             //    (학생 기기는 kiosk_users 리스너로 잔액을 읽기만 함)
-            if (window._isTeacher) setInterval(syncAllCookiesSilent, 60000);
+            // 🛡️ [폭증 방지] 여러 교사 탭이 동시에 켜지면 다했니 API 요청이 탭 수만큼 증폭됨.
+            //    localStorage 하트비트로 '활성 탭 1개'만 폴링하도록 리더 선출(나머지 탭은 대기).
+            if (window._isTeacher) {
+                const _POLL_KEY = 'kioskCookiePollLeader';
+                const _tabId = 'tab_' + Date.now() + '_' + Math.floor(Math.random()*1e9);
+                const _leaderFresh = (v) => {
+                    if (!v) return false;
+                    try { const o = JSON.parse(v); return o && (Date.now() - (o.t||0)) < 90000; } catch(_) { return false; }
+                };
+                const _claimLeader = () => {
+                    // localStorage 접근이 막힌 환경(프라이버시 모드 등)에선 조율 불가 →
+                    // 원래 동작(이 탭이 폴링)으로 폴백해 동기화가 멈추지 않도록 함.
+                    let v;
+                    try { v = localStorage.getItem(_POLL_KEY); } catch(_) { return true; }
+                    let o = null; try { o = v ? JSON.parse(v) : null; } catch(_) {}
+                    // 리더가 없거나(90초 만료) 내가 리더면 하트비트 갱신 후 폴링 수행
+                    if (!_leaderFresh(v) || (o && o.id === _tabId)) {
+                        try { localStorage.setItem(_POLL_KEY, JSON.stringify({ id: _tabId, t: Date.now() })); } catch(_) {}
+                        return true;
+                    }
+                    return false;
+                };
+                // 탭 종료 시 내가 리더면 자리 비움 → 다른 탭이 즉시 승계
+                window.addEventListener('beforeunload', () => {
+                    try {
+                        const v = localStorage.getItem(_POLL_KEY);
+                        const o = v ? JSON.parse(v) : null;
+                        if (o && o.id === _tabId) localStorage.removeItem(_POLL_KEY);
+                    } catch(_) {}
+                });
+                setInterval(() => { if (_claimLeader()) syncAllCookiesSilent(); }, 60000);
+            }
 
             // 🏪 부스마켓 데이터 구독: 교사=전체 / 학생 부스기기=자기 부스·메뉴만(트래픽 절감)
             if (bid) {
@@ -1111,61 +1117,10 @@
             }).join('');
         }
 
-        function renderHistory() {
-            const list = document.getElementById('historyList');
-            if (!list) return;
-            const logs = Object.values(historyData).sort((a, b) => a.timestamp - b.timestamp);
-            const sec = document.getElementById('bagUseSection');
-            if (sec) sec.style.display = logs.length ? 'block' : 'none';
-
-            list.innerHTML = logs.map(log => {
-                const isPlus = log.price < 0;
-                const displayPrice = isPlus ? `+${Math.abs(log.price)}` : `-${log.price}`;
-                const color = isPlus ? '#4CAF50' : '#E53935';
-                
-                return `
-                <div class="history-item">
-                    <input type="checkbox" class="log-checkbox" value="${log.id}" style="width: 22px; height: 22px; cursor: pointer; margin-right: 12px; accent-color: #FF9800;">
-                    
-                    <div class="h-info" style="flex:1;">
-                        <span class="h-name">${log.studentName}</span><br>
-                        <span style="color:#666; font-size:13px;">${log.itemName}</span>
-                    </div>
-                    <div style="display:flex; align-items:center;">
-                        <span class="h-price" style="color:${color}">${displayPrice}</span>
-                        <button class="btn-refund" onclick="refundItem('${log.id}', ${log.price}, '${log.code}', '${log.itemName}', false)" oncontextmenu="refundItem('${log.id}', ${log.price}, '${log.code}', '${log.itemName}', true); return false;">완료</button>
-                    </div>
-                </div>
-                `;
-            }).join('');
-
-            // 렌더링 후 '전체 선택' 상태 초기화 (window 객체 사용)
-            window.isAllSelected = false;
-        }
-
-        // 💡 전체 선택/해제 토글 함수 (어디서든 부를 수 있도록 window 객체에 등록)
-        window.isAllSelected = false; 
-        window.toggleAllHistory = function() {
-            const checkboxes = document.querySelectorAll('.log-checkbox');
-            if(checkboxes.length === 0) return;
-            
-            // 현재 상태의 반대로 모두 변경
-            window.isAllSelected = !window.isAllSelected;
-            checkboxes.forEach(cb => {
-                cb.checked = window.isAllSelected;
-            });
-        };
-
-        // 💡 전체 선택/해제 토글 함수
-        function toggleAllHistory(source) {
-            const checkboxes = document.querySelectorAll('.log-checkbox');
-            checkboxes.forEach(cb => cb.checked = source.checked);
-        }
-
         // ==========================================
         // 구매, 복권 및 사용 로직
         // ==========================================
-        
+
         async function fetchSingleCookieSilent(code) {
             if(!API_KEY) return;
             try {
@@ -1236,9 +1191,10 @@
                 .filter(b => b.open)
                 .sort((a,b)=>(a.createdAt||0)-(b.createdAt||0))
                 .forEach(b => {
-                    const bItems = Object.values(boothItems[b.id] || {})
-                        .filter(it => !it.soldOut && (it.stock == null || it.stock > 0))
-                        .sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+                    const bItems = Object.entries(boothItems[b.id] || {})
+                        .filter(([k,it]) => it && !it.deleted && !it.soldOut && (it.stock == null || it.stock > 0))
+                        .sort((a,b)=>_itemOrd(a[1])-_itemOrd(b[1]))
+                        .map(([k,it]) => ({ ...it, id: k }));
                     if (bItems.length === 0) return;
                     boothHtml += bItems.map(it => `
                     <div class="item-card" onclick="buyBoothItemKiosk('${b.id}','${it.id}')">
@@ -1414,14 +1370,13 @@
                     voucherUsed: res.voucherIdx.length, mondayUsed: res.mondayIdx.length,
                     status: 'pending', paid: true, timestamp: Date.now()
                 };
-                try {
-                    const updates = { [`kiosk_orders/${oid}`]: order };
-                    Object.assign(updates, shopUsedUpdate(currentBuyerCode, cookiePaid));
-                    Object.assign(updates, walletDelta(currentBuyerCode, cookiePaid, -res.voucherIdx.length, -res.mondayIdx.length));
-                    if (shopKey) couponIdx.forEach(idx => updates[`ClassData/EventShop/stu/${shopKey}/inv/${idx}/st`] = 'used');
-                    await window.dbUpdate(window.dbPath(window.db), updates);
-                    closeModal('purchaseModal');
-                } catch(e) { alert("처리 중 오류가 발생했습니다."); }
+                const updates = { [`kiosk_orders/${oid}`]: order };
+                Object.assign(updates, walletDelta(currentBuyerCode, cookiePaid, -res.voucherIdx.length, -res.mondayIdx.length));
+                if (shopKey) couponIdx.forEach(idx => updates[`ClassData/EventShop/stu/${shopKey}/inv/${idx}/st`] = 'used');
+                const r = await commitShopWrite({ deductCode: currentBuyerCode, deductDelta: cookiePaid, couponK: shopKey, couponIdx, extraUpdates: updates });
+                if (r.ok) closeModal('purchaseModal');
+                else if (r.reason === 'insufficient') alert('쿠키가 부족해요. 잔액을 확인해 주세요.');
+                else alert("처리 중 오류가 발생했습니다.");
             };
 
             if (price > 0) {
@@ -1433,66 +1388,6 @@
                     `<span style="color:#FF6F00; font-size:26px;">[${itemName}]</span><br>금액: <b style="color:${color};">${displayAmt} 쿠키</b>`,
                     () => writeOrder(price, 1, 0, 0));
             }
-        }
-
-        async function refundItem(logId, priceValue, code, itemName) {
-            const pw = prompt("이 내역을 완료(취소) 처리하시겠습니까?\n완료(관리자) 비밀번호를 입력하세요.");
-            
-            if(pw === null) return; 
-            if(pw !== REFUND_PW && !(REFUND_PW === "0404" && pw === "404")) {
-                alert("비밀번호가 일치하지 않습니다.");
-                return;
-            }
-
-            const st = usersData[code];
-            const updates = {};
-            updates[`kiosk_history/${logId}`] = null; 
-            
-            if(st) {
-                // 🎟️ 복권 등 가방 아이템 사용 취소인 경우
-                if (itemName && itemName.includes('사용')) {
-                    const newBonus = (st.bonus || 0) - Math.abs(priceValue);
-                    const newHighlight = (st.highlight || 0) + Math.abs(priceValue);
-                    updates[`kiosk_users/${code}/bonus`] = newBonus;
-                    updates[`kiosk_users/${code}/highlight`] = newHighlight === 0 ? null : newHighlight;
-
-                    // 🎒 이벤트 상점 가방에 아이템 다시 살려주기 로직
-                    // "상점 이용권 x2 사용" → name: "상점 이용권", qty: 2
-                    const qtyMatch = itemName.match(/ x(\d+) 사용$/);
-                    const restoreQty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
-                    const originalItemName = itemName.replace(/ x\d+ 사용$/, '').replace(/ 사용$/, '').trim();
-
-                    let shopUserKey = null;
-                    for (let key in shopStudents) {
-                        if (String(shopStudents[key].cd).trim() === String(code).trim()) {
-                            shopUserKey = key; break;
-                        }
-                    }
-                    if (shopUserKey && shopStudents[shopUserKey].inv) {
-                        const inv = shopStudents[shopUserKey].inv;
-                        // Firebase inv는 객체일 수 있으므로 Object.keys 사용, 최근 순으로 복구
-                        let restored = 0;
-                        Object.keys(inv).reverse().forEach(idx => {
-                            if (restored >= restoreQty) return;
-                            if (inv[idx] && inv[idx].n === originalItemName && inv[idx].st === 'used') {
-                                updates[`ClassData/EventShop/stu/${shopUserKey}/inv/${idx}/st`] = 'active';
-                                restored++;
-                            }
-                        });
-                    }
-                } 
-                // 🍔 일반 키오스크 상점 아이템 결제 취소인 경우
-                else {
-                    const newSpent = (st.spent || 0) - parseInt(priceValue);
-                    const newHighlight = (st.highlight || 0) - parseInt(priceValue);
-                    updates[`kiosk_users/${code}/spent`] = newSpent;
-                    updates[`kiosk_users/${code}/highlight`] = newHighlight === 0 ? null : newHighlight;
-                }
-            }
-
-            try { 
-                await window.dbUpdate(window.dbPath(window.db), updates); 
-            } catch(e) { alert("사용 처리 실패"); }
         }
 
         // ==========================================
@@ -1540,138 +1435,6 @@
                     alert("비밀번호가 일치하지 않습니다.");
                 }
             });
-        }
-
-        // 🔧 가방 아이템 복구 공통 헬퍼
-        function _restoreInvItems(inv, shopUserKey, originalItemName, restoreQty, updates) {
-            let restored = 0;
-            const keys = Object.keys(inv);
-            for (let i = keys.length - 1; i >= 0; i--) {
-                if (restored >= restoreQty) break;
-                const idx = keys[i];
-                if (inv[idx] && inv[idx].n === originalItemName && inv[idx].st === 'used') {
-                    const path = `ClassData/EventShop/stu/${shopUserKey}/inv/${idx}/st`;
-                    if (!updates[path]) {
-                        updates[path] = 'active';
-                        restored++;
-                    }
-                }
-            }
-        }
-
-        // 💡 개별 완료 (좌/우 클릭 판별 추가)
-        async function refundItem(logId, priceValue, code, itemName, isRightClick) {
-                // 🔒 쿠키가 오가는 처리 → 교사 비밀번호 확인(무인증 차감 방지)
-                const pw = prompt("완료(취소) 처리하려면 교사 비밀번호를 입력하세요.");
-                if (pw === null) return;
-                if (!adminPwOk(pw)) return alert("비밀번호가 일치하지 않습니다.");
-                const st = usersData[code];
-                const updates = {};
-                updates[`kiosk_history/${logId}`] = null; 
-                
-                if(st) {
-                    if (itemName && itemName.includes('사용')) {
-                        const newBonus = (st.bonus || 0) - Math.abs(priceValue);
-                        const newHighlight = (st.highlight || 0) + Math.abs(priceValue);
-                        updates[`kiosk_users/${code}/bonus`] = newBonus;
-                        updates[`kiosk_users/${code}/highlight`] = newHighlight === 0 ? null : newHighlight;
-
-                        // 우클릭(true)인 경우에만 아이템을 가방(active)으로 되돌림
-                        if (isRightClick) {
-                            const qtyMatch = itemName.match(/ x(\d+) 사용$/);
-                            const restoreQty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
-                            const originalItemName = itemName.replace(/ x\d+ 사용$/, '').replace(/ 사용$/, '').trim();
-                            let shopUserKey = null;
-                            for (let key in shopStudents) {
-                                if (String(shopStudents[key].cd).trim() === String(code).trim()) {
-                                    shopUserKey = key; break;
-                                }
-                            }
-                            if (shopUserKey && shopStudents[shopUserKey].inv) {
-                                _restoreInvItems(shopStudents[shopUserKey].inv, shopUserKey, originalItemName, restoreQty, updates);
-                            }
-                        }
-                    } else {
-                        const newSpent = (st.spent || 0) - parseInt(priceValue);
-                        const newHighlight = (st.highlight || 0) - parseInt(priceValue);
-                        updates[`kiosk_users/${code}/spent`] = newSpent;
-                        updates[`kiosk_users/${code}/highlight`] = newHighlight === 0 ? null : newHighlight;
-                    }
-                }
-
-                try {
-                    await window.dbUpdate(window.dbPath(window.db), updates);
-                } catch(e) { alert("처리 실패"); }
-        }
-
-        // 💡 선택 내역 일괄 완료 (좌/우 클릭에 따른 문구 수정)
-        async function refundSelected(isRightClick) {
-            const checkedBoxes = Array.from(document.querySelectorAll('.log-checkbox:checked'));
-            if(checkedBoxes.length === 0) {
-                alert("선택된 내역이 없습니다. 체크박스를 선택해주세요.");
-                return;
-            }
-            // 🔒 일괄 차감 처리 → 교사 비밀번호 확인
-            const pw = prompt("선택한 내역을 완료 처리하려면 교사 비밀번호를 입력하세요.");
-            if (pw === null) return;
-            if (!adminPwOk(pw)) return alert("비밀번호가 일치하지 않습니다.");
-
-                const updates = {};
-                const userUpdates = {};
-                const selectedLogIds = checkedBoxes.map(cb => cb.value);
-
-                for (let logId of selectedLogIds) {
-                    const log = historyData[logId];
-                    if (!log) continue;
-
-                    const code = log.code;
-                    if (!userUpdates[code]) userUpdates[code] = { spentDelta: 0, bonusDelta: 0, highlightDelta: 0 };
-                    
-                    updates[`kiosk_history/${logId}`] = null; 
-                    
-                    if (log.itemName && log.itemName.includes('사용')) {
-                        userUpdates[code].bonusDelta -= Math.abs(log.price);
-                        userUpdates[code].highlightDelta += Math.abs(log.price);
-
-                        if (isRightClick) {
-                            const qtyMatch = log.itemName.match(/ x(\d+) 사용$/);
-                            const restoreQty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
-                            const originalItemName = log.itemName.replace(/ x\d+ 사용$/, '').replace(/ 사용$/, '').trim();
-                            let shopUserKey = null;
-                            for (let key in shopStudents) {
-                                if (String(shopStudents[key].cd).trim() === String(code).trim()) {
-                                    shopUserKey = key; break;
-                                }
-                            }
-                            if (shopUserKey && shopStudents[shopUserKey].inv) {
-                                _restoreInvItems(shopStudents[shopUserKey].inv, shopUserKey, originalItemName, restoreQty, updates);
-                            }
-                        }
-                    } else {
-                        userUpdates[code].spentDelta -= parseInt(log.price);
-                        userUpdates[code].highlightDelta -= parseInt(log.price);
-                    }
-                }
-
-                for (let code in userUpdates) {
-                    const st = usersData[code];
-                    if (st) {
-                        if (userUpdates[code].bonusDelta !== 0) {
-                            updates[`kiosk_users/${code}/bonus`] = (st.bonus || 0) + userUpdates[code].bonusDelta;
-                        }
-                        if (userUpdates[code].spentDelta !== 0) {
-                            updates[`kiosk_users/${code}/spent`] = (st.spent || 0) + userUpdates[code].spentDelta;
-                        }
-                        if (userUpdates[code].highlightDelta !== 0) {
-                            const newH = (st.highlight || 0) + userUpdates[code].highlightDelta;
-                            updates[`kiosk_users/${code}/highlight`] = newH === 0 ? null : newH;
-                        }
-                    }
-                }
-                
-                try {
-                    await window.dbUpdate(window.dbPath(window.db), updates);
-                } catch(e) { alert("처리 실패"); }
         }
 
         // 💡 비밀번호 저장 함수 (Firebase 연동, 매니저 PW 삭제)
@@ -1905,169 +1668,6 @@
             updateAuctionTimers();
         }
 
-        // ==========================================
-        // 📤 복권 사용 요청 (선생님 확인 후 처리)
-        // ==========================================
-        async function requestLottery(shopUserKey, itemIdx, itemName) {
-            const st = usersData[currentBuyerCode];
-            showConfirmModal(
-                '📤',
-                "선생님께 요청할까요?",
-                `<span style="color:#1976D2; font-size:22px;">[${itemName}]</span><br>선생님이 확인 후 처리해 드려요!`,
-                async () => {
-                    const reqId = Date.now().toString();
-                    const now = new Date();
-                    const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-                    try {
-                        await window.dbUpdate(window.dbPath(window.db, 'kiosk_requests'), {
-                            [reqId]: {
-                                id: reqId,
-                                studentName: st.name,
-                                code: currentBuyerCode,
-                                shopUserKey: shopUserKey,
-                                itemIdx: itemIdx,
-                                itemName: itemName,
-                                time: timeStr,
-                                timestamp: Date.now()
-                            }
-                        });
-                        alert(`✅ 요청 완료!\n선생님이 곧 확인해 주실 거에요 😊`);
-                        closeModal('purchaseModal');
-                    } catch(e) { alert("요청 전송에 실패했습니다."); }
-                }
-            );
-        }
-
-        // ==========================================
-        // 🎒 수량 선택 모달 & 아이템 사용 분기
-        // ==========================================
-        let _qtyShopKey = null, _qtyIndices = [], _qtyItemName = '', _qtyMax = 1, _qtyIsLottery = false;
-
-        function openInvItem(gk) {
-            const g = window._invGrouped && window._invGrouped[gk];
-            if(!g) return;
-            _qtyShopKey = g.shopUserKey;
-            _qtyIndices = g.indices;
-            _qtyItemName = g.item.n;
-            _qtyIsLottery = g.isLottery;
-            _qtyMax = g.count;
-            document.getElementById('qtyItemIcon').innerText = g.item.i || (g.isLottery ? '🎟️' : '🎁');
-            document.getElementById('qtyItemName').innerText = g.item.n;
-            document.getElementById('qtyValue').value = 1;
-            document.getElementById('qtyMaxInfo').innerText = `보유: ${g.count}개`;
-            document.getElementById('qtyModal').style.display = 'flex';
-        }
-
-        let _qtyHoldTimer = null, _qtyHoldInterval = null;
-        function changeQty(delta) {
-            const el = document.getElementById('qtyValue');
-            let val = (parseInt(el.value) || 1) + delta;
-            if(val < 1) val = 1;
-            if(val > _qtyMax) val = _qtyMax;
-            el.value = val;
-        }
-        function startQtyHold(delta) {
-            changeQty(delta);
-            _qtyHoldTimer = setTimeout(() => {
-                _qtyHoldInterval = setInterval(() => changeQty(delta), 80);
-            }, 400);
-        }
-        function stopQtyHold() {
-            clearTimeout(_qtyHoldTimer);
-            clearInterval(_qtyHoldInterval);
-        }
-
-        function closeQtyModal() {
-            document.getElementById('qtyModal').style.display = 'none';
-        }
-
-        function confirmQtyUse() {
-            const qty = Math.min(Math.max(parseInt(document.getElementById('qtyValue').value) || 1, 1), _qtyMax);
-            closeQtyModal();
-            if(_qtyIsLottery) {
-                useLottery(_qtyShopKey, _qtyIndices, qty);
-            } else {
-                useItemRequest(_qtyShopKey, _qtyIndices, _qtyItemName, qty);
-            }
-        }
-
-
-        // ==========================================
-        // 🎁 일반 아이템 사용 (쿠키 차감 없이 구매 내역에만 기록)
-        // ==========================================
-        async function useItemRequest(shopUserKey, itemIndices, itemName, qty) {
-            const st = usersData[currentBuyerCode];
-            const useQty = qty || 1;
-            const firstIdx = Array.isArray(itemIndices) ? itemIndices[0] : itemIndices;
-            const item = shopStudents[shopUserKey].inv[firstIdx];
-            showConfirmModal(
-                item.i || '🎁',
-                "아이템을 사용하시겠습니까?",
-                `<span style="color:#FF6F00; font-size:26px;">[${itemName}]</span>${useQty > 1 ? ` <b style="color:#555;">×${useQty}</b>` : ''}`,
-                async () => {
-                    const logId = Date.now().toString();
-                    const updates = {};
-                    updates[`kiosk_history/${logId}`] = {
-                        id: logId, code: currentBuyerCode, studentName: st.name,
-                        itemName: useQty > 1 ? `${itemName} x${useQty} 사용` : `${itemName} 사용`,
-                        price: 0, timestamp: Date.now()
-                    };
-                    const toUse = Array.isArray(itemIndices) ? itemIndices.slice(0, useQty) : [itemIndices];
-                    toUse.forEach(idx => {
-                        updates[`ClassData/EventShop/stu/${shopUserKey}/inv/${idx}/st`] = 'used';
-                    });
-                    try {
-                        await window.dbUpdate(window.dbPath(window.db), updates);
-                        renderInventoryGrid(currentBuyerCode);
-                    } catch(e) { alert("처리 중 오류가 발생했습니다."); }
-                }
-            );
-        }
-
-        // ==========================================
-        // 🎟️ 상점 이용권/복권 사용 (수량만큼 +1 쿠키 지급)
-        // ==========================================
-        async function useLottery(shopUserKey, itemIndices, qty) {
-            const st = usersData[currentBuyerCode];
-            const firstIdx = Array.isArray(itemIndices) ? itemIndices[0] : itemIndices;
-            const item = shopStudents[shopUserKey].inv[firstIdx];
-            const itemName = item.n;
-            const useQty = qty || 1;
-            const result = useQty;
-
-            showConfirmModal(
-                item.i || '🎟️',
-                "아이템을 사용하시겠습니까?",
-                `<span style="color:#FF6F00; font-size:26px;">[${itemName}]</span> <b style="color:#555;">×${useQty}</b><br>사용 시 <b style="color:#4CAF50;">+${result} 쿠키</b> 획득!`,
-                async () => {
-                    const logId = Date.now().toString();
-                    const newBonus = (st.bonus || 0) + result;
-                    const newHighlight = (st.highlight || 0) - result;
-
-                    const updates = {};
-                    updates[`kiosk_users/${currentBuyerCode}/bonus`] = newBonus;
-                    updates[`kiosk_users/${currentBuyerCode}/highlight`] = newHighlight;
-                    updates[`kiosk_history/${logId}`] = {
-                        id: logId, code: currentBuyerCode, studentName: st.name,
-                        itemName: useQty > 1 ? `${itemName} x${useQty} 사용` : `${itemName} 사용`,
-                        price: -result, timestamp: Date.now()
-                    };
-                    const toUse = Array.isArray(itemIndices) ? itemIndices.slice(0, useQty) : [itemIndices];
-                    toUse.forEach(idx => {
-                        updates[`ClassData/EventShop/stu/${shopUserKey}/inv/${idx}/st`] = 'used';
-                    });
-
-                    try {
-                        await window.dbUpdate(window.dbPath(window.db), updates);
-                        alert(`🎉 축하합니다!\n${result} 🍪를 획득했습니다!`);
-                        renderInventoryGrid(currentBuyerCode);
-                    } catch(e) {
-                        alert("처리 중 오류가 발생했습니다.");
-                    }
-                }
-            );
-        }
-
       function updateAuctionTimers() {
             const now = Date.now();
             document.querySelectorAll('.auc-kiosk-timer').forEach(el => {
@@ -2152,7 +1752,7 @@
             const booths = Object.values(boothsData).sort(_boothByOrder);
             const drag = window._isTeacher;   // 교사만 드래그 정렬
             grid.innerHTML = booths.map(b => {
-                const itemCnt = Object.keys(boothItems[b.id] || {}).length;
+                const itemCnt = Object.values(boothItems[b.id] || {}).filter(it=>!it.deleted).length;
                 const openBadge = b.open ? `<span class="booth-open">영업중</span>` : `<span class="booth-closed">준비중</span>`;
                 const dragAttr = drag ? `draggable="true" ondragstart="boothDragStart(event,'${b.id}')" ondragover="boothDragOver(event)" ondrop="boothDrop(event,'${b.id}')" ondragend="boothDragEnd(event)"` : '';
                 return `
@@ -2331,7 +1931,7 @@
             const b = boothsData[currentBoothId];
             if (!saleMode) {
                 if (!b) return;
-                const items = Object.values(boothItems[currentBoothId]||{}).filter(i=>!i.soldOut);
+                const items = Object.values(boothItems[currentBoothId]||{}).filter(i=>!i.deleted && !i.soldOut);
                 if (items.length === 0) return alert('판매할 상품을 먼저 추가하세요. (오른쪽 아래 ➕)');
                 // 손님 받기 진입 시 영업중으로 자동 전환
                 if (!b.open) { b.open = true; window.dbUpdate(window.dbPath(window.db), { [`kiosk_booths/${currentBoothId}/open`]: true }); }
@@ -2345,8 +1945,14 @@
             await window.dbUpdate(window.dbPath(window.db), { [`kiosk_booths/${currentBoothId}/open`]: !b.open });
         }
         function renderBoothItems() {
+            if (_itemDrag) return;   // 순서 드래그 중엔 재렌더 금지(드래그 요소 참조 보존)
             const grid = document.getElementById('opItemGrid');
-            const items = Object.values(boothItems[currentBoothId] || {}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+            // 🔑 저장 키(key)를 아이템 id로 사용 — 옛 데이터에서 it.id 필드가 없거나 키와 달라도
+            //    삭제/수정이 올바른 노드에 반영되도록(엉뚱한 .../undefined 경로 쓰기 방지).
+            const items = Object.entries(boothItems[currentBoothId] || {})
+                .filter(([k,it]) => it && !it.deleted)
+                .sort((a,b) => _itemOrd(a[1]) - _itemOrd(b[1]))   // order(사용자 지정) 우선, 없으면 createdAt
+                .map(([k,it]) => ({ ...it, id: k }));
             const _booth = boothsData[currentBoothId] || {};
             if (saleMode) {
                 // 판매 모드: 카드 안에서 −/+로 개수 조절 → 우측 하단 주문하기
@@ -2382,7 +1988,7 @@
             }
             // 편집 모드
             grid.innerHTML = items.map(it => `
-                <div class="bm-item-card ${it.soldOut?'soldout':''}">
+                <div class="bm-item-card ${it.soldOut?'soldout':''}" data-itemid="${it.id}" onpointerdown="itemPressStart(event,'${it.id}')">
                     <span class="bm-item-del" onclick="deleteBoothItem('${it.id}')">×</span>
                     <div class="bm-emoji" title="클릭하여 이미지 선택" onclick="openEmojiPicker('${it.id}')">${it.emoji ? iconHtml(it.emoji,'이미지') : '<span style=\"font-size:14px;color:#9E9E9E;font-weight:800;\">이미지</span>'}</div>
                     <input class="bm-name" value="${attrEsc(it.name)}" placeholder="상품명" onblur="updateBoothItem('${it.id}','name',this.value)">
@@ -2415,15 +2021,154 @@
         }
         function deleteBoothItem(itemId) {
             showConfirmModal('🗑️','상품을 삭제할까요?','', async ()=>{
-                await window.dbUpdate(window.dbPath(window.db), { [`kiosk_booth_items/${currentBoothId}/${itemId}`]: null });
+                // 🛡️ 소프트 삭제: null 쓰기를 막는 DB 규칙(newData.exists 등)에서도 확실히 동작하도록
+                //    실제 삭제(null) 대신 deleted 플래그를 세우고, 모든 화면에서 필터링해 숨긴다.
+                await window.dbUpdate(window.dbPath(window.db), {
+                    [`kiosk_booth_items/${currentBoothId}/${itemId}/deleted`]: true,
+                    [`kiosk_booth_items/${currentBoothId}/${itemId}/soldOut`]: true
+                });
             });
         }
+
+        // ===== 부스 상품 순서 변경: 핸들 없이 '꾹 눌러(롱프레스) 드래그' =====
+        function _itemOrd(it){ return (typeof it.order === 'number') ? it.order : (it.createdAt || 0); }
+        let _itemPress = null;   // 롱프레스 대기 { id, x, y, pointerId, timer }
+        let _itemDrag  = null;   // 드래그 활성 { boothId, el }
+        const _ITEM_HOLD_MS = 400, _ITEM_MOVE_TOL = 10;
+
+        function itemPressStart(e, itemId){
+            if (e.pointerType === 'mouse'){
+                if (e.button !== 0) return;   // 좌클릭만
+                // 🖱️ 마우스: 입력칸·버튼·삭제(×)·이미지에선 드래그 안 함(클릭·글자선택 우선).
+                //    카드 여백/라벨을 살짝 끌면(임계 초과) 즉시 시작(아래 pointermove).
+                if (e.target && e.target.closest && e.target.closest('input, textarea, button, select, [contenteditable="true"], .bm-item-del, .bm-emoji')) return;
+                _itemPress = { id: itemId, x: e.clientX, y: e.clientY, pointerId: e.pointerId, type: 'mouse' };
+            } else {
+                // 👆 터치/펜(태블릿): 카드 어디를 눌러도 '꾹 누르면'(홀드) 드래그 시작.
+                //    짧은 탭은 그대로 입력 편집/버튼 클릭으로 처리(홀드 전에 손 떼면 타이머 취소).
+                _itemPress = { id: itemId, x: e.clientX, y: e.clientY, pointerId: e.pointerId, type: e.pointerType };
+                _itemPress.timer = setTimeout(()=> _activateItemDrag(itemId, e.pointerId, e.clientX, e.clientY), _ITEM_HOLD_MS);
+            }
+        }
+        function _activateItemDrag(itemId, pointerId, anchorX, anchorY){
+            if (_itemPress && _itemPress.timer) clearTimeout(_itemPress.timer);
+            _itemPress = null;
+            // 롱프레스 대기 중 재렌더가 있었어도 견고하도록 활성화 시점에 id로 실시간 재조회
+            const sel = (window.CSS && CSS.escape) ? CSS.escape(itemId) : itemId;
+            const card = document.querySelector('#opItemGrid .bm-item-card[data-itemid="'+sel+'"]');
+            if (!card) return;   // 렌더로 사라졌으면 이 드래그는 취소
+            const rect = card.getBoundingClientRect();
+            // 자리표시(placeholder): 카드가 떠도 격자가 유지되도록 같은 크기로 자리 차지
+            const ph = document.createElement('div');
+            ph.className = 'bm-item-card bm-item-ph';
+            ph.style.width = rect.width + 'px';
+            ph.style.height = rect.height + 'px';
+            card.parentNode.insertBefore(ph, card);
+            _itemDrag = { boothId: currentBoothId, el: card, ph,
+                offX: anchorX - rect.left, offY: anchorY - rect.top };
+            // 카드를 화면에 '떠서' 커서를 따라다니게(눈에 잘 보이게: 확대+주황 테두리+그림자)
+            card.style.position = 'fixed';
+            card.style.left = '0'; card.style.top = '0';
+            card.style.width = rect.width + 'px';
+            card.style.height = rect.height + 'px';
+            card.style.margin = '0';
+            card.style.zIndex = '1000';
+            card.style.opacity = '0.95';
+            card.style.outline = '3px solid #FB8C00';
+            card.style.boxShadow = '0 16px 34px rgba(0,0,0,0.30)';
+            card.style.transition = 'none';
+            card.style.transform = 'translate(' + rect.left + 'px,' + rect.top + 'px) scale(1.06)';
+            try { card.setPointerCapture(pointerId); } catch(_){}
+            try { document.body.style.cursor = 'grabbing'; } catch(_){}
+            try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch(_){}
+        }
+        // 포인터가 실제로 올라간 카드 기준 삽입 위치(경계 진동 없음 → 깜빡임 방지)
+        function _itemTargetBefore(grid, x, y){
+            const cards = grid.querySelectorAll('.bm-item-card:not(.bm-item-add):not(.bm-item-ph)');
+            for (const el of cards){
+                if (el === _itemDrag.el) continue;
+                const b = el.getBoundingClientRect();
+                if (x>=b.left && x<=b.right && y>=b.top && y<=b.bottom){
+                    return (x < b.left + b.width/2) ? el : el.nextElementSibling;
+                }
+            }
+            return undefined;   // 어떤 카드 위도 아님 → 자리 유지
+        }
+        // FLIP: 자리표시를 옮기고 나머지 카드가 부드럽게 미끄러지도록 애니메이션
+        function _flipMovePlaceholder(grid, before){
+            const ph = _itemDrag.ph;
+            if (before === ph || before === ph.nextSibling) return;   // 위치 변화 없음
+            const movers = Array.from(grid.querySelectorAll('.bm-item-card')).filter(c=>c!==_itemDrag.el && c!==ph);
+            const first = new Map(); movers.forEach(c=>first.set(c, c.getBoundingClientRect()));
+            grid.insertBefore(ph, before || null);
+            movers.forEach(c=>{
+                const p = first.get(c); const n = c.getBoundingClientRect();
+                const dx = p.left-n.left, dy = p.top-n.top;
+                if (dx || dy){
+                    c.style.transition = 'none';
+                    c.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+                    requestAnimationFrame(()=>{ c.style.transition = 'transform 150ms ease'; c.style.transform = ''; });
+                }
+            });
+        }
+        document.addEventListener('pointermove', (e)=>{
+            if (_itemPress){
+                const moved = Math.abs(e.clientX-_itemPress.x)>_ITEM_MOVE_TOL || Math.abs(e.clientY-_itemPress.y)>_ITEM_MOVE_TOL;
+                if (_itemPress.type === 'mouse'){
+                    if (!moved) return;
+                    _activateItemDrag(_itemPress.id, _itemPress.pointerId, _itemPress.x, _itemPress.y);   // 마우스: 살짝 끌면 즉시 시작
+                    if (!_itemDrag) return;
+                } else {
+                    if (moved){ clearTimeout(_itemPress.timer); _itemPress=null; }   // 터치 스크롤
+                    return;
+                }
+            }
+            if (!_itemDrag) return;
+            e.preventDefault();
+            const grid = document.getElementById('opItemGrid'); if(!grid) return;
+            // 카드가 커서를 따라오게
+            _itemDrag.el.style.transform = 'translate(' + (e.clientX-_itemDrag.offX) + 'px,' + (e.clientY-_itemDrag.offY) + 'px) scale(1.06)';
+            // 드롭 위치(자리표시) 갱신
+            const before = _itemTargetBefore(grid, e.clientX, e.clientY);
+            if (before !== undefined) _flipMovePlaceholder(grid, before);
+        }, { passive:false });
+        function _endItemDrag(save){
+            if (_itemPress){ if(_itemPress.timer) clearTimeout(_itemPress.timer); _itemPress=null; }
+            if (!_itemDrag) return;
+            const grid = document.getElementById('opItemGrid');
+            const boothId = _itemDrag.boothId, el = _itemDrag.el, ph = _itemDrag.ph;
+            // 카드를 자리표시 위치로 되돌리고 떠있던 스타일 제거
+            if (ph && ph.parentNode){ ph.parentNode.insertBefore(el, ph); ph.remove(); }
+            ['position','left','top','width','height','margin','zIndex','pointerEvents','opacity','outline','boxShadow','transition','transform'].forEach(p=> el.style[p]='');
+            // FLIP 잔여 트랜스폼 정리
+            if (grid) grid.querySelectorAll('.bm-item-card').forEach(c=>{ c.style.transition=''; c.style.transform=''; });
+            try { document.body.style.cursor = ''; } catch(_){}
+            _itemDrag = null;
+            // 드래그 직후 딸려오는 click 1회 무시(× 삭제/이미지 열기/입력 포커스 오작동 방지)
+            const supp = (ev)=>{ ev.stopPropagation(); ev.preventDefault(); };
+            window.addEventListener('click', supp, true);
+            setTimeout(()=> window.removeEventListener('click', supp, true), 0);
+            if (save && grid){
+                // 현재 DOM 순서를 order로 저장(값 반영은 onValue가 같은 순서로 재렌더 → 깜빡임 없음)
+                const ids = Array.from(grid.querySelectorAll('.bm-item-card:not(.bm-item-add):not(.bm-item-ph)'))
+                    .map(c=>c.getAttribute('data-itemid')).filter(Boolean);
+                const updates = {};
+                ids.forEach((id,i)=>{ updates[`kiosk_booth_items/${boothId}/${id}/order`] = i; });
+                if (Object.keys(updates).length) window.dbUpdate(window.dbPath(window.db), updates).catch(()=>{});
+            } else {
+                renderBoothItems();   // 취소 시 원래(표준) 순서로 복원
+            }
+        }
+        // 📱 터치: 드래그 활성 중에만 브라우저 스크롤 차단(비활성 시엔 정상 스크롤 유지 → 목록 스크롤 보존)
+        document.addEventListener('touchmove', (e)=>{ if (_itemDrag) { try { e.preventDefault(); } catch(_){} } }, { passive:false });
+        document.addEventListener('pointerup', ()=> _endItemDrag(true));
+        document.addEventListener('pointercancel', ()=> _endItemDrag(false));
 
         // ---- 판매: 상품 클릭 → 학생 선택 → 수량 → 보류 주문 ----
         // 손님 받기: 카드 안에서 개수 조절
         function changeCartQty(itemId, d) {
             const it = (boothItems[currentBoothId]||{})[itemId];
-            if (!it || it.soldOut) return;
+            if (!it || it.soldOut || it.deleted) return;
             const cap = it.stock == null ? Infinity : it.stock;   // 재고 한도
             let q = Math.max(0, (saleCart[itemId]||0) + d);
             if (q > cap) { q = cap; if (cap !== Infinity) alert(`재고가 ${cap}개뿐이에요.`); }
@@ -2438,7 +2183,7 @@
             const items = boothItems[currentBoothId] || {};
             let cnt = 0, total = 0;
             Object.keys(saleCart).forEach(id => {
-                const it = items[id]; if (!it) return;
+                const it = items[id]; if (!it || it.deleted) return;
                 cnt += saleCart[id];
                 total += (it.price||0) * saleCart[id];
             });
@@ -2449,8 +2194,8 @@
         function submitCart() {
             const items = boothItems[currentBoothId] || {};
             const lines = Object.keys(saleCart)
-                .map(id => ({ it: items[id], qty: saleCart[id] }))
-                .filter(l => l.it && l.qty > 0);
+                .map(id => ({ it: items[id], qty: saleCart[id], id }))   // id = 저장 키(주문·재고 경로용)
+                .filter(l => l.it && !l.it.deleted && l.qty > 0);
             if (lines.length === 0) return;
             pickCtx = { boothId: currentBoothId, lines };
             const total = lines.reduce((s,l)=>s+(l.it.price||0)*l.qty,0);
@@ -2496,7 +2241,7 @@
             const st = usersData[code];
             const b = boothsData[boothId];
             const it = (boothItems[boothId] || {})[itemId];
-            if (!st || !b || !it) return;
+            if (!st || !b || !it || it.deleted) return;
             if (b.isGov) { govConfirm(st, b, [{ it, qty: 1 }]); return; }
             const tracked = it.stock != null;
             if (tracked && it.stock <= 0) {   // 재고 소진
@@ -2516,21 +2261,20 @@
                     const order = {
                         id: oid, boothId: b.id, boothName: b.name,
                         buyerCode: st.code, buyerName: st.name, buyerNo: st.no,
-                        itemName: it.name||'상품', emoji: it.emoji||'🍬', itemId: it.id,
+                        itemName: it.name||'상품', emoji: it.emoji||'🍬', itemId: itemId,
                         price: it.price||0, qty, total,
                         cookiePaid, couponsUsed: couponIdx.length, couponIdx,
                         voucherUsed: res.voucherIdx.length, mondayUsed: res.mondayIdx.length,
                         status: 'pending', paid: true, stockTracked: tracked, timestamp: Date.now()
                     };
-                    try {
-                        const updates = { [`kiosk_orders/${oid}`]: order };
-                        Object.assign(updates, shopUsedUpdate(st.code, cookiePaid));
-                        Object.assign(updates, walletDelta(st.code, cookiePaid, -res.voucherIdx.length, -res.mondayIdx.length));
-                        if (tracked) updates[`kiosk_booth_items/${b.id}/${it.id}/stock`] = window.dbIncrement(-qty);
-                        if (shopKey) couponIdx.forEach(idx => updates[`ClassData/EventShop/stu/${shopKey}/inv/${idx}/st`] = 'used');
-                        await window.dbUpdate(window.dbPath(window.db), updates);
-                        closeModal('purchaseModal');
-                    } catch(e){ alert('주문 접수 실패'); }
+                    const updates = { [`kiosk_orders/${oid}`]: order };
+                    Object.assign(updates, walletDelta(st.code, cookiePaid, -res.voucherIdx.length, -res.mondayIdx.length));
+                    if (tracked) updates[`kiosk_booth_items/${b.id}/${itemId}/stock`] = window.dbIncrement(-qty);
+                    if (shopKey) couponIdx.forEach(idx => updates[`ClassData/EventShop/stu/${shopKey}/inv/${idx}/st`] = 'used');
+                    const r = await commitShopWrite({ deductCode: st.code, deductDelta: cookiePaid, couponK: shopKey, couponIdx, extraUpdates: updates });
+                    if (r.ok) closeModal('purchaseModal');
+                    else if (r.reason === 'insufficient') alert('쿠키가 부족해요. 잔액을 확인해 주세요.');
+                    else alert('주문 접수 실패');
                 }
             });
         }
@@ -2565,24 +2309,23 @@
                         updates[`kiosk_orders/${oid}`] = {
                             id: oid, boothId: b.id, boothName: b.name,
                             buyerCode: st.code, buyerName: st.name, buyerNo: st.no,
-                            itemName: l.it.name||'상품', emoji: l.it.emoji||'🍬', itemId: l.it.id,
+                            itemName: l.it.name||'상품', emoji: l.it.emoji||'🍬', itemId: (l.id != null ? l.id : l.it.id),
                             price: l.it.price||0, qty: l.qty, total: lineTotal,
                             cookiePaid: lineCookie, couponsUsed: lv+lm, couponIdx: lineIdx, voucherUsed: lv, mondayUsed: lm,
                             status: 'pending', paid: true, stockTracked: tracked, timestamp: base + i
                         };
-                        if (tracked) updates[`kiosk_booth_items/${b.id}/${l.it.id}/stock`] = window.dbIncrement(-l.qty);
+                        if (tracked) updates[`kiosk_booth_items/${b.id}/${(l.id != null ? l.id : l.it.id)}/stock`] = window.dbIncrement(-l.qty);
                         if (shopKey) lineIdx.forEach(idx => updates[`ClassData/EventShop/stu/${shopKey}/inv/${idx}/st`] = 'used');
                     });
                     // ⚠️ 실제 확정·분배된 쿠폰(vp+mp)만큼만 쿠폰 처리됐으므로,
                     //    쿠키 차감분도 그에 맞춰 재계산(슬롯 감소 시 과소차감 방지).
                     const realCookiePaid = total - (vp + mp);
-                    Object.assign(updates, shopUsedUpdate(st.code, realCookiePaid));       // 쿠키 결제분 차감(stu)
                     Object.assign(updates, walletDelta(st.code, realCookiePaid, -vp, -mp)); // 미러 즉시 반영(학생기기)
-                    try {
-                        await window.dbUpdate(window.dbPath(window.db), updates);
-                        saleCart = {};
-                        renderBoothItems();
-                    } catch(e){ alert('주문 접수 실패'); }
+                    const allCoupon = res.voucherIdx.concat(res.mondayIdx);
+                    const r = await commitShopWrite({ deductCode: st.code, deductDelta: realCookiePaid, couponK: shopKey, couponIdx: allCoupon, extraUpdates: updates });
+                    if (r.ok){ saleCart = {}; renderBoothItems(); }
+                    else if (r.reason === 'insufficient') alert('쿠키가 부족해요. 잔액을 확인해 주세요.');
+                    else alert('주문 접수 실패');
                 }
             });
         }
@@ -2610,12 +2353,14 @@
                     gov: true, credit, status: 'pending', paid: true, stockTracked: false, timestamp: base + i
                 };
             });
-            Object.assign(updates, shopUsedUpdate(code, net));
             Object.assign(updates, walletDelta(code, net, 0, 0));
-            window.dbUpdate(window.dbPath(window.db), updates).then(()=>{
-                saleCart = {}; renderBoothItems();
-                showInfo(net<0?'💰':(net>0?'⚠️':'✅'), net<0?'지급 완료':(net>0?'차감 완료':'처리 완료'), `${st.name} · ${fmtTotal(net)}🍪`);
-            }).catch(()=>alert('처리 실패'));
+            commitShopWrite({ deductCode: code, deductDelta: net, couponK: null, couponIdx: [], extraUpdates: updates }).then(r=>{
+                if (r.ok){
+                    saleCart = {}; renderBoothItems();
+                    showInfo(net<0?'💰':(net>0?'⚠️':'✅'), net<0?'지급 완료':(net>0?'차감 완료':'처리 완료'), `${st.name} · ${fmtTotal(net)}🍪`);
+                } else if (r.reason === 'insufficient') showInfo('⚠️','쿠키가 부족해요','그 사이 잔액이 줄었어요. 새로고침 후 다시 시도해 주세요.');
+                else alert('처리 실패');
+            });
         }
 
         // ==========================================
@@ -2853,9 +2598,72 @@
                 try { const snap = await window.dbGet(window.dbPath(window.db, `ClassData/EventShop/stu/${k}/inv`)); inv = snap.val() || {}; } catch(_) { inv = {}; }
             }
             const s = _scanCouponInv(inv);
-            out.voucherIdx = s.voucher.slice(0, vUsed);
-            out.mondayIdx  = s.monday.slice(0, mUsed);
+            // 🛡️ 후보 슬롯을 원자적으로 active→used 선점(동시 주문이 같은 슬롯을 이중사용=과소차감 방지).
+            //    '내가' 선점 성공한 슬롯만 반환 → 할인은 확정된 슬롯 수만큼만 적용됨.
+            out.voucherIdx = await _claimCouponSlots(k, s.voucher, vUsed);
+            out.mondayIdx  = await _claimCouponSlots(k, s.monday, mUsed);
             return out;
+        }
+        // 후보 인덱스를 순서대로 need개까지 원자 선점(active→used). 실제 선점 성공한 인덱스만 반환.
+        async function _claimCouponSlots(k, candidates, need){
+            const won = [];
+            for (const idx of candidates){
+                if (won.length >= need) break;
+                try {
+                    const res = await window.dbRunTransaction(
+                        window.dbPath(window.db, `ClassData/EventShop/stu/${k}/inv/${idx}/st`),
+                        cur => (cur === 'active' ? 'used' : undefined));   // active일 때만 커밋, 아니면 abort
+                    if (res.committed && res.snapshot.val() === 'used') won.push(idx);
+                } catch(_){ /* 선점 실패분은 할인에서 제외(fail-closed) */ }
+            }
+            return won;
+        }
+        // 주문 write 실패 시 선점했던 슬롯 되돌림(used→active). 선점의 보상.
+        async function _revertCouponSlots(k, idxArr){
+            if (k == null || !idxArr || !idxArr.length) return;
+            for (const idx of idxArr){
+                try { await window.dbRunTransaction(
+                    window.dbPath(window.db, `ClassData/EventShop/stu/${k}/inv/${idx}/st`),
+                    cur => (cur === 'used' ? 'active' : undefined)); } catch(_){}
+            }
+        }
+        // 🛡️ 잔액 원자 차감 가드: shopUsed += delta. delta>0이면 (기존+delta) > 잔여획득 초과 시 거부(초과지출 방지).
+        //    delta<0(지급/환불)은 상한 없이 원자 증감. 반환 {ok, sk, wrote, reason('insufficient'|'error')}.
+        async function _deductGuarded(buyerCode, delta){
+            const sk = findShopKey(buyerCode);
+            if (sk == null) return { ok:true, sk:null, wrote:false };   // 상점 미등록: 무차감(기존 동작 유지)
+            if (!delta) return { ok:true, sk, wrote:false };
+            const path = `ClassData/EventShop/stu/${sk}/shopUsed`;
+            if (delta < 0){
+                try { await window.dbRunTransaction(window.dbPath(window.db, path), cur => (cur||0)+delta); return { ok:true, sk, wrote:true }; }
+                catch(_){ return { ok:false, sk, reason:'error' }; }
+            }
+            const s = shopStudents[sk] || {};
+            const cap = Math.max(0, (s.cookie||0) - (s.usedCookie||0));   // 잔여획득 상한(로컬 스냅샷; 트랜잭션은 실제 shopUsed 재확인)
+            try {
+                const res = await window.dbRunTransaction(window.dbPath(window.db, path),
+                    cur => { const next = (cur||0) + delta; return next > cap ? undefined : next; });   // 상한 초과면 abort
+                if (res.committed) return { ok:true, sk, wrote:true };
+                return { ok:false, sk, reason:'insufficient' };
+            } catch(_){ return { ok:false, sk, reason:'error' }; }
+        }
+        // 💳 결제 확정 공통: (1)잔액 원자 차감 가드 → (2)나머지 멀티패스 기록 → (3)기록 실패 시 보상(차감·쿠폰 되돌림).
+        async function commitShopWrite({ deductCode, deductDelta, couponK, couponIdx, extraUpdates }){
+            const ded = await _deductGuarded(deductCode, deductDelta||0);
+            if (!ded.ok){ await _revertCouponSlots(couponK, couponIdx); return ded; }
+            const upd = Object.assign({}, extraUpdates||{});
+            if (ded.wrote && ded.sk != null) upd[`ClassData/EventShop/stu/${ded.sk}/updatedAt`] = Date.now();
+            try {
+                await window.dbUpdate(window.dbPath(window.db), upd);
+                return { ok:true };
+            } catch(e){
+                // 보상: 차감 복구 + 쿠폰 슬롯 복구(부분성공으로 인한 화폐/쿠폰 손실 방지)
+                if (ded.wrote && ded.sk != null){
+                    try { await window.dbUpdate(window.dbPath(window.db), { [`ClassData/EventShop/stu/${ded.sk}/shopUsed`]: window.dbIncrement(-deductDelta) }); } catch(_){}
+                }
+                await _revertCouponSlots(couponK, couponIdx);
+                return { ok:false, reason:'error' };
+            }
         }
         // 🪞 경량 지갑 미러: 교사 기기가 stu에서 계산해 기록(자가 치유). 변경분만 기록(해시 가드).
         window._walletHash = window._walletHash || {};
@@ -2980,7 +2788,14 @@
             let v = Math.max(0, Math.min(_payCtx.voucherCount, total, parseInt(document.getElementById('payVoucher').value)||0));
             let m = Math.max(0, Math.min(_payCtx.mondayCount, total - v, parseInt(document.getElementById('payMonday').value)||0));
             const cookiePaid = total - (v + m);
-            if (cookiePaid > _payCtx.availNum) return;
+            // 🛡️ 모달 연 시점의 고정 잔액이 아니라 '현재' 실시간 스냅샷으로 재검증
+            //    (다른 부스/기기에서 그 사이 잔액이 줄었을 수 있음 → 초과지출 방지)
+            const liveAvail = shopAvail(_payCtx.code);
+            const availNum = (liveAvail == null ? Infinity : liveAvail);
+            if (cookiePaid > availNum) {
+                _payCtx.availNum = availNum; recalcPay();
+                return showInfo('⚠️', '쿠키가 부족해요', `가용 쿠키가 ${availNum}🍪로 바뀌었어요. 금액을 확인해 주세요.`);
+            }
             const qty = _payCtx.qty;
             const cb = _payCtx.onPay;
             closeModal('payModal');
@@ -3121,11 +2936,17 @@
             showPasswordModal(`${label} 주문 ${ids.length}건을 정산합니다.<br>총 <b style='color:#E65100'>${sum} 🍪</b> 차감 · <b style='color:#E65100'>교사 비밀번호</b>`, (pw)=>{
                 if(!adminPwOk(pw)) return alert('비밀번호가 일치하지 않습니다.');
                 showConfirmModal('💰','정산을 확정할까요?',`${ids.length}건 · 총 ${sum} 🍪`, async ()=>{
+                    // 🛡️ [이중집계 방지] 주문별 원자 선점 — 동시 정산(다중 교사 탭)이어도 같은 주문은 딱 1번만 집계
+                    const settleIds = [];
+                    for (const id of ids) {
+                        if (ordersData[id] && ordersData[id].status==='pending' && await _claimOnce(`kiosk_settle/${id}`)) settleIds.push(id);
+                    }
+                    if (settleIds.length === 0) return alert('이미 정산된 주문이에요.');
                     const updates = {};
                     const statDelta = {};   // boothId -> {settled,count,items}
                     const legacyDeduct = {};   // 구버전(paid 미표기) 주문: 정산 시 차감 buyerCode->합계
                     const now = Date.now();
-                    ids.forEach(id=>{
+                    settleIds.forEach(id=>{
                         const o = ordersData[id];
                         // 신규 주문은 구입 시 이미 차감됨(paid) → 정산은 아카이브+집계만
                         // 구버전 보류 주문(paid 없음)은 차감된 적 없으므로 정산 때 차감
@@ -3147,7 +2968,12 @@
                     try {
                         await window.dbUpdate(window.dbPath(window.db), updates);
                     }
-                    catch(e){ alert('정산 실패'); }
+                    catch(e){
+                        // 쓰기 실패 시 선점 해제 → 다음 시도 가능(주문이 영구 잠겨 정산 불가되는 것 방지)
+                        const rb = {}; settleIds.forEach(id=> rb[`kiosk_settle/${id}`] = null);
+                        try { await window.dbUpdate(window.dbPath(window.db), rb); } catch(_){}
+                        alert('정산 실패');
+                    }
                 });
             });
         }
@@ -3157,7 +2983,7 @@
                 const tok = 'c'+Date.now()+'_'+Math.floor(Math.random()*1e9);
                 const res = await window.dbRunTransaction(window.dbPath(window.db, claimPath), cur => cur ? cur : tok);
                 return res.committed && res.snapshot.val()===tok;
-            }catch(_){ return true; }   // 트랜잭션 실패 시엔 기존 동작 유지(막지 않음)
+            }catch(_){ return false; }   // 트랜잭션 실패 시엔 fail-closed(막음) — 돈 이동(환불/정산/지급) 이중처리 방지. 필요 시 사용자가 재시도.
         }
         function refundOrder(id) {
             const o = ordersData[id]; if(!o) return;
@@ -3166,6 +2992,9 @@
             showPasswordModal(`주문을 환불합니다.<br>${o.emoji||''} ${o.itemName} x${o.qty} (${o.total}🍪)<br><b style='color:#E65100'>교사 비밀번호</b>`, (pw)=>{
                 if(!adminPwOk(pw)) return alert('비밀번호가 일치하지 않습니다.');
                 showConfirmModal('↩️','환불할까요?', `🍪${cookieBack}${couponBack?` + 사용한 아이템 ${couponBack}개`:''}를 그대로 돌려줘요.`, async ()=>{
+                    // 🛡️ 정산과 상호배타: 정산 락을 '먼저' 선점 → 같은 pending 주문을 정산·환불 동시에 처리하는 경합 차단.
+                    //    (정산이 이미 선점했으면 여기서 중단하여 kiosk_refunds는 건드리지 않음 → 정산 후 아카이브 환불은 정상 동작)
+                    if (!(await _claimOnce(`kiosk_settle/${id}`))) return alert('이미 처리(정산/환불)된 주문이에요.');
                     // 🛡️ 이중환불 원자 가드: 동시 환불이어도 딱 1번만
                     if (!(await _claimOnce(`kiosk_refunds/${id}`))) return alert('이미 처리(환불/정산)된 주문이에요.');
                     const updates = { [`kiosk_orders/${id}`]: null };
@@ -3349,6 +3178,10 @@
                 if(!adminPwOk(pw)) return alert('비밀번호가 일치하지 않습니다.');
                 const cookieBack = (o.cookiePaid != null ? o.cookiePaid : o.total);  // 실제 차감된 쿠키만 복구
                 showConfirmModal('↩️','환불할까요?', `🍪${cookieBack}${o.couponsUsed?` + 🎟️${o.couponsUsed}`:''}를 돌려줘요.`, async ()=>{
+                    // 🛡️ 정산과 상호배타(대기중 주문 한정): refundOrder와 동일하게 정산 락을 '먼저' 선점 →
+                    //    같은 pending 주문을 정산(doSettle)·환불 동시 처리하는 경합 차단(공짜 획득+매출 과다집계 방지).
+                    //    settled(이미 정산된 아카이브) 주문은 정산이 끝났으므로 kiosk_refunds 가드만으로 충분(refundArchived와 동일).
+                    if (!settled && !(await _claimOnce(`kiosk_settle/${id}`))) return alert('이미 처리(정산/환불)된 주문이에요.');
                     // 🛡️ 이중환불 원자 가드: 동시 환불이어도 딱 1번만
                     if (!(await _claimOnce(`kiosk_refunds/${id}`))) return alert('이미 처리(환불/정산)된 주문이에요.');
                     const updates = {};
