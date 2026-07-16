@@ -1108,7 +1108,7 @@
                 }
 
                 return `
-                <div class="student-card" onclick="checkStudentCodeAndOpen('${st.code}', '${st.name}')">
+                <div class="student-card" onclick="checkStudentCodeAndOpen('${st.code}')">
                     ${badgeHtml}
                     <div class="st-card-name">${st.name}</div>
                     <div class="st-num-big">🍪${availableCookie}</div>
@@ -1420,7 +1420,7 @@
         // ==========================================
         
         // 💡 학생이 자기 카드를 눌렀을 때 → 비밀번호 없이 바로 열기
-        function checkStudentCodeAndOpen(code, name) {
+        function checkStudentCodeAndOpen(code) {
             openPurchaseModal(code);
         }
 
@@ -3109,8 +3109,11 @@
             const pending = Object.values(ordersData).filter(o=>o.boothId===boothId);
             let archived = [];
             try {
-                const snap = await window.dbGet(window.dbPath(window.db, 'kiosk_orders_archive'));
-                archived = Object.values(snap.val() || {}).filter(o=>o.boothId===boothId);
+                // [트래픽 절감] 전체 아카이브 대신 이 부스 것만 서버 필터로 조회
+                //   ※ Firebase 규칙에 kiosk_orders_archive의 .indexOn:["boothId"] 추가 시 서버에서 필터링됨(다운로드 급감)
+                const snap = await window.dbGet(window.dbQuery(window.dbPath(window.db, 'kiosk_orders_archive'),
+                                                window.dbOrderByChild('boothId'), window.dbEqualTo(boothId)));
+                archived = Object.values(snap.val() || {});
             } catch(e) {}
 
             const rows = [...pending, ...archived];
@@ -3218,7 +3221,9 @@
             showPasswordModal("정산 내역을 조회합니다.<br><b style='color:#E65100'>교사 비밀번호</b>", async (pw)=>{
                 if(!adminPwOk(pw)) return alert('비밀번호가 일치하지 않습니다.');
                 try {
-                    const snap = await window.dbGet(window.dbPath(window.db, 'kiosk_orders_archive'));
+                    // [트래픽 절감] 전체 아카이브 대신 이 부스 것만 서버 필터로 조회(.indexOn:["boothId"] 권장)
+                    const snap = await window.dbGet(window.dbQuery(window.dbPath(window.db, 'kiosk_orders_archive'),
+                                                    window.dbOrderByChild('boothId'), window.dbEqualTo(boothId)));
                     archiveCache = snap.val() || {};
                 } catch(e){ archiveCache = {}; }
                 archiveBoothId = boothId;

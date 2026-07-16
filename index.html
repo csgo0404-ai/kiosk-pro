@@ -1095,19 +1095,52 @@ function resetAll(){
     _doResetAll();
   }, '🧹');
 }
-function _doResetAll(){
+async function _doResetAll(){
   window._bizPubHash = {};   // 슬림미러 해시가드 초기화 → 재생성한 회사가 bizPub에 확실히 반영되게(초기화 후 stale-skip 방지)
   const tSign = obj(DB.meta).teacherSignUrl;   // 교사 서명은 보존
   // 사장별 부스(kiosk_booths/sb_*)와 관련 데이터도 제거 — 공무원(isGov) 등 그 외 부스는 보존
   const rootUpd = {};
-  entries(obj(window._kioskBooths)).forEach(([id,b])=>{
-    if(String(id).startsWith('sb_') && !(b&&b.isGov)){
-      rootUpd['kiosk_booths/'+id]=null; rootUpd['kiosk_booth_items/'+id]=null; rootUpd['kiosk_booth_stats/'+id]=null; rootUpd['kiosk_payroll/settled/'+id]=null;
-    }
+  const sbIds = entries(obj(window._kioskBooths))
+    .filter(([id,b])=> String(id).startsWith('sb_') && !(b&&b.isGov))
+    .map(([id])=> id);
+  const sbSet = new Set(sbIds);
+  sbIds.forEach(id=>{
+    rootUpd['kiosk_booths/'+id]=null;
+    rootUpd['kiosk_booth_items/'+id]=null;
+    rootUpd['kiosk_booth_stats/'+id]=null;        // 매출 집계
+    rootUpd['kiosk_payroll/settled/'+id]=null;     // 매출 워터마크
+    rootUpd['kiosk_payroll/slock/'+id]=null;       // 매출구간 정산 선점락
   });
+  // 🧹 사장 부스의 매출·정산 '기록'도 함께 정리해 유령 매출(부스 id 재사용 시 옛 매출 부활)을 막는다.
+  // ⚠️ 절대 건드리지 않는 것: ClassData/EventShop/stu (shopUsed·inv = 학생 실제 잔액).
+  //    이미 지급/차감된 쿠키·상점이용권은 정산 '시점'에 이미 반영됐고, 기록 노드를 지워도 되돌지 않음
+  //    (여기에 환불/역산을 넣으면 "2쿠키→0쿠키" 사고가 나므로 기록 삭제만 한다).
+  if (sbIds.length){
+    try {
+      for (const id of sbIds){
+        // 정산내역 아카이브 + 보류 주문(boothId 매칭) 삭제 (.indexOn:["boothId"] 권장)
+        const arv = (await DBROOT.child('kiosk_orders_archive').orderByChild('boothId').equalTo(id).once('value')).val() || {};
+        Object.keys(arv).forEach(k=> rootUpd['kiosk_orders_archive/'+k]=null);
+        const orv = (await DBROOT.child('kiosk_orders').orderByChild('boothId').equalTo(id).once('value')).val() || {};
+        Object.keys(orv).forEach(k=> rootUpd['kiosk_orders/'+k]=null);
+      }
+      // 월급 정산 신청/완료 기록(boothId 또는 revenueMarkKey 매칭) 삭제 + 해당 선점락 정리
+      const py = (await DBROOT.child('kiosk_payroll').once('value')).val() || {};
+      ['requests','paid'].forEach(sec=>{
+        const m = py[sec] || {};
+        Object.keys(m).forEach(rid=>{
+          const r = m[rid] || {};
+          if (sbSet.has(r.boothId) || sbSet.has(r.revenueMarkKey)){
+            rootUpd['kiosk_payroll/'+sec+'/'+rid]=null;
+            if (py.lock && py.lock[rid]!=null) rootUpd['kiosk_payroll/lock/'+rid]=null;
+          }
+        });
+      });
+    } catch(_){}
+  }
   S.remove().then(()=>{
     if(tSign) S.child('meta/teacherSignUrl').set(tSign);
-    const done = ()=> toast('초기화 완료'+(tSign?' (교사 서명 보존)':'')+' · 사장 부스 제거');
+    const done = ()=> toast('초기화 완료'+(tSign?' (교사 서명 보존)':'')+' · 사장 부스·매출 기록 정리 (학생 쿠키는 유지)');
     if(Object.keys(rootUpd).length) DBROOT.update(rootUpd).then(done).catch(done); else done();
   }); }
 
@@ -1344,6 +1377,12 @@ async function requestPayroll(cd){
     if(pay>0){ items.push({cd:acd, pay}); total += pay; }
   });
   if(!items.length){ toast('지급할 금액을 입력하세요'); return; }
+  // 🛡️ 중복 요청 차단: 이미 대기(pending)·처리중(paying) 요청이 있으면 새로 만들지 않음.
+  //    (재클릭·두 기기 동시요청으로 pending이 2건 생겨 교사가 둘 다 승인 → 직원 이중지급·사장 이중차감 방지)
+  if(entries(obj(obj(DB.payroll)[cd])).some(([id,r])=> r && (r.status==='pending' || r.status==='paying'))){
+    prettyAlert('이미 정산 요청이 있어요', '먼저 보낸 <b>시급 정산 요청</b>이 아직 대기 중이에요.<br>선생님이 승인/거절한 뒤에 다시 요청해 주세요.', '🧮');
+    return;
+  }
   // 🎟️ 사장 쿠키 + 상점이용권(1:1)이 시급 총액에 모자라면 요청 자체를 막고 예쁜 창으로 안내
   const info = await _bossShopInfo(cd);
   if(!info){ prettyAlert('요청할 수 없어요', '이벤트 상점에서 <b>사장님 계정</b>을 찾지 못했어요.<br>선생님께 문의해 주세요.', '⚠️'); return; }
@@ -1355,8 +1394,15 @@ async function requestPayroll(cd){
   const vUse = Math.min(info.voucherCount, total), cUse = total - vUse;
   prettyConfirm('시급 지급 요청',
     '직원 <b>'+items.length+'명</b>에게 <b>총 '+total+'개</b>(시간당)를 지급하도록 선생님께 요청할까요?<br><span class="muted">승인되면 사장 부담 '+total+'개 중 <b>상점이용권 '+vUse+'장</b> + <b>쿠키 '+cUse+'🍪</b>가 빠져나가요. (이용권 우선 사용)</span>', ()=>{
+    // 확인 시점 재확인(모달 여는 사이 다른 요청이 생겼을 수 있음) + busy 플래그로 이중 전송 차단
+    window._payReqBusy = window._payReqBusy || {};
+    if(window._payReqBusy[cd]) return;
+    if(entries(obj(obj(DB.payroll)[cd])).some(([id,r])=> r && (r.status==='pending' || r.status==='paying'))){ toast('이미 대기 중인 요청이 있어요'); return; }
+    window._payReqBusy[cd] = true;
     const ref = S.child('payroll/'+cd).push();
-    ref.set({ bossCd:cd, items, total, status:'pending', requestedAt:TS }).then(()=>toast('정산 요청을 보냈어요! 📨')).catch(()=>toast('요청 실패'));
+    ref.set({ bossCd:cd, items, total, status:'pending', requestedAt:TS })
+      .then(()=>{ window._payReqBusy[cd]=false; toast('정산 요청을 보냈어요! 📨'); })
+      .catch(()=>{ window._payReqBusy[cd]=false; toast('요청 실패'); });
   }, '💰');
 }
 
