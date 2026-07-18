@@ -304,6 +304,15 @@ function _maybeAutoBooth(){
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200); }
+// 작성물(사업계획서/지원서/면접점수/질문) 로컬 임시저장 전용 durable setItem — 저장공간이 꽉 차
+//   무음으로 실패하면, 재렌더가 빈 draft로 폼을 덮어 작성 중 내용이 경고 없이 사라진다(저사양 태블릿 실전 사고).
+//   실패 시 1회 toast로 알려 학생이 지금 제출하도록 유도한다(스팸 방지 플래그, 성공하면 리셋).
+//   ※ 재생성 가능한 캐시(로스터)·플래그·로그인·UI상태는 이 헬퍼를 쓰지 않는다(무음 유지가 정상).
+let _lsWarned=false;
+function _lsSetWarn(key, value){
+  try{ localStorage.setItem(key, value); _lsWarned=false; return true; }
+  catch(_){ if(!_lsWarned){ _lsWarned=true; try{ toast('⚠️ 저장공간이 가득 차 작성 내용이 임시저장되지 않아요 — 지금 제출하세요'); }catch(__){} } return false; }
+}
 let _pcYes=null;
 function prettyConfirm(title, html, onYes, icon){ const c=$('pcCancel'); if(c) c.style.display=''; $('pcTitle').textContent=title; $('pcMsg').innerHTML=html; $('pcIcon').textContent=icon||'⚠️'; _pcYes=onYes||null; $('pcOverlay').classList.add('show'); }
 /* 단일 버튼 안내창(취소 버튼 숨김). 예쁜 창으로 알림만 띄울 때 사용. */
@@ -1424,7 +1433,7 @@ function _numField(label, id, val, unit, attr){
 function _numShow(v, unit){ return (v==null || v==='') ? '-' : (esc(v)+unit); }
 function _draftKey(kind){ return 'startup_draft_'+kind+'_'+(ME&&ME.cd); }
 function getDraftLocal(kind){ try{ return JSON.parse(localStorage.getItem(_draftKey(kind))||'null'); }catch(_){ return null; } }
-function setDraftLocal(kind, data){ try{ localStorage.setItem(_draftKey(kind), JSON.stringify(data)); }catch(_){} }
+function setDraftLocal(kind, data){ _lsSetWarn(_draftKey(kind), JSON.stringify(data)); }
 function clearDraftLocal(kind){ try{ localStorage.removeItem(_draftKey(kind)); }catch(_){} }
 function _optSel(list, sel){ return list.map(o=>`<option ${o===sel?'selected':''}>${esc(o)}</option>`).join(''); }
 function autosavePlan(){ setDraftLocal('plan', { name:$('p_name').value, ceo:$('p_ceo').value, desc:$('p_desc').value, plan:$('p_plan').value, items:$('p_items').value, itemsTchr:$('p_itemsTchr').value, cost:$('p_cost').value, cookie:$('p_cookie').value, duty:$('p_duty').value, qual:$('p_qual').value, head:$('p_head').value, days:$('p_days').value, bonus:$('p_bonus').value, ins4:$('p_ins4').value, cond:$('p_cond').value, pay:$('p_pay').value, at:Date.now() }); }
@@ -1588,7 +1597,7 @@ function _rehireApplicants(cd, post){
 // 추가 채용 폼 로컬 초안(자동저장) — 재렌더/새로고침에도 입력 보존
 function _rehireKey(){ return 'startup_rehire_'+(ME&&ME.cd); }
 function getRehireDraft(){ try{ return JSON.parse(localStorage.getItem(_rehireKey())||'null')||{}; }catch(_){ return {}; } }
-function autosaveRehire(){ try{ localStorage.setItem(_rehireKey(), JSON.stringify({ duty:$('rh_duty').value, head:$('rh_head').value, days:$('rh_days').value, qual:$('rh_qual').value, pay:$('rh_pay').value, bonus:$('rh_bonus').value, ins4:$('rh_ins4').value, cond:$('rh_cond').value })); }catch(_){} }
+function autosaveRehire(){ _lsSetWarn(_rehireKey(), JSON.stringify({ duty:$('rh_duty').value, head:$('rh_head').value, days:$('rh_days').value, qual:$('rh_qual').value, pay:$('rh_pay').value, bonus:$('rh_bonus').value, ins4:$('rh_ins4').value, cond:$('rh_cond').value })); }
 function clearRehireDraft(){ try{ localStorage.removeItem(_rehireKey()); }catch(_){} }
 function cancelRehireEdit(){ clearRehireDraft(); scheduleRender(); toast('편집을 취소했어요'); }
 function saveRehirePost(){
@@ -2077,7 +2086,7 @@ function ordUp(){
 /* ---- 학생: 면접 채점표 (표 + 별점, 로컬 보관 → 마지막에 제출) ---- */
 function _iScoresKey(){ return 'startup_iscores_'+(ME&&ME.cd); }
 function getLocalScores(){ if(!window._localScores){ try{ window._localScores=JSON.parse(localStorage.getItem(_iScoresKey())||'{}')||{}; }catch(_){ window._localScores={}; } } return window._localScores; }
-function _saveLocalScores(){ try{ localStorage.setItem(_iScoresKey(), JSON.stringify(getLocalScores())); }catch(_){} }
+function _saveLocalScores(){ _lsSetWarn(_iScoresKey(), JSON.stringify(getLocalScores())); }
 function localScoreOf(tcd, idx){ const t=getLocalScores()[tcd]||{}; return t['i'+idx]||0; }
 function setLocalScore(tcd, idx, n){ const ls=getLocalScores(); ls[tcd]=ls[tcd]||{}; if(n>0) ls[tcd]['i'+idx]=n; else delete ls[tcd]['i'+idx]; _saveLocalScores(); }
 function interviewScoreCard(voterCd){
@@ -2171,7 +2180,7 @@ function starUp(e){
 /* ---- 면접 질문 제출 (익명). 학생은 questions 전체를 구독하지 않고 내 질문만 로컬 보관 ---- */
 function _myqKey(){ return 'startup_myq_'+(ME&&ME.cd); }
 function getMyQ(){ try{ return JSON.parse(localStorage.getItem(_myqKey())||'{}')||{}; }catch(_){ return {}; } }
-function saveMyQ(m){ try{ localStorage.setItem(_myqKey(), JSON.stringify(m)); }catch(_){} }
+function saveMyQ(m){ _lsSetWarn(_myqKey(), JSON.stringify(m)); }
 function interviewQuestionsCard(isTeacher){
   const qs = entries(DB.interview && DB.interview.questions).sort((a,b)=>(a[1].at||0)-(b[1].at||0));
   const targets = entries(DB.businesses).filter(([cd,b])=>b.status==='approved');
@@ -2529,10 +2538,10 @@ function getResumeDraft(bc){ try{ return JSON.parse(localStorage.getItem(_resume
 function clearResumeDraft(bc){ try{ localStorage.removeItem(_resumeDraftKey(bc)); }catch(_){} }
 function autosaveResume(bc){
   if(!$('r_motive_'+bc)) return;
-  try{ localStorage.setItem(_resumeDraftKey(bc), JSON.stringify({
+  _lsSetWarn(_resumeDraftKey(bc), JSON.stringify({
     motive:$('r_motive_'+bc).value, pros:$('r_pros_'+bc).value, cons:$('r_cons_'+bc).value,
     career:$('r_career_'+bc).value, resolve:$('r_resolve_'+bc).value, wantPay:$('r_pay_'+bc).value
-  })); }catch(_){}
+  }));
 }
 
 /* ===== 교사: 지원자 이력서 수정·취소 ===== */
@@ -2593,8 +2602,11 @@ function submitResume(bc){
     // 이력서엔 이름 저장 안 함(익명). 본인 조회용 역인덱스만 별도.
     S.child('resumes/'+bc+'/'+ME.cd).update(data);
     S.child('applicantIndex/'+ME.cd+'/'+bc).set(true);
-    try{ localStorage.setItem(_resumeKey(bc), JSON.stringify(data)); }catch(_){}   // 로컬 프리필용 보관
-    clearResumeDraft(bc);
+    // 프리필 보관이 성공했을 때만 작업 draft를 지운다 — 프리필이 쿼터로 무음 실패한 채 draft까지
+    //   지우면, (쿼터초과+오프라인+새로고침)이 겹칠 때 서버 write(메모리 큐)마저 사라져 지원서가
+    //   영구 유실된다. 최소 한 벌(작업 draft)은 로컬에 남겨 재열람/재제출로 복구되게 한다.
+    let _preOk=false; try{ localStorage.setItem(_resumeKey(bc), JSON.stringify(data)); _preOk=true; }catch(_){}
+    if(_preOk) clearResumeDraft(bc);
     window._resumeOpen=window._resumeOpen||{}; window._resumeOpen[bc]=false;
     toast('지원 완료! 📨');
   }, '📨');
