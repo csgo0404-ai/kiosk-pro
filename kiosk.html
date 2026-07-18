@@ -1128,10 +1128,13 @@
                 if (res.ok) {
                     const data = (await res.json()).data || {};
                     if(data.cookie !== undefined) {
-                        await window.dbUpdate(window.dbPath(window.db, `kiosk_users/${code}`), {
-                            cookie: data.cookie,
-                            usedCookie: data.usedCookie || 0
-                        });
+                        // 🔻 변경된 값만 기록 → 클릭마다 불필요한 Firebase 쓰기 방지(syncAllCookiesSilent와 동일 정책)
+                        const cur = usersData[code] || {};
+                        const nc = data.cookie, nu = data.usedCookie || 0;
+                        const upd = {};
+                        if (cur.cookie !== nc) upd[`kiosk_users/${code}/cookie`] = nc;
+                        if ((cur.usedCookie||0) !== nu) upd[`kiosk_users/${code}/usedCookie`] = nu;
+                        if (Object.keys(upd).length) await window.dbUpdate(window.dbPath(window.db), upd);
                     }
                 }
             } catch(e) {}
