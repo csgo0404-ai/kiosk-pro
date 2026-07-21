@@ -874,6 +874,7 @@
         let itemsData = {};
         let shopStudents = {}; 
         let currentBuyerCode = null;
+        const TEACHER_CODE = '__TEACHER__';   // 선생님(코드 없음): 쿠키 차감 없이 부스 매출만 적립
 
 
         // Firebase 데이터 리스너
@@ -2222,7 +2223,15 @@
             const students = Object.values(usersData)
                 .filter(st => !kw || (st.name||'').includes(kw) || String(st.no).includes(kw))
                 .sort((a,b)=> parseInt(a.no)-parseInt(b.no));
-            grid.innerHTML = students.map(st => {
+            // 👩‍🏫 선생님 카드: 검색어가 없거나 '선생/교사'에 매칭될 때 맨 앞에 표시(코드 없음 → 무차감 결제)
+            const teacherCard = (!kw || '선생님교사'.includes(kw))
+                ? `<div class="buyer-pick-card" onclick="chooseBuyer('${TEACHER_CODE}')">
+                    <div class="bp-no">👩‍🏫</div>
+                    <div class="bp-name">선생님</div>
+                    <div class="bp-candy">&nbsp;</div>
+                </div>`
+                : '';
+            grid.innerHTML = teacherCard + (students.map(st => {
                 const a = shopAvail(st.code);
                 const avail = a==null ? '–' : a;
                 return `<div class="buyer-pick-card" onclick="chooseBuyer('${st.code}')">
@@ -2230,12 +2239,43 @@
                     <div class="bp-name">${st.name}</div>
                     <div class="bp-candy">🍪 ${avail}</div>
                 </div>`;
-            }).join('') || `<div style="grid-column:1/-1; text-align:center; color:#aaa; padding:30px;">학생이 없습니다.</div>`;
+            }).join('') || (teacherCard ? '' : `<div style="grid-column:1/-1; text-align:center; color:#aaa; padding:30px;">학생이 없습니다.</div>`));
         }
         function chooseBuyer(code) {
             pickCtx.buyerCode = code;
             closeModal('buyerPickModal');
+            if (code === TEACHER_CODE) return teacherConfirmCart();
             confirmCart();
+        }
+
+        // 👩‍🏫 선생님 주문: 코드가 없어 지갑 차감/쿠폰 없이 부스 매출(쿠키)만 적립
+        async function teacherConfirmCart() {
+            const lines = (pickCtx.lines||[]).filter(l => l.it && l.qty > 0);
+            if (lines.length === 0) return;
+            const b = boothsData[pickCtx.boothId];
+            if (!b) return;
+            if (b.isGov) return showInfo('👩‍🏫', '이용할 수 없어요', '선생님은 공무원 부스를 이용할 수 없어요.');
+            const base = Date.now();
+            const updates = {};
+            lines.forEach((l, i) => {
+                const oid = 'o' + (base + i);
+                const lineTotal = (l.it.price||0)*l.qty;
+                const tracked = l.it.stock != null;
+                const iid = (l.id != null ? l.id : l.it.id);
+                updates[`kiosk_orders/${oid}`] = {
+                    id: oid, boothId: b.id, boothName: b.name,
+                    buyerCode: TEACHER_CODE, buyerName: '선생님', buyerNo: '★',
+                    itemName: l.it.name||'상품', emoji: l.it.emoji||'🍬', itemId: iid,
+                    price: l.it.price||0, qty: l.qty, total: lineTotal,
+                    cookiePaid: lineTotal, couponsUsed: 0, couponIdx: [], voucherUsed: 0, mondayUsed: 0,
+                    status: 'pending', paid: true, stockTracked: tracked, isTeacher: true, timestamp: base + i
+                };
+                if (tracked) updates[`kiosk_booth_items/${b.id}/${iid}/stock`] = window.dbIncrement(-l.qty);
+            });
+            // 차감 대상(deductCode) 없음 → 지갑 무차감, 부스 매출만 기록
+            const r = await commitShopWrite({ deductCode: null, deductDelta: 0, couponK: null, couponIdx: [], extraUpdates: updates });
+            if (r.ok){ saleCart = {}; renderBoothItems(); }
+            else alert('주문 접수 실패');
         }
 
         // 키오스크 상점에서 부스 상품을 현재 학생에게 주문 접수 (구입 즉시 가방 쿠키 차감)
