@@ -718,7 +718,7 @@
                 <div style="font-weight:800; color:#5D4037; margin-bottom:6px;">🎟️ 상점 이용권 사용 <span style="font-size:13px; color:#888;">(보유 <span id="payVoucherMax">0</span>개) · 1:1로 대체</span></div>
                 <div style="display:flex; align-items:center; justify-content:center; gap:12px;">
                     <button onclick="payCouponChange('voucher',-1)" style="width:40px; height:40px; border-radius:50%; border:none; background:#FFE0B2; font-size:22px; font-weight:bold; cursor:pointer;">−</button>
-                    <input type="number" id="payVoucher" value="0" min="0" oninput="payCouponInput()" onfocus="this.select()" style="font-family:'Jua',sans-serif; font-size:28px; color:#E65100; width:70px; text-align:center; border:2px solid #FFE0B2; border-radius:12px; padding:3px 0; -moz-appearance:textfield;">
+                    <input type="number" id="payVoucher" value="0" min="0" oninput="payCouponInput('voucher')" onfocus="this.select()" style="font-family:'Jua',sans-serif; font-size:28px; color:#E65100; width:70px; text-align:center; border:2px solid #FFE0B2; border-radius:12px; padding:3px 0; -moz-appearance:textfield;">
                     <button onclick="payCouponChange('voucher',1)" style="width:40px; height:40px; border-radius:50%; border:none; background:#FFE0B2; font-size:22px; font-weight:bold; cursor:pointer;">+</button>
                     <span style="color:#8D6E63; font-weight:700;">개</span>
                 </div>
@@ -2745,6 +2745,7 @@
             document.getElementById('payQty').value = 1;
             document.getElementById('payVoucher').value = 0;
             document.getElementById('payMonday').value = 0;
+            _payCtx.voucherTouched = false;   // 아직 학생이 손대지 않음 → 이용권 자동 우선 사용
             recalcPay();
             document.getElementById('payModal').style.display = 'flex';
         }
@@ -2761,13 +2762,16 @@
         function payCouponChange(kind, d){
             const el = document.getElementById(kind==='voucher' ? 'payVoucher' : 'payMonday');
             el.value = Math.max(0, (parseInt(el.value)||0) + d);
+            if(kind==='voucher') _payCtx.voucherTouched = true;   // 학생이 직접 조절 → 자동 우선 사용 중지
             recalcPay();
         }
-        function payCouponInput(){ recalcPay(); }
+        function payCouponInput(kind){ if(kind==='voucher') _payCtx.voucherTouched = true; recalcPay(); }
         function recalcPay(){
             const total = _payCtx.unit * _payCtx.qty;
             _payCtx.total = total;
             const vEl = document.getElementById('payVoucher'), mEl = document.getElementById('payMonday');
+            // 🎟️ 기본: 상점 이용권부터 자동 소모(모자란 만큼만 쿠키). 학생이 이용권 개수를 직접 바꾸면 그 값 유지.
+            if(!_payCtx.voucherTouched) vEl.value = Math.min(_payCtx.voucherCount, total);
             // 이용권 먼저 클램프(보유·총액), 월요 쿠키는 남은 총액까지
             let v = Math.max(0, Math.min(_payCtx.voucherCount, total, parseInt(vEl.value)||0));
             let m = Math.max(0, Math.min(_payCtx.mondayCount, total - v, parseInt(mEl.value)||0));
@@ -2778,8 +2782,13 @@
             document.getElementById('payPrice').innerText = total;
             document.getElementById('payVoucherRow').style.display = _payCtx.voucherCount > 0 ? 'block' : 'none';
             document.getElementById('payMondayRow').style.display = _payCtx.mondayCount > 0 ? 'block' : 'none';
+            const _payParts = [];
+            if (v > 0) _payParts.push(`상점이용권 ${v}개`);
+            if (m > 0) _payParts.push(`월요쿠키 ${m}개`);
+            if (cookiePaid > 0) _payParts.push(`쿠키 ${cookiePaid}개`);
+            if (!_payParts.length) _payParts.push(`쿠키 0개`);   // 전부 0이면 최소 한 줄
             document.getElementById('payInfo').innerHTML =
-                `🎟️ ${v}개 + 🌞 ${m}개 + 🍪 ${cookiePaid}개로 결제` +
+                _payParts.join(' + ') + '로 결제' +
                 (enough ? '' : `<br><span style="color:#E53935;font-size:14px;">⚠️ 쿠키가 부족해요</span>`);
             const btn = document.getElementById('payConfirmBtn');
             btn.disabled = !enough;
