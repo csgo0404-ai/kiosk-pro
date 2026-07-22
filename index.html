@@ -1143,6 +1143,10 @@ function resetAll(){
 async function _doResetAll(){
   window._bizPubHash = {};   // 슬림미러 해시가드 초기화 → 재생성한 회사가 bizPub에 확실히 반영되게(초기화 후 stale-skip 방지)
   const tSign = obj(DB.meta).teacherSignUrl;   // 교사 서명은 보존
+  // 사업가 면접 채점 '설정'(평가항목·항목별 만점)은 보존 — 매번 다시 만들지 않도록. (order/점수 등 세션 데이터는 초기화)
+  const iCfgSaved = obj(obj(DB.interview).config);
+  const iItemsSaved = Array.isArray(iCfgSaved.items) ? iCfgSaved.items.slice() : null;
+  const iMaxSaved = iCfgSaved.max;
   // 사장별 부스(kiosk_booths/sb_*)와 관련 데이터도 제거 — 공무원(isGov) 등 그 외 부스는 보존
   const rootUpd = {};
   const sbIds = entries(obj(window._kioskBooths))
@@ -1185,7 +1189,10 @@ async function _doResetAll(){
   }
   S.remove().then(()=>{
     if(tSign) S.child('meta/teacherSignUrl').set(tSign);
-    const done = ()=> toast('초기화 완료'+(tSign?' (교사 서명 보존)':'')+' · 사장 부스·매출 기록 정리 (학생 쿠키는 유지)');
+    if(iItemsSaved && iItemsSaved.length) S.child('interview/config/items').set(iItemsSaved);   // 면접 채점 항목 복원
+    if(iMaxSaved) S.child('interview/config/max').set(iMaxSaved);                                 // 항목별 만점 복원
+    const kept = [tSign?'교사 서명':null, (iItemsSaved&&iItemsSaved.length)?'면접 설정':null].filter(Boolean).join('·');
+    const done = ()=> toast('초기화 완료'+(kept?` (${kept} 보존)`:'')+' · 사장 부스·매출 기록 정리 (학생 쿠키는 유지)');
     if(Object.keys(rootUpd).length) DBROOT.update(rootUpd).then(done).catch(done); else done();
   }); }
 

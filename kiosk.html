@@ -147,7 +147,7 @@
         .highlighted-card { border-color: #FFC107; background: #C5E1A5; }
 
         /* 구매 내역 사이드바 */
-        .history-list { flex: 1; overflow-y: auto; margin-top: 15px; }
+        .history-list { flex: 1; overflow-y: auto; overflow-x: hidden; margin-top: 15px; }
         .history-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px dashed #DDD; }
         .h-info { font-size: 15px; }
         .h-name { font-weight: 800; color: #000; }
@@ -299,6 +299,8 @@
         .booth-stat-open { position: absolute; top: 12px; right: 14px; font-size: 12px; font-weight: 800; color: #2E7D32; }
         .booth-stat-off { position: absolute; top: 12px; right: 14px; font-size: 12px; font-weight: 800; color: #B71C1C; }
         .booth-status-empty { color: #bbb; padding: 14px; }
+        .booth-stat-closed { opacity: 0.7; }
+        .booth-stat-closed .booth-stat-name, .booth-stat-closed .booth-stat-amt { color: #6D6459; }
 
         .live-auction-wrapper {
             flex-shrink: 0;
@@ -449,7 +451,7 @@
         .sale-qty-btn { width:38px; height:38px; border-radius:50%; border:none; background:#FFE0B2; color:#E65100; font-size:24px; font-weight:900; cursor:pointer; line-height:1; }
         .sale-qty-btn:active { background:#FFCC80; }
         .sale-qty-num { font-family:'Jua',sans-serif; font-size:26px; color:#E65100; min-width:32px; text-align:center; }
-        #orderBar { position:fixed; right:28px; bottom:28px; z-index:500; border:none; border-radius:40px; padding:18px 36px; font-family:'Jua',sans-serif; font-size:22px; font-weight:900; color:#fff; background:#FB8C00; box-shadow:0 8px 20px rgba(251,140,0,0.45); cursor:pointer; }
+        #orderBar { position:fixed; right:368px; bottom:28px; z-index:500; border:none; border-radius:40px; padding:18px 36px; font-family:'Jua',sans-serif; font-size:22px; font-weight:900; color:#fff; background:#FB8C00; box-shadow:0 8px 20px rgba(251,140,0,0.45); cursor:pointer; }
         #orderBar:hover { background:#F57C00; }
         #orderBar:disabled { background:#E0E0E0; color:#9E9E9E; box-shadow:none; cursor:default; }
         .booth-add { background:#F9FBE7 !important; border:3px dashed #C5E1A5; color:#9CCC65; }
@@ -497,6 +499,22 @@
         .ord-student-cnt { font-size:12px; color:#888; background:#fff; border-radius:10px; padding:2px 8px; font-weight:700; }
         .ord-student-sum { font-weight:900; color:#E65100; font-size:16px; }
         .ord-student-arrow { color:#BCAAA4; font-size:22px; font-weight:900; }
+        /* 구매내역 정렬 토글 (학생별/시간별) */
+        .ord-viewtoggle { display:flex; gap:6px; margin-top:14px; }
+        .ord-viewtoggle button { flex:1; padding:7px 0; border:2px solid #FFD54F; background:#fff; color:#8D6E63; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer; font-family:'Jua',sans-serif; transition:0.12s; }
+        .ord-viewtoggle button.active { background:#FFB74D; color:#fff; border-color:#FFB74D; }
+        .ord-time-row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 6px; border-bottom:1px dashed #E0E0E0; cursor:pointer; transition:0.12s; }
+        .ord-time-row:hover { background:#FFF8E1; }
+        .ord-time-main { font-size:14px; color:#5D4037; min-width:0; }
+        .ord-time-main b { color:#000; }
+        .ord-time-when { font-size:11px; color:#aaa; margin-top:2px; text-align:right; }
+        .st-coupon-sub { font-size:11px; color:#8D6E63; font-weight:700; margin-top:2px; }
+        /* 판매현황 정렬 토글 (이름순/판매순) */
+        .sales-sorttoggle { display:flex; gap:6px; justify-content:flex-end; margin-bottom:14px; }
+        .sales-sorttoggle button { padding:6px 14px; border:2px solid #B2DFDB; background:#fff; color:#00695C; border-radius:20px; font-weight:800; font-size:13px; cursor:pointer; font-family:'Jua',sans-serif; transition:0.12s; }
+        .sales-sorttoggle button.active { background:#4DB6AC; color:#fff; border-color:#4DB6AC; }
+        .kiosk-sorttoggle button { border-color:#FFCC80; color:#E65100; }
+        .kiosk-sorttoggle button.active { background:#FB8C00; color:#fff; border-color:#FB8C00; }
         .ord-toolbar { display:flex; gap:8px; margin-top:10px; }
         .ord-toolbar select { flex:1; border-radius:10px; border:1px solid #ddd; padding:6px; font-weight:700; }
         .btn-settle { background:#FFD54F; color:#5D4037; border:none; padding:8px 14px; border-radius:20px; font-weight:900; cursor:pointer; box-shadow:0 4px 0 #FFB300; }
@@ -593,6 +611,10 @@
         <div class="booth-status-wrapper">
             <div class="booth-status-header">
                 <h3>🏪 부스별 판매현황</h3>
+                <div class="sales-sorttoggle kiosk-sorttoggle" style="margin-bottom:0;">
+                    <button id="kioskSalesSort_name" onclick="setKioskSalesSort('name')">이름순</button>
+                    <button id="kioskSalesSort_sold" onclick="setKioskSalesSort('sold')">판매순</button>
+                </div>
             </div>
             <div id="boothStatusBar" class="booth-status-list"></div>
         </div>
@@ -604,6 +626,10 @@
             <h3 style="margin: 0; font-size: 20px; font-family: 'Jua', sans-serif; display:flex; align-items:center; gap:8px;">
                 <span onclick="resetOrders()" title="구매 내역 초기화" style="cursor:pointer;">🧾</span> <span>구매 내역</span>
             </h3>
+        </div>
+        <div class="ord-viewtoggle">
+            <button id="ordViewTime" class="active" onclick="setOrderView('time')">🕒 시간별</button>
+            <button id="ordViewStudent" onclick="setOrderView('student')">👥 학생별</button>
         </div>
         <div class="history-list" id="orderList" style="flex:1;"></div>
     </div>
@@ -635,8 +661,9 @@
         </div>
     </div>
 
-  <div class="modal-overlay" id="adminModal" onclick="closeModal('adminModal')">
+  <div class="modal-overlay" id="adminModal">
         <div class="admin-modal-content" onclick="event.stopPropagation()">
+            <button class="modal-x" onclick="closeModal('adminModal')" title="닫기">×</button>
             <div class="admin-header">
                 <h2>🎪 상점 꾸미기</h2>
             </div>
@@ -1099,6 +1126,9 @@
 
             grid.innerHTML = students.map(st => {
                 const availableCookie = availOf(st);
+                // 🎫🌞 상점 이용권 + 월요 쿠키도 1:1 결제수단 → 쿠키와 합산한 총 개수만 표시
+                const ci = getCouponInfo(st.code);
+                const totalUsable = availableCookie + (ci.voucherCount||0) + (ci.mondayCount||0);
 
                 let badgeHtml = "";
                 if(st.highlight && st.highlight !== 0) {
@@ -1112,7 +1142,7 @@
                 <div class="student-card" onclick="checkStudentCodeAndOpen('${st.code}')">
                     ${badgeHtml}
                     <div class="st-card-name">${st.name}</div>
-                    <div class="st-num-big">🍪${availableCookie}</div>
+                    <div class="st-num-big">🍪${totalUsable}</div>
                 </div>
                 `;
             }).join('');
@@ -1269,7 +1299,7 @@
             const grouped = {};
             Object.keys(myInv).forEach(idx => {
                 const item = myInv[idx];
-                if(!item || item.st !== 'active') return;
+                if(!item || !(item.st === 'active' || item.st === 'new')) return;   // 갓 지급된 new 상태도 표시
                 const nm = String(item.n || '').replace(/\s/g,'');
                 const isCoupon = nm.includes('상점이용권');
                 const isMonday = nm.includes('월요쿠키');
@@ -1712,6 +1742,9 @@
         let boothStats   = {};   // kiosk_booth_stats/{boothId} (정산 누적 집계)
         let currentBoothId = null;   // 운영 중인 부스
         let boothFilter    = 'all';  // 구매내역 부스 필터
+        let orderViewMode  = 'time';  // 구매내역 정렬: student(학생별) | time(시간별)
+        let salesSortMode  = 'default';  // 판매현황 정렬: default(개설순) | name(이름순) | sold(판매순)
+        let kioskSalesSortMode = 'name';  // 키오스크 하단 판매현황 정렬: default(개설순) | name(이름순) | sold(판매순)
         let pickCtx        = null;   // {boothId} 손님 선택 컨텍스트
         let bmQty          = 1;      // 부스마켓 수량
         let bmHoldTimer    = null;
@@ -2616,10 +2649,14 @@
             const voucher = [], monday = [];
             Object.keys(inv||{}).forEach(idx => {
                 const it = inv[idx];
-                if (!it || it.st !== 'active') return;
+                if (!it) return;
+                // 🎫🍪 이벤트 상점과 동일한 "사용 가능" 판정: st가 active 또는 new, 잠금(미션 진행) 제외.
+                //     ⚠️ 갓 지급된 이용권/월요쿠키는 st='new'라, active만 세면 0개로 잡혀 결제가 막힌다.
+                const usable = (it.st === 'active' || it.st === 'new') && !it.locked;
+                if (!usable) return;
                 const nm = String(it.n||'').replace(/\s/g,'');
                 if (nm.includes('상점이용권')) voucher.push(idx);
-                else if (nm.includes('월요쿠키') && !it.locked) monday.push(idx);
+                else if (nm.includes('월요쿠키') && !it.reqDone) monday.push(idx);
             });
             return { voucher, monday };
         }
@@ -2655,7 +2692,7 @@
                 try {
                     const res = await window.dbRunTransaction(
                         window.dbPath(window.db, `ClassData/EventShop/stu/${k}/inv/${idx}/st`),
-                        cur => (cur === 'active' ? 'used' : undefined));   // active일 때만 커밋, 아니면 abort
+                        cur => ((cur === 'active' || cur === 'new') ? 'used' : undefined));   // active/new일 때만 커밋, 아니면 abort
                     if (res.committed && res.snapshot.val() === 'used') won.push(idx);
                 } catch(_){ /* 선점 실패분은 할인에서 제외(fail-closed) */ }
             }
@@ -2900,36 +2937,65 @@
                     catch(e){ alert('초기화 실패'); }
                 });
         }
+        // 구매내역 정렬 토글 (학생별/시간별)
+        function setOrderView(mode){
+            orderViewMode = mode;
+            const s = document.getElementById('ordViewStudent'), t = document.getElementById('ordViewTime');
+            if (s) s.classList.toggle('active', mode==='student');
+            if (t) t.classList.toggle('active', mode==='time');
+            renderOrders();
+        }
+        // 주문 타임스탬프 → HH:MM 표시
+        function _fmtOrderTime(ts){
+            if (!ts) return '';
+            const d = new Date(ts);
+            const hh = String(d.getHours()).padStart(2,'0');
+            const mm = String(d.getMinutes()).padStart(2,'0');
+            return `${hh}:${mm}`;
+        }
         function renderOrders() {
             const list = document.getElementById('orderList');
             if (!list) return;
             let orders = Object.values(ordersData).filter(o=> boothFilter==='all' || o.boothId===boothFilter);
-            // 학생별 그룹 (번호순)
-            const byBuyer = {};
-            orders.forEach(o=>{ (byBuyer[o.buyerCode] = byBuyer[o.buyerCode]||[]).push(o); });
-            const sumOf = code => byBuyer[code].reduce((s,o)=>s+o.total,0);
-            const buyerCodes = Object.keys(byBuyer).sort((a,b)=> sumOf(b) - sumOf(a)); // 금액 많은 순
-            if (buyerCodes.length === 0) {
+            if (orders.length === 0) {
                 list.innerHTML = `<div style="text-align:center;color:#bbb;padding:40px;">주문이 없습니다.</div>`;
-                // 상세 창이 열려 있으면 함께 갱신(주문이 모두 사라지면 닫힘)
                 if (document.getElementById('studentOrdersModal').style.display === 'flex' && currentSOCode) renderStudentOrders();
                 return;
             }
-            // 학생 이름별로 1줄: 합계만 표시, 클릭 시 상세 창
-            list.innerHTML = buyerCodes.map(code=>{
-                const ords = byBuyer[code];
-                const st = usersData[code]||{};
-                const pendingSum = ords.reduce((s,o)=>s+o.total,0);
-                const cnt = ords.length;
-                return `<div class="ord-student-row" onclick="openStudentOrders('${code}')">
-                    <div class="ord-student-name">${st.name||o_name(code)}</div>
-                    <div class="ord-student-right">
-                        <span class="ord-student-cnt">${cnt}건</span>
-                        <span class="ord-student-sum">${pendingSum} 🍪</span>
-                        <span class="ord-student-arrow">›</span>
-                    </div>
-                </div>`;
-            }).join('');
+            if (orderViewMode === 'time') {
+                // 🕒 시간별: 오래된 주문이 위, 최신이 하단 (클릭 시 해당 학생 상세)
+                const sorted = orders.slice().sort((a,b)=> (a.timestamp||0)-(b.timestamp||0));
+                list.innerHTML = sorted.map(o=>{
+                    const nm = (usersData[o.buyerCode]||{}).name || o.buyerName || o.buyerCode;
+                    return `<div class="ord-time-row" onclick="openStudentOrders('${o.buyerCode}')">
+                        <div class="ord-time-main"><b>${nm}</b> · ${o.emoji||''} ${o.itemName} x${o.qty}</div>
+                        <div>
+                            <div class="ord-student-sum">${o.total} 🍪</div>
+                            <div class="ord-time-when">${_fmtOrderTime(o.timestamp)}</div>
+                        </div>
+                    </div>`;
+                }).join('');
+            } else {
+                // 👥 학생별: 학생 1줄, 합계 표시, 금액 많은 순
+                const byBuyer = {};
+                orders.forEach(o=>{ (byBuyer[o.buyerCode] = byBuyer[o.buyerCode]||[]).push(o); });
+                const sumOf = code => byBuyer[code].reduce((s,o)=>s+o.total,0);
+                const buyerCodes = Object.keys(byBuyer).sort((a,b)=> sumOf(b) - sumOf(a));
+                list.innerHTML = buyerCodes.map(code=>{
+                    const ords = byBuyer[code];
+                    const st = usersData[code]||{};
+                    const pendingSum = ords.reduce((s,o)=>s+o.total,0);
+                    const cnt = ords.length;
+                    return `<div class="ord-student-row" onclick="openStudentOrders('${code}')">
+                        <div class="ord-student-name">${st.name||o_name(code)}</div>
+                        <div class="ord-student-right">
+                            <span class="ord-student-cnt">${cnt}건</span>
+                            <span class="ord-student-sum">${pendingSum} 🍪</span>
+                            <span class="ord-student-arrow">›</span>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
             // 상세 창이 열려 있으면 함께 갱신
             if (document.getElementById('studentOrdersModal').style.display === 'flex' && currentSOCode) renderStudentOrders();
         }
@@ -3082,6 +3148,15 @@
             renderSales();
             document.getElementById('salesModal').style.display = 'flex';
         }
+        // 판매현황 정렬 토글 (개설순/이름순/판매순)
+        function setSalesSort(mode){
+            salesSortMode = mode;
+            ['default','name','sold'].forEach(m=>{
+                const el = document.getElementById('salesSort_'+m);
+                if (el) el.classList.toggle('active', m===mode);
+            });
+            renderSales();
+        }
         function renderSales() {
             const body = document.getElementById('salesBody');
             const booths = Object.values(boothsData).filter(b=>!b.isGov).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));   // 공무원 부스는 판매현황에서 제외
@@ -3102,10 +3177,19 @@
             const totalSettled = booths.reduce((s,b)=>s+stat[b.id].settled,0);
             const totalPending = booths.reduce((s,b)=>s+stat[b.id].pending,0);
             const topId = booths.reduce((top,b)=> stat[b.id].settled > (stat[top]?.settled||0) ? b.id : top, null);
-            if (booths.length===0) { body.innerHTML = `<div style="text-align:center;color:#bbb;padding:40px;">부스가 없습니다.</div>`; }
-            else body.innerHTML = `
+            // 정렬 적용: 이름순 / 판매순(확정+보류 매출 많은 순) / 개설순(기본)
+            const shown = booths.slice();
+            if (salesSortMode === 'name') shown.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||''), 'ko'));
+            else if (salesSortMode === 'sold') shown.sort((a,b)=> (stat[b.id].settled+stat[b.id].pending) - (stat[a.id].settled+stat[a.id].pending));
+            const sortBar = `<div class="sales-sorttoggle">
+                <button id="salesSort_default" class="${salesSortMode==='default'?'active':''}" onclick="setSalesSort('default')">개설순</button>
+                <button id="salesSort_name" class="${salesSortMode==='name'?'active':''}" onclick="setSalesSort('name')">이름순</button>
+                <button id="salesSort_sold" class="${salesSortMode==='sold'?'active':''}" onclick="setSalesSort('sold')">판매순</button>
+            </div>`;
+            if (booths.length===0) { body.innerHTML = sortBar + `<div style="text-align:center;color:#bbb;padding:40px;">부스가 없습니다.</div>`; }
+            else body.innerHTML = sortBar + `
                 <div class="sales-summary">확정 매출 합계 <b>${totalSettled} 🍪</b> · 보류 <b style="color:#FB8C00">${totalPending} 🍪</b></div>
-                ` + booths.map(b=>{
+                ` + shown.map(b=>{
                 const s = stat[b.id];
                 const best = Object.entries(s.items).sort((a,b)=>b[1]-a[1])[0];
                 const pct = Math.round(s.settled / maxSettled * 100);
@@ -3122,29 +3206,37 @@
             }).join('');
         }
 
+        // 키오스크 하단 판매현황 정렬 토글 (개설순/이름순/판매순) — 같은 버튼 다시 누르면 개설순 복귀
+        function setKioskSalesSort(mode){
+            kioskSalesSortMode = (kioskSalesSortMode===mode) ? 'default' : mode;
+            renderKioskBoothStatus();
+        }
         // ---- 키오스크 하단: 부스별 판매현황 ----
         function renderKioskBoothStatus() {
             const bar = document.getElementById('boothStatusBar');
             if (!bar) return;
             const booths = Object.values(boothsData).filter(b=>!b.isGov).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));   // 공무원 부스는 판매현황에서 제외
             // 매출 = 자동 반영(현재 주문) + 과거 정산분(있으면). 정산 단계가 없어졌으므로 주문 합계가 곧 매출.
-            const salesByBooth = {}, cntByBooth = {};
+            const salesByBooth = {};
             Object.values(ordersData).forEach(o=>{
                 salesByBooth[o.boothId] = (salesByBooth[o.boothId]||0) + o.total;
-                cntByBooth[o.boothId] = (cntByBooth[o.boothId]||0) + (o.qty||1);
+            });
+            // 정렬 토글 버튼 활성화 표시
+            ['name','sold'].forEach(m=>{
+                const el = document.getElementById('kioskSalesSort_'+m);
+                if (el) el.classList.toggle('active', m===kioskSalesSortMode);
             });
             if (booths.length === 0) { bar.innerHTML = `<div class="booth-status-empty">아직 개설된 부스가 없습니다.</div>`; return; }
             const salesOf = b => (salesByBooth[b.id]||0) + ((boothStats[b.id]||{}).settled||0);
-            const topId = booths.reduce((t,b)=> salesOf(b) > salesOf(boothsData[t]||{id:t}) ? b.id : t, booths[0].id);
+            // 정렬 적용: 이름순 / 판매순(매출 많은 순) / 개설순(기본)
+            if (kioskSalesSortMode === 'name') booths.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||''), 'ko'));
+            else if (kioskSalesSortMode === 'sold') booths.sort((a,b)=> salesOf(b) - salesOf(a));
             bar.innerHTML = booths.map(b=>{
                 const sales = salesOf(b);
-                const cnt = (cntByBooth[b.id]||0) + ((boothStats[b.id]||{}).count||0);
-                const crown = (b.id===topId && sales>0) ? '👑 ' : '';
-                const openBadge = b.open ? `<span class="booth-stat-open">● 영업중</span>` : `<span class="booth-stat-off">● 준비중</span>`;
-                return `<div class="booth-stat-card" style="background:${b.color||'#FFE0B2'}" onclick="showBoothHistory('${b.id}')">
-                    <div class="booth-stat-name">${crown}${b.icon||'🏪'} ${b.name} ${openBadge}</div>
+                const bg = b.open ? (b.color||'#FFE0B2') : '#D7D2CB';   // 준비중이면 회색 배경
+                return `<div class="booth-stat-card${b.open?'':' booth-stat-closed'}" style="background:${bg}" onclick="showBoothHistory('${b.id}')">
+                    <div class="booth-stat-name">${b.icon||'🏪'} ${b.name}</div>
                     <div class="booth-stat-amt">${sales} 🍪</div>
-                    ${cnt?`<div class="booth-stat-sub">판매 ${cnt}개</div>`:''}
                 </div>`;
             }).join('');
         }
